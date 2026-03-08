@@ -597,20 +597,68 @@ const AdminDashboard = ({
   const handleImageUpload = async (file: File, onProgress?: (progress: number) => void): Promise<string> => {
     return new Promise(async (resolve, reject) => {
       try {
-        if (onProgress) onProgress(30);
-        else setUploadProgress(30);
+        if (onProgress) onProgress(10);
+        else setUploadProgress(10);
         
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = () => {
+        // Create an image element to draw the file
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        
+        img.onload = () => {
+          if (onProgress) onProgress(40);
+          else setUploadProgress(40);
+
+          // Calculate new dimensions (max 1200px width/height to save space)
+          const MAX_SIZE = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          // Draw to canvas for compression
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error("Could not get canvas context"));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          if (onProgress) onProgress(70);
+          else setUploadProgress(70);
+
+          // Compress to JPEG with 0.7 quality (significantly reduces base64 size)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          
+          URL.revokeObjectURL(objectUrl);
+          
           if (onProgress) onProgress(100);
           else setUploadProgress(100);
-          resolve(reader.result as string);
+          
+          resolve(dataUrl);
         };
-        reader.onerror = (error) => {
-          console.error("FileReader error:", error);
+
+        img.onerror = (error) => {
+          URL.revokeObjectURL(objectUrl);
+          console.error("Image load error:", error);
           reject(error);
         };
+
+        img.src = objectUrl;
       } catch (error) {
         console.error("Upload failed:", error);
         reject(error);
