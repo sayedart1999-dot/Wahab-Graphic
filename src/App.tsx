@@ -1669,9 +1669,9 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'py-4' : 'py-8'}`}>
+    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'py-4 bg-black/80 backdrop-blur-md border-b border-white/10' : 'py-8'}`}>
       <div className="max-w-[1600px] mx-auto px-6 flex justify-between items-center">
-        <a href="#home" onClick={() => handleNavLinkClick('home')} className="text-2xl font-display font-bold tracking-tighter flex items-center gap-1">
+        <a href="#home" onClick={() => handleNavLinkClick('home')} className="text-2xl font-display font-bold tracking-tighter flex items-center gap-1 relative z-10">
           Wahab Graphic<span className="text-orange-accent">.</span>
         </a>
 
