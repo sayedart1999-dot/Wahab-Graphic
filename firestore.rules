@@ -50,7 +50,7 @@ service cloud.firestore {
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.slug is string && data.slug.size() > 0 && data.slug.size() < 100 &&
              (!('order' in data) || data.order is number) &&
-             (!('coverImage' in data) || (data.coverImage is string && data.coverImage.size() < 2000));
+             (!('coverImage' in data) || (data.coverImage is string && data.coverImage.size() < 1048500));
     }
 
     function isValidProject(data) {
@@ -58,10 +58,11 @@ service cloud.firestore {
              hasOnlyAllowedFields(data, ['categoryId', 'name', 'coverImage', 'images', 'description', 'createdAt', 'canvasData', 'canvasBackgroundColor']) &&
              data.categoryId is string &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
-             data.coverImage is string && data.coverImage.size() < 2000 &&
+             data.coverImage is string && data.coverImage.size() < 1048500 &&
              data.createdAt is timestamp &&
              (!('description' in data) || (data.description is string && data.description.size() < 5000)) &&
              (!('images' in data) || data.images is list) &&
+             (!('canvasData' in data) || data.canvasData is list) &&
              (!('canvasBackgroundColor' in data) || (data.canvasBackgroundColor is string && data.canvasBackgroundColor.size() < 20));
     }
 
