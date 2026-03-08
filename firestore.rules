@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: categories
+    // Fields:
+    //   - name: string (required)
+    //   - slug: string (required)
+    //   - order: number
+    //
+    // Collection: projects
+    // Fields:
+    //   - categoryId: string (required)
+    //   - name: string (required)
+    //   - coverImage: string (required)
+    //   - images: list (strings)
+    //   - description: string
+    //   - createdAt: timestamp
+    //
+    // Collection: messages
+    // Fields:
+    //   - fullName: string (required)
+    //   - email: string (required, email format)
+    //   - subject: string
+    //   - message: string (required)
+    //   - createdAt: timestamp
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "sayedart1999@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['name', 'slug']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() < 100;
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['categoryId', 'name', 'coverImage']) &&
+             data.categoryId is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.coverImage is string && data.coverImage.size() > 0;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['fullName', 'email', 'message']) &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() < 100 &&
+             data.email is string && data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 2000;
+    }
+
+    // Rules
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidCategory(request.resource.data);
+      allow update: if isAdmin() && isValidCategory(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /projects/{projectId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidProject(request.resource.data);
+      allow update: if isAdmin() && isValidProject(request.resource.data);
+      allow delete: if isAdmin();
+    }
+    
+    match /messages/{messageId} {
+      allow create: if isValidMessage(request.resource.data);
+      allow read, delete: if isAdmin();
+    }
+    
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+  }
+}

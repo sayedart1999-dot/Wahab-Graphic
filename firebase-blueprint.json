@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "A folder/category for projects (e.g., Logo Design, Thumbnail Design)",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The display name of the category"
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-friendly version of the name"
+        },
+        "order": {
+          "type": "number",
+          "description": "Display order"
+        }
+      },
+      "required": ["name", "slug"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A design project within a category",
+      "type": "object",
+      "properties": {
+        "categoryId": {
+          "type": "string",
+          "description": "The ID of the category this project belongs to"
+        },
+        "name": {
+          "type": "string",
+          "description": "Project title"
+        },
+        "coverImage": {
+          "type": "string",
+          "description": "URL of the cover image (1300x1000px recommended)"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": { "type": "string" },
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "width": { "type": "number" },
+              "height": { "type": "number" },
+              "rotation": { "type": "number" }
+            }
+          },
+          "description": "List of images with layout data"
+        },
+        "description": {
+          "type": "string",
+          "description": "Project description"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of creation"
+        }
+      },
+      "required": ["categoryId", "name", "coverImage"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A message from the contact form",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "description": "Sender's full name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Sender's email address"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Message subject"
+        },
+        "message": {
+          "type": "string",
+          "description": "Message content"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of message"
+        }
+      },
+      "required": ["fullName", "email", "message"]
+    }
+  },
+  "firestore": {
+    "categories": {
+      "schema": "Category",
+      "description": "Collection of project categories"
+    },
+    "projects": {
+      "schema": "Project",
+      "description": "Collection of design projects"
+    },
+    "messages": {
+      "schema": "Message",
+      "description": "Collection of contact form messages"
+    }
+  }
+}
