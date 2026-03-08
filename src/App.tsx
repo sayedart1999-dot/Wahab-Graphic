@@ -2356,18 +2356,29 @@ export default function App() {
       setProjects(projs);
     });
 
-    const unsubscribeMsgs = onSnapshot(query(collection(db, 'messages'), orderBy('createdAt', 'desc')), (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMessages(msgs);
-    });
-
     return () => {
       unsubscribeAuth();
       unsubscribeCats();
       unsubscribeProjs();
-      unsubscribeMsgs();
     };
   }, []);
+
+  useEffect(() => {
+    let unsubscribeMsgs: (() => void) | undefined;
+
+    if (isAdmin) {
+      unsubscribeMsgs = onSnapshot(query(collection(db, 'messages'), orderBy('createdAt', 'desc')), (snapshot) => {
+        const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setMessages(msgs);
+      });
+    } else {
+      setMessages([]);
+    }
+
+    return () => {
+      if (unsubscribeMsgs) unsubscribeMsgs();
+    };
+  }, [isAdmin]);
 
   return (
     <div className="relative">

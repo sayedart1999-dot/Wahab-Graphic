@@ -40,24 +40,39 @@ service cloud.firestore {
         (request.auth.token.email == "sayedart1999@gmail.com" && request.auth.token.email_verified == true);
     }
 
+    function hasOnlyAllowedFields(data, allowedFields) {
+      return data.keys().hasOnly(allowedFields);
+    }
+
     function isValidCategory(data) {
       return data.keys().hasAll(['name', 'slug']) &&
+             hasOnlyAllowedFields(data, ['name', 'slug', 'order', 'coverImage']) &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.slug is string && data.slug.size() > 0 && data.slug.size() < 100;
+             data.slug is string && data.slug.size() > 0 && data.slug.size() < 100 &&
+             (!('order' in data) || data.order is number) &&
+             (!('coverImage' in data) || (data.coverImage is string && data.coverImage.size() < 2000));
     }
 
     function isValidProject(data) {
-      return data.keys().hasAll(['categoryId', 'name', 'coverImage']) &&
+      return data.keys().hasAll(['categoryId', 'name', 'coverImage', 'createdAt']) &&
+             hasOnlyAllowedFields(data, ['categoryId', 'name', 'coverImage', 'images', 'description', 'createdAt', 'canvasData', 'canvasBackgroundColor']) &&
              data.categoryId is string &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
-             data.coverImage is string && data.coverImage.size() > 0;
+             data.coverImage is string && data.coverImage.size() < 2000 &&
+             data.createdAt is timestamp &&
+             (!('description' in data) || (data.description is string && data.description.size() < 5000)) &&
+             (!('images' in data) || data.images is list) &&
+             (!('canvasBackgroundColor' in data) || (data.canvasBackgroundColor is string && data.canvasBackgroundColor.size() < 20));
     }
 
     function isValidMessage(data) {
-      return data.keys().hasAll(['fullName', 'email', 'message']) &&
+      return data.keys().hasAll(['fullName', 'email', 'message', 'createdAt']) &&
+             hasOnlyAllowedFields(data, ['fullName', 'email', 'subject', 'message', 'createdAt']) &&
              data.fullName is string && data.fullName.size() > 0 && data.fullName.size() < 100 &&
              data.email is string && data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
-             data.message is string && data.message.size() > 0 && data.message.size() < 2000;
+             data.message is string && data.message.size() > 0 && data.message.size() < 2000 &&
+             data.createdAt is timestamp &&
+             (!('subject' in data) || (data.subject is string && data.subject.size() < 200));
     }
 
     // Rules
