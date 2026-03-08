@@ -1670,13 +1670,15 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'py-4 bg-black/80 backdrop-blur-md border-b border-white/10' : 'py-8'}`}>
-      <div className="max-w-[1600px] mx-auto px-6 flex justify-between items-center">
-        <a href="#home" onClick={() => handleNavLinkClick('home')} className="text-2xl font-display font-bold tracking-tighter flex items-center gap-1 relative z-10">
-          Wahab Graphic<span className="text-orange-accent">.</span>
+      <div className="max-w-[1600px] mx-auto px-6 grid grid-cols-2 md:grid-cols-3 items-center">
+        {/* Logo (Left) */}
+        <a href="#home" onClick={() => handleNavLinkClick('home')} className="flex items-center gap-3 relative z-10 justify-self-start">
+          <img src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" alt="Wahab Graphic Logo" className="w-10 h-10 rounded-lg shadow-lg object-cover" />
+          <span className="text-2xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
         </a>
 
-        {/* Desktop Nav - Pill Style */}
-        <div className="hidden md:flex items-center gap-2 glass px-2 py-2 rounded-full relative">
+        {/* Desktop Nav - Pill Style (Center) */}
+        <div className="hidden md:flex items-center justify-center gap-2 glass px-2 py-2 rounded-full relative justify-self-center">
           {navLinks.map((link) => (
             <a 
               key={link.name} 
@@ -1696,19 +1698,22 @@ const Navbar = () => {
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-4">
+        {/* Desktop Menu Button (Right) */}
+        <div className="hidden md:flex items-center justify-end justify-self-end gap-4">
           <button className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-orange-accent hover:text-black transition-all border-white/10">
             <Menu className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Mobile Toggle */}
-        <button 
-          className="md:hidden text-white"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X /> : <Menu />}
-        </button>
+        {/* Mobile Toggle (Right) */}
+        <div className="flex justify-end justify-self-end md:hidden">
+          <button 
+            className="text-white"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X /> : <Menu />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -2441,8 +2446,9 @@ export default function App() {
       
       <footer className="py-12 border-t border-white/5">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="text-xl font-display font-bold tracking-tighter flex items-center gap-1">
-            Wahab Graphic<span className="text-orange-accent">.</span>
+          <div className="flex items-center gap-3">
+            <img src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" alt="Wahab Graphic Logo" className="w-8 h-8 rounded-md opacity-80 object-cover" />
+            <span className="text-xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
           </div>
           
           <p className="text-gray-500 text-sm">
