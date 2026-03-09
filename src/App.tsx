@@ -2246,7 +2246,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {categories.map((cat, idx) => {
-              const count = projects.filter(p => p.categoryId === cat.id).length;
+              const catProjects = projects.filter(p => p.categoryId === cat.id);
               return (
                 <motion.div
                   key={cat.id}
@@ -2255,27 +2255,64 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.4 }}
-                  className="group relative overflow-hidden rounded-3xl aspect-[4/3] glass cursor-pointer flex flex-col items-center justify-center transition-colors"
+                  className="group relative w-full aspect-[4/3] cursor-pointer"
                   onClick={() => setSelectedCategory(cat)}
                 >
-                  {cat.coverImage ? (
-                    <>
-                      <img 
-                        src={cat.coverImage} 
-                        alt={cat.name} 
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-x-0 bottom-0 bg-black/40 backdrop-blur-md border-t border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-center py-2 px-4">
-                        <h3 className="text-lg font-bold text-white text-center">{cat.name}</h3>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="relative z-10 flex flex-col items-center p-8">
-                      <Folder className={`w-20 h-20 mb-4 ${idx % 2 === 0 ? 'text-orange-accent' : 'text-blue-accent'} group-hover:scale-110 transition-transform duration-500`} />
-                      <h3 className="text-2xl font-bold text-center">{cat.name}</h3>
+                  {/* Back of the Folder (Hidden until hover) */}
+                  <div className="absolute inset-0 pt-8 z-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-full h-full bg-white/10 border border-white/10 rounded-3xl rounded-tl-none relative">
+                      {/* Folder Tab */}
+                      <div className="absolute -top-8 left-0 w-1/2 max-w-[160px] h-8 bg-white/10 border-t border-l border-r border-white/10 rounded-t-2xl"></div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Files (Projects) sliding out from the middle */}
+                  <div className="absolute inset-0 z-10 flex justify-center pointer-events-none">
+                    {catProjects.slice(0, 3).map((p, i) => (
+                      <div
+                        key={p.id}
+                        className={`absolute bottom-6 w-[75%] aspect-video bg-white p-1.5 rounded-xl shadow-2xl transition-all duration-500 ease-out opacity-0 group-hover:opacity-100
+                          translate-y-12
+                          ${i === 0 ? 'group-hover:-translate-y-32 group-hover:-rotate-6' : 
+                            i === 1 ? 'group-hover:-translate-y-28 group-hover:rotate-3' : 
+                            'group-hover:-translate-y-24 group-hover:rotate-8'}
+                        `}
+                        style={{ zIndex: 10 + i }}
+                      >
+                        <img
+                          src={p.coverImage}
+                          alt=""
+                          className="w-full h-full object-cover rounded-lg"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Front of the Folder (Category Cover) */}
+                  <div className="absolute inset-0 z-20 bg-white/5 rounded-3xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 group-hover:top-14 group-hover:border-t-white/20 group-hover:translate-y-2">
+                    {cat.coverImage ? (
+                      <>
+                        <img 
+                          src={cat.coverImage} 
+                          alt={cat.name} 
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800/80 to-black/90 flex flex-col items-center justify-center p-8">
+                        <Folder className={`w-20 h-20 mb-4 ${idx % 2 === 0 ? 'text-orange-accent' : 'text-blue-accent'} group-hover:scale-110 transition-transform duration-500`} />
+                        <h3 className="text-2xl font-bold text-center">{cat.name}</h3>
+                      </div>
+                    )}
+                    
+                    <div className="absolute inset-x-0 bottom-0 p-5 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <h3 className="text-xl font-bold text-white drop-shadow-md text-center">{cat.name}</h3>
+                      <p className="text-sm text-gray-300 font-medium mt-1 text-center">{catProjects.length} Projects</p>
+                    </div>
+                  </div>
                 </motion.div>
               );
             })}
