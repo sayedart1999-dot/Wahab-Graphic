@@ -200,6 +200,29 @@ const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: {
             y: Math.round(e.target.y() / 10) * 10,
           });
         }}
+        onTransform={() => {
+          if (readOnly) return;
+          const node = shapeRef.current;
+          if (!node) return;
+
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
+          
+          const width = node.width();
+          const height = node.height();
+          
+          const currentWidth = width * scaleX;
+          const currentHeight = height * scaleY;
+          
+          const snappedWidth = Math.max(10, Math.round(currentWidth / 10) * 10);
+          const snappedHeight = Math.max(10, Math.round(currentHeight / 10) * 10);
+          
+          node.scaleX(snappedWidth / width);
+          node.scaleY(snappedHeight / height);
+          
+          node.x(Math.round(node.x() / 10) * 10);
+          node.y(Math.round(node.y() / 10) * 10);
+        }}
         onTransformEnd={(e) => {
           if (readOnly) return;
           const node = shapeRef.current;
@@ -258,17 +281,22 @@ const CanvasDesignEditor = ({
   const trRef = React.useRef<any>(null);
 
   useEffect(() => {
-    if (selectedId && trRef.current && stageRef.current) {
-      const node = stageRef.current.findOne('#' + selectedId);
-      if (node) {
-        trRef.current.nodes([node]);
-        trRef.current.getLayer().batchDraw();
-      }
+    if (selectedId && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
+      const attach = () => {
+        const node = stageRef.current?.findOne('#' + selectedId);
+        if (node) {
+          trRef.current.nodes([node]);
+          trRef.current.getLayer()?.batchDraw();
+        }
+      };
+      attach();
+      const timeout = setTimeout(attach, 50);
+      return () => clearTimeout(timeout);
     } else if (trRef.current) {
       trRef.current.nodes([]);
-      trRef.current.getLayer().batchDraw();
+      trRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedId, items]);
+  }, [selectedId, items.length, isZoomMode, isPanMode]);
 
   const handleSetCover = () => {
     if (stageRef.current && onSetCover) {
@@ -416,7 +444,7 @@ const CanvasDesignEditor = ({
       return;
     }
 
-    const clickedOnEmpty = e.target === e.target.getStage();
+    const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
     if (clickedOnEmpty) {
       selectShape(null);
     }
@@ -573,18 +601,16 @@ const CanvasDesignEditor = ({
                     <Line
                       key={`v-${i}`}
                       points={[i * 10, 0, i * 10, canvasHeight]}
-                      stroke="rgba(128, 128, 128, 0.2)"
+                      stroke="rgba(128, 128, 128, 0.15)"
                       strokeWidth={1}
-                      dash={i % 5 === 0 ? [] : [2, 2]}
                     />
                   ))}
                   {Array.from({ length: Math.ceil(canvasHeight / 10) + 1 }).map((_, i) => (
                     <Line
                       key={`h-${i}`}
                       points={[0, i * 10, 800, i * 10]}
-                      stroke="rgba(128, 128, 128, 0.2)"
+                      stroke="rgba(128, 128, 128, 0.15)"
                       strokeWidth={1}
-                      dash={i % 5 === 0 ? [] : [2, 2]}
                     />
                   ))}
                   {items.map((item, i) => (
@@ -602,21 +628,16 @@ const CanvasDesignEditor = ({
                     />
                   ))}
                 </Group>
-                {selectedId && !isZoomMode && !isPanMode && (
-                  <Transformer
-                    ref={trRef}
-                    boundBoxFunc={(oldBox, newBox) => {
-                      if (newBox.width < 10 || newBox.height < 10) {
-                        return oldBox;
-                      }
-                      newBox.width = Math.round(newBox.width / 10) * 10;
-                      newBox.height = Math.round(newBox.height / 10) * 10;
-                      newBox.x = Math.round(newBox.x / 10) * 10;
-                      newBox.y = Math.round(newBox.y / 10) * 10;
-                      return newBox;
-                    }}
-                  />
-                )}
+                <Transformer
+                  ref={trRef}
+                  visible={!!selectedId && !isZoomMode && !isPanMode}
+                  boundBoxFunc={(oldBox, newBox) => {
+                    if (newBox.width < 5 || newBox.height < 5) {
+                      return oldBox;
+                    }
+                    return newBox;
+                  }}
+                />
               </Layer>
             </Stage>
             <div className="absolute bottom-2 right-2 text-[10px] text-gray-500 pointer-events-none bg-black/50 px-2 py-1 rounded z-10">
@@ -1564,7 +1585,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       transformOrigin: 'top left',
                       zIndex: 10
                     }}
-                    className="object-cover cursor-zoom-in select-none drop-shadow-xl hover:scale-[1.02] transition-transform duration-300"
+                    className="cursor-zoom-in select-none drop-shadow-xl hover:scale-[1.02] transition-transform duration-300"
                   />
                 ))}
               </div>
@@ -1753,11 +1774,23 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       wrapperClass="!w-full !h-full"
                       contentClass="!w-full !h-full flex items-center justify-center"
                     >
-                      <img 
-                        src={project.canvasData[selectedCanvasIdx].src} 
-                        className="max-w-full max-h-full object-contain select-none shadow-2xl" 
-                        alt="Enlarged view" 
-                      />
+                      <div
+                        style={{
+                          aspectRatio: `${project.canvasData[selectedCanvasIdx].width * (project.canvasData[selectedCanvasIdx].scaleX || 1)} / ${project.canvasData[selectedCanvasIdx].height * (project.canvasData[selectedCanvasIdx].scaleY || 1)}`,
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <img 
+                          src={project.canvasData[selectedCanvasIdx].src} 
+                          style={{ width: '100%', height: '100%', objectFit: 'fill' }}
+                          className="select-none shadow-2xl" 
+                          alt="Enlarged view" 
+                        />
+                      </div>
                     </TransformComponent>
                   </>
                 )}
