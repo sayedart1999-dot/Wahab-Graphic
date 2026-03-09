@@ -137,23 +137,28 @@ const SKILLS: Skill[] = [
 const SERVICES: Service[] = [
   { 
     title: "Logo Design", 
-    description: "Crafting unique and memorable visual identities that define your brand's essence.",
+    description: "Unique and modern logos designed to represent your brand identity.",
     icon: <PenTool className="w-10 h-10 text-orange-accent" />
   },
   { 
-    title: "Social Media Design", 
-    description: "Engaging visuals tailored for all social platforms to boost your online presence.",
-    icon: <Smartphone className="w-10 h-10 text-blue-accent" />
-  },
-  { 
     title: "Brand Identity", 
-    description: "Comprehensive branding solutions including color palettes, typography, and guidelines.",
-    icon: <Layers className="w-10 h-10 text-orange-accent" />
+    description: "Consistent visual systems including colors, typography, and brand style.",
+    icon: <Layers className="w-10 h-10 text-blue-accent" />
   },
   { 
-    title: "Poster & Banner Design", 
-    description: "High-impact print and digital designs for events, promotions, and advertising.",
+    title: "Social Media Design", 
+    description: "Eye-catching graphics for Instagram, Facebook, and other platforms.",
+    icon: <Smartphone className="w-10 h-10 text-orange-accent" />
+  },
+  { 
+    title: "Flyer & Poster Design", 
+    description: "Creative promotional materials for marketing and advertising.",
     icon: <Monitor className="w-10 h-10 text-blue-accent" />
+  },
+  { 
+    title: "YouTube Thumbnail Design", 
+    description: "Attention-grabbing thumbnails designed to increase clicks.",
+    icon: <Layout className="w-10 h-10 text-orange-accent" />
   },
 ];
 
@@ -1816,6 +1821,96 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
   );
 };
 
+const CustomCursor = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+  const [isClicking, setIsClicking] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleMouseDown = () => setIsClicking(true);
+    const handleMouseUp = () => setIsClicking(false);
+
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'A' || 
+        target.tagName === 'BUTTON' || 
+        target.closest('a') || 
+        target.closest('button') ||
+        target.getAttribute('role') === 'button' ||
+        target.classList.contains('cursor-pointer')
+      ) {
+        setIsHovering(true);
+      } else {
+        setIsHovering(false);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mouseover', handleMouseOver);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseover', handleMouseOver);
+    };
+  }, []);
+
+  return (
+    <div className="hidden md:block">
+      {/* Horizontal Line */}
+      <motion.div
+        className="fixed top-0 left-0 h-[1px] bg-orange-accent/40 pointer-events-none z-[9997]"
+        animate={{
+          x: mousePosition.x - 20,
+          y: mousePosition.y,
+          width: isHovering ? 0 : 40,
+        }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+      />
+      {/* Vertical Line */}
+      <motion.div
+        className="fixed top-0 left-0 w-[1px] bg-orange-accent/40 pointer-events-none z-[9997]"
+        animate={{
+          x: mousePosition.x,
+          y: mousePosition.y - 20,
+          height: isHovering ? 0 : 40,
+        }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+      />
+      {/* Main Dot */}
+      <motion.div
+        className="fixed top-0 left-0 w-2 h-2 bg-orange-accent rounded-full pointer-events-none z-[9999]"
+        animate={{
+          x: mousePosition.x - 4,
+          y: mousePosition.y - 4,
+          scale: isClicking ? 0.5 : isHovering ? 0 : 1,
+        }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.1 }}
+      />
+      {/* Expanding Ring on Hover */}
+      <motion.div
+        className="fixed top-0 left-0 w-12 h-12 border-2 border-blue-accent rounded-full pointer-events-none z-[9998]"
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{
+          x: mousePosition.x - 24,
+          y: mousePosition.y - 24,
+          opacity: isHovering ? 1 : 0,
+          scale: isHovering ? 1.2 : 0,
+        }}
+        transition={{ type: 'spring', damping: 20, stiffness: 150 }}
+      />
+    </div>
+  );
+};
+
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -1986,7 +2081,7 @@ const Hero = () => {
           className="order-2 lg:order-1"
         >
           <div className="mb-4 text-lg md:text-xl text-gray-400 italic font-light">
-            Welcome to my creative portfolio! ✨
+            Logo Design, Brand Identity & Social Media Graphics
           </div>
           <div className="mb-8 flex items-baseline">
             <span className="text-2xl font-medium text-white">Hi, I am </span>
@@ -2013,7 +2108,7 @@ const Hero = () => {
           </h1>
           
           <p className="text-gray-300 text-xl max-w-2xl mb-8 leading-relaxed font-medium">
-            I design creative & modern visuals using <span className="text-orange-accent">Illustrator</span> & <span className="text-blue-accent">Photoshop</span>.
+            I create modern, clean, and impactful designs that help brands stand out and communicate their message clearly.
           </p>
           
           <div className="flex flex-wrap items-center gap-6 mb-8">
@@ -2180,10 +2275,7 @@ const About = () => {
             </h2>
             <div className="space-y-4 text-gray-400 text-lg leading-relaxed">
               <p>
-                As a passionate graphic designer with a deep focus on futuristic and modern aesthetics, I help brands stand out in the digital landscape.
-              </p>
-              <p>
-                With expertise in <span className="text-orange-accent font-bold">Adobe Illustrator</span> and <span className="text-blue-accent font-bold">Adobe Photoshop</span>, I transform complex ideas into clean, impactful visual solutions.
+                Hello, I'm Wahab, a passionate graphic designer who focuses on creating clean, modern, and visually engaging designs. I specialize in logo design, brand identity, and social media graphics that help businesses build a strong visual presence. My goal is to help brands look professional and memorable through thoughtful and effective design.
               </p>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {['Logo Design', 'Social Media Design', 'Branding', 'Poster Design'].map((item) => (
@@ -2237,7 +2329,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
       <div className="max-w-[1600px] mx-auto px-6 w-full">
         <div className="text-center mb-10">
           <h2 className="text-4xl md:text-5xl font-bold mb-3">MY <span className="text-orange-accent italic">PORTFOLIO</span></h2>
-          <p className="text-gray-400 max-w-xl mx-auto">Explore my latest design projects across various categories.</p>
+          <p className="text-gray-400 max-w-xl mx-auto">Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs that help brands communicate better with their audience.</p>
         </div>
 
         {!selectedCategory ? (
@@ -2460,18 +2552,18 @@ const Services = () => {
     <section id="services" className="min-h-screen flex items-center py-16 scroll-mt-20 bg-black/30">
       <div className="max-w-[1600px] mx-auto px-6 w-full">
         <div className="text-center mb-8">
-          <h2 className="text-4xl md:text-5xl font-bold mb-3">WHAT I <span className="text-orange-accent italic">OFFER</span></h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-3">SERVICES I <span className="text-orange-accent italic">OFFER</span></h2>
           <p className="text-gray-400 max-w-xl mx-auto">Specialized design services to help your business grow and shine.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
           {SERVICES.map((service, idx) => (
             <motion.div
               key={service.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="glass p-10 rounded-3xl hover:border-orange-accent/50 transition-all group"
+              className={`glass p-6 rounded-3xl transition-all group ${idx % 2 === 0 ? 'hover:border-orange-accent/50' : 'hover:border-blue-accent/50'}`}
             >
               <div className="mb-6 group-hover:scale-110 transition-transform duration-500">
                 {service.icon}
@@ -2520,7 +2612,7 @@ const Contact = () => {
                 Let's <span className="text-orange-accent">Work</span> <br />Together
               </h2>
               <p className="text-gray-400 text-lg mb-10 max-w-md font-medium">
-                Have a project in mind? I'm always open to discussing new design challenges and creative opportunities.
+                If you're looking for creative and professional design work for your brand, feel free to get in touch. I would be happy to collaborate and help bring your ideas to life.
               </p>
               
               <div className="space-y-6">
@@ -2679,6 +2771,7 @@ export default function App() {
 
   return (
     <div className="relative">
+      <CustomCursor />
       <GlassScene />
       <Navbar />
       <Hero />
