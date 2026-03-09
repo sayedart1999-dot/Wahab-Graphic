@@ -70,7 +70,10 @@ import {
   Stage, 
   Layer, 
   Image as KonvaImage, 
-  Transformer 
+  Transformer,
+  Rect,
+  Group,
+  Line
 } from 'react-konva';
 import Konva from 'konva';
 import useImage from 'use-image';
@@ -164,18 +167,11 @@ const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: {
 }) => {
   const [image] = useImage(item.src, 'anonymous');
   const shapeRef = React.useRef<any>(null);
-  const trRef = React.useRef<any>(null);
-
-  useEffect(() => {
-    if (isSelected && trRef.current && shapeRef.current) {
-      trRef.current.nodes([shapeRef.current]);
-      trRef.current.getLayer().batchDraw();
-    }
-  }, [isSelected]);
 
   return (
     <React.Fragment>
       <KonvaImage
+        id={item.id}
         onClick={readOnly ? undefined : onSelect}
         onTap={readOnly ? undefined : onSelect}
         image={image}
@@ -188,12 +184,20 @@ const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: {
         scaleX={item.scaleX}
         scaleY={item.scaleY}
         draggable={!readOnly}
+        dragBoundFunc={(pos) => {
+          const stage = shapeRef.current?.getStage();
+          if (!stage) return pos;
+          const scale = stage.scaleX();
+          const x = Math.round((pos.x - stage.x()) / scale / 10) * 10 * scale + stage.x();
+          const y = Math.round((pos.y - stage.y()) / scale / 10) * 10 * scale + stage.y();
+          return { x, y };
+        }}
         onDragEnd={(e) => {
           if (readOnly) return;
           onChange({
             ...item,
-            x: e.target.x(),
-            y: e.target.y(),
+            x: Math.round(e.target.x() / 10) * 10,
+            y: Math.round(e.target.y() / 10) * 10,
           });
         }}
         onTransformEnd={(e) => {
@@ -202,29 +206,16 @@ const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: {
           const scaleX = node.scaleX();
           const scaleY = node.scaleY();
 
-          // Reset scale to 1 and adjust width/height instead for consistent storage
-          // Or keep scale. Let's keep scale for simplicity with Konva
           onChange({
             ...item,
-            x: node.x(),
-            y: node.y(),
-            rotation: node.rotation(),
+            x: Math.round(node.x() / 10) * 10,
+            y: Math.round(node.y() / 10) * 10,
+            rotation: Math.round(node.rotation()),
             scaleX: scaleX,
             scaleY: scaleY,
           });
         }}
       />
-      {isSelected && !readOnly && (
-        <Transformer
-          ref={trRef}
-          boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 5 || newBox.height < 5) {
-              return oldBox;
-            }
-            return newBox;
-          }}
-        />
-      )}
     </React.Fragment>
   );
 };
@@ -253,8 +244,31 @@ const CanvasDesignEditor = ({
   const [selectedId, selectShape] = useState<string | null>(null);
   const stageRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [canvasHeight, setCanvasHeight] = useState(450);
   const [stageSize, setStageSize] = useState({ width: 800, height: 450, scale: 1 });
+
+  const [isZoomMode, setIsZoomMode] = useState(false);
+  const [isPanMode, setIsPanMode] = useState(false);
+  const keys = React.useRef({ ctrl: false, space: false });
+  const [zoom, setZoom] = useState(1);
+  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
+  const isZoomingRef = React.useRef(false);
+  const zoomStartRef = React.useRef({ x: 0, zoom: 1, pointerX: 0, pointerY: 0, stageX: 0, stageY: 0 });
+  const trRef = React.useRef<any>(null);
+
+  useEffect(() => {
+    if (selectedId && trRef.current && stageRef.current) {
+      const node = stageRef.current.findOne('#' + selectedId);
+      if (node) {
+        trRef.current.nodes([node]);
+        trRef.current.getLayer().batchDraw();
+      }
+    } else if (trRef.current) {
+      trRef.current.nodes([]);
+      trRef.current.getLayer().batchDraw();
+    }
+  }, [selectedId, items]);
 
   const handleSetCover = () => {
     if (stageRef.current && onSetCover) {
@@ -282,10 +296,41 @@ const CanvasDesignEditor = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [canvasHeight]);
 
-  // Keyboard listener for Undo/Redo
+  // Keyboard listener for Undo/Redo, Arrow keys, and Zoom keys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      if (e.key === 'Control' || e.key === 'Meta') keys.current.ctrl = true;
+      if (e.code === 'Space') {
+        keys.current.space = true;
+        if (!(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+          e.preventDefault();
+        }
+      }
+      
+      if (keys.current.ctrl && keys.current.space) {
+        setIsZoomMode(true);
+        setIsPanMode(false);
+      } else if (keys.current.space && !keys.current.ctrl) {
+        setIsPanMode(true);
+        setIsZoomMode(false);
+      }
+
+      if (selectedId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        setItems(prevItems => prevItems.map(item => {
+          if (item.id === selectedId) {
+            const step = e.shiftKey ? 10 : 1;
+            let newX = item.x;
+            let newY = item.y;
+            if (e.key === 'ArrowUp') newY -= step;
+            if (e.key === 'ArrowDown') newY += step;
+            if (e.key === 'ArrowLeft') newX -= step;
+            if (e.key === 'ArrowRight') newX += step;
+            return { ...item, x: newX, y: newY };
+          }
+          return item;
+        }));
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault();
         if (e.shiftKey) {
           onRedo();
@@ -297,14 +342,91 @@ const CanvasDesignEditor = ({
         onRedo();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onUndo, onRedo]);
 
-  const checkDeselect = (e: any) => {
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control' || e.key === 'Meta') keys.current.ctrl = false;
+      if (e.code === 'Space') keys.current.space = false;
+      
+      if (keys.current.ctrl && keys.current.space) {
+        setIsZoomMode(true);
+        setIsPanMode(false);
+      } else if (keys.current.space && !keys.current.ctrl) {
+        setIsPanMode(true);
+        setIsZoomMode(false);
+      } else {
+        setIsZoomMode(false);
+        setIsPanMode(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [onUndo, onRedo, selectedId, setItems]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isZoomingRef.current) {
+        const dx = e.clientX - zoomStartRef.current.x;
+        const zoomFactor = Math.exp(dx / 200); // adjust sensitivity
+        const newZoom = Math.max(0.1, Math.min(zoomStartRef.current.zoom * zoomFactor, 10));
+        
+        const oldScale = zoomStartRef.current.zoom * stageSize.scale;
+        const newScale = newZoom * stageSize.scale;
+        
+        const logicalX = (zoomStartRef.current.pointerX - zoomStartRef.current.stageX) / oldScale;
+        const logicalY = (zoomStartRef.current.pointerY - zoomStartRef.current.stageY) / oldScale;
+        
+        const newStageX = zoomStartRef.current.pointerX - logicalX * newScale;
+        const newStageY = zoomStartRef.current.pointerY - logicalY * newScale;
+        
+        setZoom(newZoom);
+        setStagePos({ x: newStageX, y: newStageY });
+      }
+    };
+
+    const handleMouseUp = () => {
+      isZoomingRef.current = false;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [stageSize.scale]);
+
+  const handleMouseDown = (e: any) => {
+    if (isZoomMode) {
+      isZoomingRef.current = true;
+      const stage = e.target.getStage();
+      const pos = stage.getPointerPosition();
+      zoomStartRef.current = {
+        x: e.evt.clientX,
+        zoom: zoom,
+        pointerX: pos.x,
+        pointerY: pos.y,
+        stageX: stagePos.x,
+        stageY: stagePos.y
+      };
+      return;
+    }
+
     const clickedOnEmpty = e.target === e.target.getStage();
     if (clickedOnEmpty) {
       selectShape(null);
+    }
+  };
+
+  const handleWheel = (e: any) => {
+    if (isZoomMode) return;
+    e.evt.preventDefault();
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop += e.evt.deltaY;
     }
   };
 
@@ -370,22 +492,13 @@ const CanvasDesignEditor = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {onSetCover && (
+          {zoom !== 1 && (
             <button
               type="button"
-              onClick={handleSetCover}
-              className="px-3 py-2 bg-green-500/20 text-green-500 border border-green-500/50 font-bold rounded-lg hover:bg-green-500 hover:text-white transition-colors text-xs"
+              onClick={() => { setZoom(1); setStagePos({ x: 0, y: 0 }); }}
+              className="px-3 py-2 bg-blue-500/20 text-blue-500 border border-blue-500/50 font-bold rounded-lg hover:bg-blue-500 hover:text-white transition-colors text-xs"
             >
-              Save Canvas
-            </button>
-          )}
-          {onClear && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="px-3 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors text-xs"
-            >
-              Clear All
+              Reset Zoom
             </button>
           )}
           <div className="w-px h-6 bg-white/10 mx-2"></div>
@@ -418,36 +531,97 @@ const CanvasDesignEditor = ({
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 h-[600px]">
-        <div ref={containerRef} className="flex-1 rounded-xl overflow-hidden border border-white/10 relative shadow-inner bg-black/20 h-full">
-          <Stage
-            width={stageSize.width}
-            height={stageSize.height}
-            scaleX={stageSize.scale}
-            scaleY={stageSize.scale}
-            onMouseDown={checkDeselect}
-            onTouchStart={checkDeselect}
-            ref={stageRef}
-            style={{ background: backgroundColor }}
-            className="w-full h-full"
-          >
-            <Layer>
-              {items.map((item, i) => (
-                <URLImage
-                  key={item.id}
-                  item={item}
-                  isSelected={item.id === selectedId}
-                  onSelect={() => selectShape(item.id)}
-                  onChange={(newItem: CanvasItem) => {
-                    const newItems = items.slice();
-                    newItems[i] = newItem;
-                    setItems(newItems);
-                  }}
-                />
-              ))}
-            </Layer>
-          </Stage>
-          <div className="absolute bottom-2 right-2 text-[10px] text-gray-500 pointer-events-none bg-black/50 px-2 py-1 rounded">
-            Canvas: 800x{canvasHeight} (Scaled {stageSize.scale.toFixed(2)}x)
+        <div ref={scrollContainerRef} className="flex-1 rounded-xl overflow-y-auto overflow-x-hidden border border-white/10 relative shadow-inner bg-black/20 h-full custom-scrollbar" style={{ direction: 'rtl' }}>
+          <div ref={containerRef} style={{ direction: 'ltr' }} className="w-full min-h-full relative">
+            <Stage
+              width={stageSize.width}
+              height={stageSize.height}
+              scaleX={stageSize.scale * zoom}
+              scaleY={stageSize.scale * zoom}
+              x={stagePos.x}
+              y={stagePos.y}
+              draggable={isPanMode}
+              onDragMove={(e) => {
+                if (e.target === stageRef.current) {
+                  setStagePos({ x: e.target.x(), y: e.target.y() });
+                }
+              }}
+              onMouseDown={handleMouseDown}
+              onTouchStart={handleMouseDown}
+              onWheel={handleWheel}
+              ref={stageRef}
+              style={{ cursor: isZoomMode ? 'col-resize' : (isPanMode ? 'grab' : 'default') }}
+              className="w-full"
+            >
+              <Layer>
+                <Group
+                  clipX={0}
+                  clipY={0}
+                  clipWidth={800}
+                  clipHeight={canvasHeight}
+                >
+                  <Rect
+                    x={0}
+                    y={0}
+                    width={800}
+                    height={canvasHeight}
+                    fill={backgroundColor}
+                    name="background"
+                  />
+                  {/* Grid Lines */}
+                  {Array.from({ length: Math.ceil(800 / 10) + 1 }).map((_, i) => (
+                    <Line
+                      key={`v-${i}`}
+                      points={[i * 10, 0, i * 10, canvasHeight]}
+                      stroke="rgba(128, 128, 128, 0.2)"
+                      strokeWidth={1}
+                      dash={i % 5 === 0 ? [] : [2, 2]}
+                    />
+                  ))}
+                  {Array.from({ length: Math.ceil(canvasHeight / 10) + 1 }).map((_, i) => (
+                    <Line
+                      key={`h-${i}`}
+                      points={[0, i * 10, 800, i * 10]}
+                      stroke="rgba(128, 128, 128, 0.2)"
+                      strokeWidth={1}
+                      dash={i % 5 === 0 ? [] : [2, 2]}
+                    />
+                  ))}
+                  {items.map((item, i) => (
+                    <URLImage
+                      key={item.id}
+                      item={item}
+                      isSelected={item.id === selectedId}
+                      onSelect={() => selectShape(item.id)}
+                      onChange={(newItem: CanvasItem) => {
+                        const newItems = items.slice();
+                        newItems[i] = newItem;
+                        setItems(newItems);
+                      }}
+                      readOnly={isZoomMode || isPanMode}
+                    />
+                  ))}
+                </Group>
+                {selectedId && !isZoomMode && !isPanMode && (
+                  <Transformer
+                    ref={trRef}
+                    boundBoxFunc={(oldBox, newBox) => {
+                      if (newBox.width < 10 || newBox.height < 10) {
+                        return oldBox;
+                      }
+                      newBox.width = Math.round(newBox.width / 10) * 10;
+                      newBox.height = Math.round(newBox.height / 10) * 10;
+                      newBox.x = Math.round(newBox.x / 10) * 10;
+                      newBox.y = Math.round(newBox.y / 10) * 10;
+                      return newBox;
+                    }}
+                  />
+                )}
+              </Layer>
+            </Stage>
+            <div className="absolute bottom-2 right-2 text-[10px] text-gray-500 pointer-events-none bg-black/50 px-2 py-1 rounded z-10">
+              Canvas: 800x{canvasHeight} (Scaled {(stageSize.scale * zoom).toFixed(2)}x)
+            </div>
           </div>
         </div>
 
