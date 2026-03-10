@@ -117,48 +117,55 @@ interface Skill {
   name: string;
   level: number;
   icon: React.ReactNode;
+  color: string;
 }
 
 interface Service {
   title: string;
   description: string;
   icon: React.ReactNode;
+  color: string;
 }
 
 // --- Data ---
 const SKILLS: Skill[] = [
-  { name: "Adobe Illustrator", level: 95, icon: <PenTool className="w-5 h-5" /> },
-  { name: "Adobe Photoshop", level: 90, icon: <Palette className="w-5 h-5" /> },
-  { name: "Typography", level: 85, icon: <Layout className="w-5 h-5" /> },
-  { name: "Color Theory", level: 92, icon: <Layers className="w-5 h-5" /> },
-  { name: "Branding", level: 88, icon: <Award className="w-5 h-5" /> },
+  { name: "Adobe Illustrator", level: 95, icon: <PenTool className="w-5 h-5" />, color: "orange-accent" },
+  { name: "Adobe Photoshop", level: 90, icon: <Palette className="w-5 h-5" />, color: "blue-accent" },
+  { name: "Typography", level: 85, icon: <Layout className="w-5 h-5" />, color: "emerald-accent" },
+  { name: "Color Theory", level: 92, icon: <Layers className="w-5 h-5" />, color: "violet-accent" },
+  { name: "Branding", level: 88, icon: <Award className="w-5 h-5" />, color: "rose-accent" },
 ];
 
 const SERVICES: Service[] = [
   { 
     title: "Logo Design", 
     description: "Unique and modern logos designed to represent your brand identity.",
-    icon: <PenTool className="w-10 h-10 text-orange-accent" />
+    icon: <PenTool className="w-10 h-10" />,
+    color: "orange-accent"
   },
   { 
     title: "Brand Identity", 
     description: "Consistent visual systems including colors, typography, and brand style.",
-    icon: <Layers className="w-10 h-10 text-blue-accent" />
+    icon: <Layers className="w-10 h-10" />,
+    color: "blue-accent"
   },
   { 
     title: "Social Media Design", 
     description: "Eye-catching graphics for Instagram, Facebook, and other platforms.",
-    icon: <Smartphone className="w-10 h-10 text-orange-accent" />
+    icon: <Smartphone className="w-10 h-10" />,
+    color: "emerald-accent"
   },
   { 
     title: "Flyer & Poster Design", 
     description: "Creative promotional materials for marketing and advertising.",
-    icon: <Monitor className="w-10 h-10 text-blue-accent" />
+    icon: <Monitor className="w-10 h-10" />,
+    color: "violet-accent"
   },
   { 
     title: "YouTube Thumbnail Design", 
     description: "Attention-grabbing thumbnails designed to increase clicks.",
-    icon: <Layout className="w-10 h-10 text-orange-accent" />
+    icon: <Layout className="w-10 h-10" />,
+    color: "rose-accent"
   },
 ];
 
@@ -1039,6 +1046,30 @@ const AdminDashboard = ({
     }
   };
 
+  const handleEditCategory = (cat: Category) => {
+    setEditingCategory(cat);
+    setCatName(cat.name);
+    setCatCover(cat.coverImage || '');
+    setIsAddingCategory(false); // Close add form if open
+  };
+
+  const handleUpdateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory) return;
+    try {
+      await updateDoc(doc(db, 'categories', editingCategory.id), {
+        name: catName,
+        slug: catName.toLowerCase().replace(/\s+/g, '-'),
+        coverImage: catCover
+      });
+      setCatName('');
+      setCatCover('');
+      setEditingCategory(null);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'categories');
+    }
+  };
+
   const handleDeleteCategory = (id: string) => {
     setDeleteConfirmation({ 
       type: 'category', 
@@ -1184,11 +1215,11 @@ const AdminDashboard = ({
               </button>
             </div>
 
-            {isAddingCategory && (
-              <form onSubmit={handleAddCategory} className="glass p-6 rounded-3xl flex flex-col gap-4">
+            {(isAddingCategory || editingCategory) && (
+              <form onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory} className="glass p-6 rounded-3xl flex flex-col gap-4">
                 <div className="flex gap-4 items-end">
                   <div className="flex-1 space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Folder Name</label>
+                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{editingCategory ? 'Edit Folder Name' : 'Folder Name'}</label>
                     <input 
                       value={catName}
                       onChange={(e) => setCatName(e.target.value)}
@@ -1216,7 +1247,7 @@ const AdminDashboard = ({
                   <button type="submit" disabled={isUploading} className="px-6 py-3 bg-orange-accent text-black font-bold rounded-xl disabled:opacity-50">
                     {isUploading ? 'Uploading...' : 'Save'}
                   </button>
-                  <button type="button" onClick={() => { setIsAddingCategory(false); setCatCover(''); setCatName(''); }} className="px-6 py-3 glass rounded-xl">Cancel</button>
+                  <button type="button" onClick={() => { setIsAddingCategory(false); setEditingCategory(null); setCatCover(''); setCatName(''); }} className="px-6 py-3 glass rounded-xl">Cancel</button>
                 </div>
                 {catCover && (
                   <div className="w-32 h-32 rounded-xl overflow-hidden border border-white/10">
@@ -1238,12 +1269,22 @@ const AdminDashboard = ({
                     <p className="font-bold text-lg">{cat.name}</p>
                     <p className="text-xs text-gray-400 font-mono">/{cat.slug}</p>
                   </div>
-                  <button 
-                    onClick={() => handleDeleteCategory(cat.id)}
-                    className="p-3 text-gray-400 hover:text-red-500 transition-colors relative z-10 bg-black/50 rounded-full"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="relative z-10 flex items-center gap-2">
+                    <button 
+                      onClick={() => handleEditCategory(cat)}
+                      className="p-3 text-gray-400 hover:text-orange-accent transition-colors bg-black/50 rounded-full"
+                      title="Edit Folder"
+                    >
+                      <Edit2 className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteCategory(cat.id)}
+                      className="p-3 text-gray-400 hover:text-red-500 transition-colors bg-black/50 rounded-full"
+                      title="Delete Folder"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -2069,8 +2110,10 @@ const Hero = () => {
   return (
     <section id="home" className="relative min-h-screen flex items-center pt-16 overflow-hidden">
       {/* Background Glows */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-orange-accent/5 rounded-full blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-accent/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-accent/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+      <div className="absolute top-3/4 right-1/4 translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-accent/10 rounded-full blur-[120px] pointer-events-none animate-pulse delay-700" />
+      <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-emerald-accent/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-violet-accent/5 rounded-full blur-[150px] pointer-events-none" />
       
       <div className="max-w-[1600px] mx-auto px-6 relative z-10 w-full">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
@@ -2290,22 +2333,22 @@ const About = () => {
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-6">
-              <div className="glass p-8 rounded-3xl text-center">
+              <div className="glass p-8 rounded-3xl text-center border-orange-accent/20 hover:border-orange-accent/50 transition-colors">
                 <h3 className="text-4xl font-bold text-orange-accent mb-2">5+</h3>
                 <p className="text-xs uppercase tracking-widest text-gray-400">Years Exp.</p>
               </div>
-              <div className="glass p-8 rounded-3xl text-center">
-                <h3 className="text-4xl font-bold text-orange-accent mb-2">150+</h3>
+              <div className="glass p-8 rounded-3xl text-center border-blue-accent/20 hover:border-blue-accent/50 transition-colors">
+                <h3 className="text-4xl font-bold text-blue-accent mb-2">150+</h3>
                 <p className="text-xs uppercase tracking-widest text-gray-400">Projects</p>
               </div>
             </div>
             <div className="space-y-6">
-              <div className="glass p-8 rounded-3xl text-center">
-                <h3 className="text-4xl font-bold text-orange-accent mb-2">99%</h3>
+              <div className="glass p-8 rounded-3xl text-center border-emerald-accent/20 hover:border-emerald-accent/50 transition-colors">
+                <h3 className="text-4xl font-bold text-emerald-accent mb-2">99%</h3>
                 <p className="text-xs uppercase tracking-widest text-gray-400">Happy Clients</p>
               </div>
-              <div className="glass p-8 rounded-3xl text-center">
-                <h3 className="text-4xl font-bold text-orange-accent mb-2">24/7</h3>
+              <div className="glass p-8 rounded-3xl text-center border-violet-accent/20 hover:border-violet-accent/50 transition-colors">
+                <h3 className="text-4xl font-bold text-violet-accent mb-2">24/7</h3>
                 <p className="text-xs uppercase tracking-widest text-gray-400">Support</p>
               </div>
             </div>
@@ -2395,14 +2438,18 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                       </>
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-gray-800/80 to-black/90 flex flex-col items-center justify-center p-8">
-                        <Folder className={`w-20 h-20 mb-4 ${idx % 2 === 0 ? 'text-orange-accent' : 'text-blue-accent'} group-hover:scale-110 transition-transform duration-500`} />
+                        <Folder className={`w-20 h-20 mb-4 ${
+                          idx % 4 === 0 ? 'text-orange-accent' : 
+                          idx % 4 === 1 ? 'text-blue-accent' : 
+                          idx % 4 === 2 ? 'text-emerald-accent' : 
+                          'text-violet-accent'
+                        } group-hover:scale-110 transition-transform duration-500`} />
                         <h3 className="text-2xl font-bold text-center">{cat.name}</h3>
                       </div>
                     )}
                     
-                    <div className="absolute inset-x-0 bottom-0 p-5 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <h3 className="text-xl font-bold text-white drop-shadow-md text-center">{cat.name}</h3>
-                      <p className="text-sm text-gray-300 font-medium mt-1 text-center">{catProjects.length} Projects</p>
+                    <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <h3 className="text-xl font-bold text-white drop-shadow-md text-center leading-tight">{cat.name}</h3>
                     </div>
                   </div>
                 </motion.div>
@@ -2492,23 +2539,24 @@ const Skills = () => {
               My technical proficiency allows me to deliver high-quality designs that are both aesthetically pleasing and strategically sound.
             </p>
             <div className="space-y-6">
-                {SKILLS.map((skill, idx) => (
+                {SKILLS.map((skill) => (
                   <div key={skill.name}>
                     <div className="flex justify-between items-center mb-3">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 glass rounded-lg ${idx % 2 === 0 ? 'text-orange-accent' : 'text-blue-accent'}`}>
+                        <div className={`p-2 glass rounded-lg text-${skill.color}`}>
                           {skill.icon}
                         </div>
                         <span className="font-bold tracking-tight">{skill.name}</span>
                       </div>
-                      <span className={`${idx % 2 === 0 ? 'text-orange-accent' : 'text-blue-accent'} font-mono text-sm`}>{skill.level}%</span>
+                      <span className={`text-${skill.color} font-mono text-sm`}>{skill.level}%</span>
                     </div>
                     <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         whileInView={{ width: `${skill.level}%` }}
                         transition={{ duration: 1.5, ease: "easeOut" }}
-                        className={`h-full ${idx % 2 === 0 ? 'bg-orange-accent orange-border-glow' : 'bg-blue-accent blue-border-glow'}`}
+                        className={`h-full bg-${skill.color}`}
+                        style={{ boxShadow: `0 0 15px var(--color-${skill.color})` }}
                       />
                     </div>
                   </div>
@@ -2563,9 +2611,9 @@ const Services = () => {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={`glass p-6 rounded-3xl transition-all group ${idx % 2 === 0 ? 'hover:border-orange-accent/50' : 'hover:border-blue-accent/50'}`}
+              className={`glass p-6 rounded-3xl transition-all group hover:border-${service.color}/50`}
             >
-              <div className="mb-6 group-hover:scale-110 transition-transform duration-500">
+              <div className={`mb-6 group-hover:scale-110 transition-transform duration-500 text-${service.color}`}>
                 {service.icon}
               </div>
               <h3 className="text-xl font-bold mb-4">{service.title}</h3>
@@ -2633,7 +2681,7 @@ const Contact = () => {
                     <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Contact Me</p>
                     <a href="https://wa.me/8801973324750?text=Hello%20I%20want%20to%20discuss%20a%20design%20project%20with%20you" target="_blank" rel="noopener noreferrer" className="text-xl font-bold hover:text-blue-accent transition-colors">
                       +8801973324750
-                      <span className="ml-2 text-[10px] bg-orange-accent/20 text-orange-accent px-1.5 py-0.5 rounded">Recommended</span>
+                      <span className="ml-2 text-[10px] bg-emerald-accent/20 text-emerald-accent px-1.5 py-0.5 rounded">Recommended</span>
                     </a>
                   </div>
                 </div>
