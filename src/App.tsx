@@ -15,6 +15,7 @@ import {
   ExternalLink, 
   Menu, 
   X, 
+  User as UserIcon,
   ChevronRight,
   Monitor,
   Smartphone,
@@ -745,7 +746,7 @@ const AdminDashboard = ({
   messages: any[],
   onClose: () => void 
 }) => {
-  const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages'>('projects');
+  const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages' | 'notes'>('projects');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -1178,7 +1179,58 @@ const AdminDashboard = ({
           >
             Messages ({messages.length})
           </button>
+          <button 
+            onClick={() => setActiveTab('notes')}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'notes' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
+          >
+            Style Notes
+          </button>
         </div>
+
+        {activeTab === 'notes' && (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold">Style Guide & Notes</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="glass p-6 rounded-3xl border-orange-accent/20">
+                <h4 className="text-orange-accent font-bold mb-4 flex items-center gap-2">
+                  <Palette className="w-5 h-5" /> Color Palette
+                </h4>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-[#ff6a00] border border-white/10"></div>
+                    <span><span className="font-bold">Orange Accent:</span> #ff6a00 (Primary)</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-[#00a3ff] border border-white/10"></div>
+                    <span><span className="font-bold">Blue Accent:</span> #00a3ff (Secondary)</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-[#0a0502] border border-white/10"></div>
+                    <span><span className="font-bold">Dark Background:</span> #0a0502</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-[#2a1810] border border-white/10"></div>
+                    <span><span className="font-bold">Deep Brown Glow:</span> #2a1810</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="glass p-6 rounded-3xl border-blue-accent/20">
+                <h4 className="text-blue-accent font-bold mb-4 flex items-center gap-2">
+                  <Layout className="w-5 h-5" /> Typography
+                </h4>
+                <ul className="space-y-3 text-sm">
+                  <li><span className="font-bold">Display:</span> Space Grotesk (Headlines)</li>
+                  <li><span className="font-bold">Sans:</span> Inter (Body Text)</li>
+                  <li><span className="font-bold">Script:</span> Dancing Script (Signature/Name)</li>
+                  <li><span className="font-bold">Mono:</span> JetBrains Mono (Technical/Stats)</li>
+                </ul>
+              </div>
+            </div>
+            <div className="glass p-6 rounded-3xl border-white/10 italic text-gray-400 text-sm">
+              Note: These colors and fonts have been specifically chosen to maintain a premium and modern graphic designer portfolio aesthetic.
+            </div>
+          </div>
+        )}
 
         {activeTab === 'messages' && (
           <div className="space-y-4">
@@ -1969,7 +2021,7 @@ const CustomCursor = () => {
   );
 };
 
-const Navbar = () => {
+const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () => void }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
@@ -2060,13 +2112,30 @@ const Navbar = () => {
 
         {/* Desktop Menu Button (Right) */}
         <div className="hidden md:flex items-center justify-end justify-self-end gap-4">
+          {isAdmin && (
+            <button 
+              onClick={onAdminClick}
+              className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-orange-accent hover:text-black transition-all border-white/10 group"
+              title="Admin Dashboard"
+            >
+              <UserIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            </button>
+          )}
           <button className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-orange-accent hover:text-black transition-all border-white/10">
             <Menu className="w-6 h-6" />
           </button>
         </div>
 
         {/* Mobile Toggle (Right) */}
-        <div className="flex justify-end justify-self-end md:hidden">
+        <div className="flex justify-end justify-self-end md:hidden gap-4 items-center">
+          {isAdmin && (
+            <button 
+              onClick={onAdminClick}
+              className="text-white hover:text-orange-accent transition-colors"
+            >
+              <UserIcon className="w-6 h-6" />
+            </button>
+          )}
           <button 
             className="text-white"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -2833,7 +2902,7 @@ export default function App() {
     <div className="relative">
       <CustomCursor />
       <GlassScene />
-      <Navbar />
+      <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} />
       <Hero />
       <About />
       <Portfolio categories={categories} projects={projects} />
@@ -2854,20 +2923,12 @@ export default function App() {
 
           <div className="flex items-center gap-6">
             {isAdmin ? (
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setShowAdmin(true)}
-                  className="text-xs uppercase tracking-widest text-orange-accent font-bold hover:underline"
-                >
-                  Admin Panel
-                </button>
-                <button 
-                  onClick={logOut}
-                  className="text-gray-500 hover:text-white transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+              <button 
+                onClick={logOut}
+                className="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-xs uppercase tracking-widest"
+              >
+                <LogOut className="w-4 h-4" /> Logout
+              </button>
             ) : (
               <button 
                 onClick={signInWithGoogle}
