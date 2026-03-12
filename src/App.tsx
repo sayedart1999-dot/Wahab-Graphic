@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassScene } from './components/GlassScene';
 import { 
@@ -107,6 +110,7 @@ interface Project {
   createdAt: Timestamp;
   canvasData?: CanvasItem[];
   canvasBackgroundColor?: string;
+  canvasHeight?: number;
 }
 
 interface Category {
@@ -265,6 +269,8 @@ const CanvasDesignEditor = ({
   onUploadImage,
   backgroundColor,
   setBackgroundColor,
+  canvasHeight,
+  setCanvasHeight,
   onUndo,
   onRedo,
   onSetCover,
@@ -275,6 +281,8 @@ const CanvasDesignEditor = ({
   onUploadImage: (e: React.ChangeEvent<HTMLInputElement>) => void,
   backgroundColor: string,
   setBackgroundColor: (color: string) => void,
+  canvasHeight: number,
+  setCanvasHeight: (h: number) => void,
   onUndo: () => void,
   onRedo: () => void,
   onSetCover?: (dataUrl: string) => void,
@@ -284,8 +292,16 @@ const CanvasDesignEditor = ({
   const stageRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const [canvasHeight, setCanvasHeight] = useState(450);
-  const [stageSize, setStageSize] = useState({ width: 800, height: 450, scale: 1 });
+  const [stageSize, setStageSize] = useState({ width: 800, height: canvasHeight, scale: 1 });
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+      setItems((items) => arrayMove(items, oldIndex, newIndex));
+    }
+  };
 
   const [isZoomMode, setIsZoomMode] = useState(false);
   const [isPanMode, setIsPanMode] = useState(false);
@@ -670,63 +686,34 @@ const CanvasDesignEditor = ({
             </h3>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-            {items.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-500 text-xs gap-2 opacity-50">
-                <Layers className="w-8 h-8" />
-                <p>No layers yet</p>
-              </div>
-            ) : (
-              [...items].reverse().map((item, index) => {
-                const originalIndex = items.length - 1 - index;
-                return (
-                  <div 
-                    key={item.id}
-                    onClick={() => selectShape(item.id)}
-                    className={`group flex items-center gap-3 p-2 rounded-lg cursor-pointer border transition-all ${
-                      selectedId === item.id 
-                        ? 'bg-blue-accent/10 border-blue-accent/50 shadow-lg shadow-blue-accent/5' 
-                        : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                    }`}
-                  >
-                    <div className="w-10 h-10 bg-black/50 rounded overflow-hidden flex-shrink-0 border border-white/10 relative">
-                      <img src={item.src} className="w-full h-full object-cover" alt="layer" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className={`text-xs font-medium truncate ${selectedId === item.id ? 'text-blue-accent' : 'text-gray-300'}`}>
-                          Image {originalIndex + 1}
-                        </p>
-                      </div>
-                      <p className="text-[10px] text-gray-500 truncate font-mono mt-0.5">
-                        {Math.round(item.width)}x{Math.round(item.height)} • {Math.round(item.x)},{Math.round(item.y)}
-                      </p>
-                    </div>
-                    
-                    <div className="flex flex-col gap-0.5">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); moveLayer(item.id, 'up'); }}
-                        disabled={originalIndex === items.length - 1}
-                        className="p-1 hover:bg-white/20 rounded disabled:opacity-0 text-gray-400 hover:text-white transition-all"
-                        title="Bring Forward"
-                      >
-                        <ArrowUp className="w-3 h-3" />
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); moveLayer(item.id, 'down'); }}
-                        disabled={originalIndex === 0}
-                        className="p-1 hover:bg-white/20 rounded disabled:opacity-0 text-gray-400 hover:text-white transition-all"
-                        title="Send Backward"
-                      >
-                        <ArrowDown className="w-3 h-3" />
-                      </button>
-                    </div>
+          <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={[...items].reverse().map(i => i.id)} strategy={verticalListSortingStrategy}>
+              <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                {items.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-500 text-xs gap-2 opacity-50">
+                    <Layers className="w-8 h-8" />
+                    <p>No layers yet</p>
                   </div>
-                );
-              })
-            )}
-          </div>
+                ) : (
+                  [...items].reverse().map((item, index) => {
+                    const originalIndex = items.length - 1 - index;
+                    return (
+                      <SortableLayerItem 
+                        key={item.id}
+                        item={item}
+                        originalIndex={originalIndex}
+                        isSelected={selectedId === item.id}
+                        onSelect={() => selectShape(item.id)}
+                        onMoveUp={() => moveLayer(item.id, 'up')}
+                        onMoveDown={() => moveLayer(item.id, 'down')}
+                        itemsLength={items.length}
+                      />
+                    );
+                  })
+                )}
+              </div>
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
       
@@ -769,6 +756,7 @@ const AdminDashboard = ({
   const [projImages, setProjImages] = useState<string[]>([]);
   const [projDesc, setProjDesc] = useState('');
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
+  const [canvasHeight, setCanvasHeight] = useState(450);
   const [canvasBgColor, setCanvasBgColor] = useState('#1a1a1a');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -825,9 +813,20 @@ const AdminDashboard = ({
           if (onProgress) onProgress(40);
           else setUploadProgress(40);
 
-          // No resolution limits - use original dimensions
+          // Resolution limit of 2,000 pixels
           let width = img.width;
           let height = img.height;
+          const MAX_SIZE = 2000;
+
+          if (width > MAX_SIZE || height > MAX_SIZE) {
+            if (width > height) {
+              height = Math.round((height * MAX_SIZE) / width);
+              width = MAX_SIZE;
+            } else {
+              width = Math.round((width * MAX_SIZE) / height);
+              height = MAX_SIZE;
+            }
+          }
 
           // Draw to canvas for high-quality output
           const canvas = document.createElement('canvas');
@@ -848,8 +847,8 @@ const AdminDashboard = ({
           if (onProgress) onProgress(70);
           else setUploadProgress(70);
 
-          // Compress to JPEG with 1.0 quality (Maximum resolution, no detail loss)
-          const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+          // Compress to JPEG with 0.8 quality to reduce size while maintaining quality
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
           
           URL.revokeObjectURL(objectUrl);
           
@@ -935,8 +934,7 @@ const AdminDashboard = ({
   };
 
   const handleSetCover = (dataUrl: string) => {
-    // Only set as cover if not already set, or maybe just update it?
-    // User can always change it manually.
+    // Only set as cover if not already set
     if (!projCover) {
       setProjCover(dataUrl);
     }
@@ -1086,6 +1084,7 @@ const AdminDashboard = ({
         description: projDesc,
         canvasData: canvasItems,
         canvasBackgroundColor: canvasBgColor,
+        canvasHeight: canvasHeight,
         createdAt: editingProject ? editingProject.createdAt : serverTimestamp()
       };
 
@@ -1094,6 +1093,7 @@ const AdminDashboard = ({
         await refreshProjects();
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 3000);
+        setIsAddingProject(false);
       } else {
         await addDoc(collection(db, 'projects'), projectData);
         await refreshProjects();
@@ -1113,6 +1113,7 @@ const AdminDashboard = ({
     setProjImages([]);
     setProjDesc('');
     setCanvasItems([]);
+    setCanvasHeight(450);
     setCanvasHistory([[]]);
     setHistoryStep(0);
     setCanvasBgColor('#1a1a1a');
@@ -1478,6 +1479,8 @@ const AdminDashboard = ({
                     onUploadImage={handleCanvasImageUpload} 
                     backgroundColor={canvasBgColor}
                     setBackgroundColor={setCanvasBgColor}
+                    canvasHeight={canvasHeight}
+                    setCanvasHeight={setCanvasHeight}
                     onUndo={handleUndo}
                     onRedo={handleRedo}
                     onSetCover={handleSetCover}
@@ -1533,6 +1536,7 @@ const AdminDashboard = ({
                           setProjImages(proj.images || []);
                           setProjDesc(proj.description);
                           setCanvasItems(proj.canvasData || []);
+                          setCanvasHeight(proj.canvasHeight || 450);
                           setCanvasHistory([proj.canvasData || []]);
                           setHistoryStep(0);
                           setCanvasBgColor(proj.canvasBackgroundColor || '#1a1a1a');
@@ -1673,7 +1677,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                     const itemHeight = item.height * (item.scaleY || 1);
                     const itemBottom = item.y + itemHeight;
                     return Math.max(max, itemBottom);
-                  }, 450)) * scale,
+                  }, project.canvasHeight || 450)) * scale,
                   backgroundColor: 'transparent'
                 }}
               >
@@ -2862,6 +2866,63 @@ const Contact = () => {
         </div>
       </div>
     </section>
+  );
+};
+
+const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: () => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes} 
+      {...listeners}
+      onClick={onSelect}
+      className={`group flex items-center gap-3 p-2 rounded-lg cursor-pointer border transition-all ${
+        isSelected 
+          ? 'bg-blue-accent/10 border-blue-accent/50 shadow-lg shadow-blue-accent/5' 
+          : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
+      }`}
+    >
+      <div className="w-10 h-10 bg-black/50 rounded overflow-hidden flex-shrink-0 border border-white/10 relative">
+        <img src={item.src} className="w-full h-full object-cover" alt="layer" />
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <p className={`text-xs font-medium truncate ${isSelected ? 'text-blue-accent' : 'text-gray-300'}`}>
+            Image {originalIndex + 1}
+          </p>
+        </div>
+        <p className="text-[10px] text-gray-500 truncate font-mono mt-0.5">
+          {Math.round(item.width)}x{Math.round(item.height)} • {Math.round(item.x)},{Math.round(item.y)}
+        </p>
+      </div>
+      
+      <div className="flex flex-col gap-0.5">
+        <button 
+          onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+          disabled={originalIndex === itemsLength - 1}
+          className="p-1 hover:bg-white/20 rounded disabled:opacity-0 text-gray-400 hover:text-white transition-all"
+          title="Bring Forward"
+        >
+          <ArrowUp className="w-3 h-3" />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+          disabled={originalIndex === 0}
+          className="p-1 hover:bg-white/20 rounded disabled:opacity-0 text-gray-400 hover:text-white transition-all"
+          title="Send Backward"
+        >
+          <ArrowDown className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
   );
 };
 

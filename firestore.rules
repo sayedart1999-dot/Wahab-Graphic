@@ -18,6 +18,9 @@ service cloud.firestore {
     //   - coverImage: string (required)
     //   - images: list (strings)
     //   - description: string
+    //   - canvasData: list
+    //   - canvasBackgroundColor: string
+    //   - canvasHeight: number
     //   - createdAt: timestamp
     //
     // Collection: messages
@@ -55,7 +58,7 @@ service cloud.firestore {
 
     function isValidProject(data) {
       return data.keys().hasAll(['categoryId', 'name', 'coverImage', 'createdAt']) &&
-             hasOnlyAllowedFields(data, ['categoryId', 'name', 'coverImage', 'images', 'description', 'createdAt', 'canvasData', 'canvasBackgroundColor']) &&
+             hasOnlyAllowedFields(data, ['categoryId', 'name', 'coverImage', 'images', 'description', 'createdAt', 'canvasData', 'canvasBackgroundColor', 'canvasHeight']) &&
              data.categoryId is string &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
              data.coverImage is string && data.coverImage.size() < 1048500 &&
@@ -63,7 +66,8 @@ service cloud.firestore {
              (!('description' in data) || (data.description is string && data.description.size() < 5000)) &&
              (!('images' in data) || data.images is list) &&
              (!('canvasData' in data) || data.canvasData is list) &&
-             (!('canvasBackgroundColor' in data) || (data.canvasBackgroundColor is string && data.canvasBackgroundColor.size() < 20));
+             (!('canvasBackgroundColor' in data) || (data.canvasBackgroundColor is string && data.canvasBackgroundColor.size() < 20)) &&
+             (!('canvasHeight' in data) || data.canvasHeight is number);
     }
 
     function isValidMessage(data) {
