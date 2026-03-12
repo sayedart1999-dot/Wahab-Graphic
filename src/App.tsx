@@ -1094,6 +1094,7 @@ const AdminDashboard = ({
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 3000);
         setIsAddingProject(false);
+        setEditingProject(null);
       } else {
         await addDoc(collection(db, 'projects'), projectData);
         await refreshProjects();
