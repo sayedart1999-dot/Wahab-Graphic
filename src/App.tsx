@@ -319,7 +319,7 @@ const CanvasDesignEditor = ({
       selectShape(null);
       // Wait for state update to remove transformer
       setTimeout(() => {
-        const dataUrl = stageRef.current.toDataURL({ pixelRatio: 3 });
+        const dataUrl = stageRef.current.toDataURL({ pixelRatio: 5 });
         onSetCover(dataUrl);
       }, 0);
     }
@@ -825,20 +825,9 @@ const AdminDashboard = ({
           if (onProgress) onProgress(40);
           else setUploadProgress(40);
 
-          // Calculate new dimensions (max 4000px for ultra-high resolution)
-          const MAX_SIZE = 4000;
+          // No resolution limits - use original dimensions
           let width = img.width;
           let height = img.height;
-
-          if (width > MAX_SIZE || height > MAX_SIZE) {
-            if (width > height) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            } else {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
 
           // Draw to canvas for high-quality output
           const canvas = document.createElement('canvas');
@@ -851,7 +840,7 @@ const AdminDashboard = ({
             return;
           }
 
-          // Use high quality image smoothing
+          // Use maximum quality image smoothing
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
@@ -859,8 +848,8 @@ const AdminDashboard = ({
           if (onProgress) onProgress(70);
           else setUploadProgress(70);
 
-          // Compress to JPEG with 0.92 quality (sweet spot for high res without massive file size)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+          // Compress to JPEG with 1.0 quality (Maximum resolution, no detail loss)
+          const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
           
           URL.revokeObjectURL(objectUrl);
           
@@ -991,23 +980,10 @@ const AdminDashboard = ({
             const img = new Image();
             img.src = url;
             img.onload = () => {
+              // No resolution limits for canvas items
               let w = img.naturalWidth;
               let h = img.naturalHeight;
               
-              const MAX_WIDTH = 2000;
-              const MAX_HEIGHT = 2000;
-
-              if (w > MAX_WIDTH || h > MAX_HEIGHT) {
-                const ratio = w / h;
-                if (w / MAX_WIDTH > h / MAX_HEIGHT) {
-                  w = MAX_WIDTH;
-                  h = MAX_WIDTH / ratio;
-                } else {
-                  h = MAX_HEIGHT;
-                  w = MAX_HEIGHT * ratio;
-                }
-              }
-
               // Offset each new image slightly so they don't stack perfectly on top of each other
               const offset = i * 20;
 
@@ -1718,7 +1694,8 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       height: item.height * (item.scaleY || 1) * scale,
                       transform: `rotate(${item.rotation || 0}deg)`,
                       transformOrigin: 'top left',
-                      zIndex: 10
+                      zIndex: 10,
+                      imageRendering: 'auto'
                     }}
                     className="cursor-zoom-in select-none drop-shadow-xl hover:scale-[1.02] transition-transform duration-300"
                   />
@@ -2538,7 +2515,8 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                         <img
                           src={p.coverImage}
                           alt=""
-                          className="w-full h-full object-cover rounded-lg"
+                          className="w-full h-full object-cover rounded-lg shadow-inner"
+                          style={{ imageRendering: 'auto' }}
                           referrerPolicy="no-referrer"
                         />
                       </div>
@@ -2553,6 +2531,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                           src={cat.coverImage} 
                           alt={cat.name} 
                           className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          style={{ imageRendering: 'auto' }}
                           referrerPolicy="no-referrer"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -2608,6 +2587,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                       src={project.coverImage} 
                       alt={project.name} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      style={{ imageRendering: 'auto' }}
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 pb-4 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end">
