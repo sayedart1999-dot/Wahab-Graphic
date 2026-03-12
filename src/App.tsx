@@ -41,7 +41,9 @@ import {
   ArrowUp,
   ArrowDown,
   Undo2,
-  Redo2
+  Redo2,
+  Loader2,
+  Check
 } from 'lucide-react';
 import { 
   db, 
@@ -62,7 +64,8 @@ import {
   query, 
   orderBy, 
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  getDocs
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -316,7 +319,7 @@ const CanvasDesignEditor = ({
       selectShape(null);
       // Wait for state update to remove transformer
       setTimeout(() => {
-        const dataUrl = stageRef.current.toDataURL({ pixelRatio: 2 });
+        const dataUrl = stageRef.current.toDataURL({ pixelRatio: 3 });
         onSetCover(dataUrl);
       }, 0);
     }
@@ -739,12 +742,16 @@ const AdminDashboard = ({
   categories, 
   projects, 
   messages,
-  onClose 
+  onClose,
+  refreshCategories,
+  refreshProjects
 }: { 
   categories: Category[], 
   projects: Project[], 
   messages: any[],
-  onClose: () => void 
+  onClose: () => void,
+  refreshCategories: () => Promise<void>,
+  refreshProjects: () => Promise<void>
 }) => {
   const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages' | 'notes'>('projects');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -765,6 +772,8 @@ const AdminDashboard = ({
   const [canvasBgColor, setCanvasBgColor] = useState('#1a1a1a');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   // History State
   const [canvasHistory, setCanvasHistory] = useState<CanvasItem[][]>([[]]);
@@ -816,24 +825,22 @@ const AdminDashboard = ({
           if (onProgress) onProgress(40);
           else setUploadProgress(40);
 
-          // Calculate new dimensions (max 1200px width/height to save space)
-          const MAX_SIZE = 1200;
+          // Calculate new dimensions (max 4000px for ultra-high resolution)
+          const MAX_SIZE = 4000;
           let width = img.width;
           let height = img.height;
 
-          if (width > height) {
-            if (width > MAX_SIZE) {
+          if (width > MAX_SIZE || height > MAX_SIZE) {
+            if (width > height) {
               height *= MAX_SIZE / width;
               width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
+            } else {
               width *= MAX_SIZE / height;
               height = MAX_SIZE;
             }
           }
 
-          // Draw to canvas for compression
+          // Draw to canvas for high-quality output
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
@@ -844,13 +851,16 @@ const AdminDashboard = ({
             return;
           }
 
+          // Use high quality image smoothing
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
           
           if (onProgress) onProgress(70);
           else setUploadProgress(70);
 
-          // Compress to JPEG with 0.7 quality (significantly reduces base64 size)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          // Compress to JPEG with 0.92 quality (sweet spot for high res without massive file size)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
           
           URL.revokeObjectURL(objectUrl);
           
@@ -984,8 +994,8 @@ const AdminDashboard = ({
               let w = img.naturalWidth;
               let h = img.naturalHeight;
               
-              const MAX_WIDTH = 800;
-              const MAX_HEIGHT = 450;
+              const MAX_WIDTH = 2000;
+              const MAX_HEIGHT = 2000;
 
               if (w > MAX_WIDTH || h > MAX_HEIGHT) {
                 const ratio = w / h;
@@ -1032,6 +1042,7 @@ const AdminDashboard = ({
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       await addDoc(collection(db, 'categories'), {
         name: catName,
@@ -1039,11 +1050,14 @@ const AdminDashboard = ({
         order: categories.length,
         coverImage: catCover
       });
+      await refreshCategories();
       setCatName('');
       setCatCover('');
       setIsAddingCategory(false);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'categories');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1057,17 +1071,21 @@ const AdminDashboard = ({
   const handleUpdateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCategory) return;
+    setIsSaving(true);
     try {
       await updateDoc(doc(db, 'categories', editingCategory.id), {
         name: catName,
         slug: catName.toLowerCase().replace(/\s+/g, '-'),
         coverImage: catCover
       });
+      await refreshCategories();
       setCatName('');
       setCatCover('');
       setEditingCategory(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'categories');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1081,6 +1099,8 @@ const AdminDashboard = ({
 
   const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
+    setIsSaved(false);
     try {
       const projectData = {
         name: projName,
@@ -1090,18 +1110,23 @@ const AdminDashboard = ({
         description: projDesc,
         canvasData: canvasItems,
         canvasBackgroundColor: canvasBgColor,
-        createdAt: serverTimestamp()
+        createdAt: editingProject ? editingProject.createdAt : serverTimestamp()
       };
 
       if (editingProject) {
         await updateDoc(doc(db, 'projects', editingProject.id), projectData);
+        await refreshProjects();
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 3000);
       } else {
         await addDoc(collection(db, 'projects'), projectData);
+        await refreshProjects();
+        resetProjectForm();
       }
-
-      resetProjectForm();
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1133,8 +1158,10 @@ const AdminDashboard = ({
     try {
       if (type === 'category') {
         await deleteDoc(doc(db, 'categories', id));
+        await refreshCategories();
       } else if (type === 'project') {
         await deleteDoc(doc(db, 'projects', id));
+        await refreshProjects();
       } else if (type === 'message') {
         await deleteDoc(doc(db, 'messages', id));
       }
@@ -1495,8 +1522,18 @@ const AdminDashboard = ({
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-white/10">
-                  <button type="submit" disabled={isUploading} className="flex-1 py-3 bg-orange-accent text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-orange-accent/20">
-                    <Send className="w-4 h-4" /> {editingProject ? 'Update Project' : 'Publish Project'}
+                  <button 
+                    type="submit" 
+                    disabled={isUploading || isSaving} 
+                    className="flex-1 py-3 bg-orange-accent text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-orange-accent/20"
+                  >
+                    {isSaving ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                    ) : isSaved ? (
+                      <><Check className="w-4 h-4" /> Saved!</>
+                    ) : (
+                      <><Send className="w-4 h-4" /> {editingProject ? 'Update Project' : 'Publish Project'}</>
+                    )}
                   </button>
                   <button type="button" onClick={resetProjectForm} className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10">
                     Cancel
@@ -2858,26 +2895,37 @@ export default function App() {
 
   const adminEmail = "sayedart1999@gmail.com";
 
+  const fetchCategories = async () => {
+    try {
+      const snapshot = await getDocs(query(collection(db, 'categories'), orderBy('order')));
+      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+      setCategories(cats);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const snapshot = await getDocs(query(collection(db, 'projects'), orderBy('createdAt', 'desc')));
+      const projs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+      setProjects(projs);
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+    }
+  };
+
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setIsAdmin(u?.email === adminEmail && u?.emailVerified);
     });
 
-    const unsubscribeCats = onSnapshot(query(collection(db, 'categories'), orderBy('order')), (snapshot) => {
-      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
-      setCategories(cats);
-    });
-
-    const unsubscribeProjs = onSnapshot(query(collection(db, 'projects'), orderBy('createdAt', 'desc')), (snapshot) => {
-      const projs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-      setProjects(projs);
-    });
+    fetchCategories();
+    fetchProjects();
 
     return () => {
       unsubscribeAuth();
-      unsubscribeCats();
-      unsubscribeProjs();
     };
   }, []);
 
@@ -2953,6 +3001,8 @@ export default function App() {
             projects={projects} 
             messages={messages}
             onClose={() => setShowAdmin(false)} 
+            refreshCategories={fetchCategories}
+            refreshProjects={fetchProjects}
           />
         )}
       </AnimatePresence>
