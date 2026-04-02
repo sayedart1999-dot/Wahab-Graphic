@@ -18,6 +18,7 @@ service cloud.firestore {
     //   - coverImage: string (required)
     //   - images: list (strings)
     //   - description: string
+    //   - status: string (draft | published)
     //   - canvasData: list
     //   - canvasBackgroundColor: string
     //   - canvasHeight: number
@@ -58,11 +59,12 @@ service cloud.firestore {
 
     function isValidProject(data) {
       return data.keys().hasAll(['categoryId', 'name', 'coverImage', 'createdAt']) &&
-             hasOnlyAllowedFields(data, ['categoryId', 'name', 'coverImage', 'images', 'description', 'createdAt', 'canvasData', 'canvasBackgroundColor', 'canvasHeight']) &&
+             hasOnlyAllowedFields(data, ['categoryId', 'name', 'coverImage', 'images', 'description', 'status', 'createdAt', 'canvasData', 'canvasBackgroundColor', 'canvasHeight']) &&
              data.categoryId is string &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
              data.coverImage is string && data.coverImage.size() < 1048500 &&
              data.createdAt is timestamp &&
+             (!('status' in data) || (data.status in ['draft', 'published'])) &&
              (!('description' in data) || (data.description is string && data.description.size() < 5000)) &&
              (!('images' in data) || data.images is list) &&
              (!('canvasData' in data) || data.canvasData is list) &&
@@ -89,7 +91,7 @@ service cloud.firestore {
     }
 
     match /projects/{projectId} {
-      allow read: if true;
+      allow read: if isAdmin() || (resource.data.status == 'published' || !('status' in resource.data));
       allow create: if isAdmin() && isValidProject(request.resource.data);
       allow update: if isAdmin() && isValidProject(request.resource.data);
       allow delete: if isAdmin();

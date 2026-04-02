@@ -56,6 +56,11 @@
           "type": "string",
           "description": "Project description"
         },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published"],
+          "description": "Visibility status of the project"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

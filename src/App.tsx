@@ -68,10 +68,11 @@ import {
   orderBy, 
   serverTimestamp,
   Timestamp,
-  getDocs
+  getDocs,
+  where
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, uploadBytes, uploadString } from 'firebase/storage';
 
 import { 
   Stage, 
@@ -107,6 +108,7 @@ interface Project {
   coverImage: string;
   images: string[];
   description: string;
+  status: 'draft' | 'published';
   createdAt: Timestamp;
   canvasData?: CanvasItem[];
   canvasBackgroundColor?: string;
@@ -729,16 +731,12 @@ const AdminDashboard = ({
   categories, 
   projects, 
   messages,
-  onClose,
-  refreshCategories,
-  refreshProjects
+  onClose
 }: { 
   categories: Category[], 
   projects: Project[], 
   messages: any[],
-  onClose: () => void,
-  refreshCategories: () => Promise<void>,
-  refreshProjects: () => Promise<void>
+  onClose: () => void
 }) => {
   const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages' | 'notes'>('projects');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -755,13 +753,13 @@ const AdminDashboard = ({
   const [projCover, setProjCover] = useState('');
   const [projImages, setProjImages] = useState<string[]>([]);
   const [projDesc, setProjDesc] = useState('');
+  const [projStatus, setProjStatus] = useState<'draft' | 'published'>('published');
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   const [canvasHeight, setCanvasHeight] = useState(450);
   const [canvasBgColor, setCanvasBgColor] = useState('#1a1a1a');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const pendingUploads = React.useRef<Map<string, Promise<string>>>(new Map());
 
   // History State
   const [canvasHistory, setCanvasHistory] = useState<CanvasItem[][]>([[]]);
@@ -799,142 +797,169 @@ const AdminDashboard = ({
     }
   };
 
-  const handleImageUpload = async (file: File, onProgress?: (progress: number) => void): Promise<string> => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        if (onProgress) onProgress(10);
-        else setUploadProgress(10);
-        
-        // Create an image element to draw the file
-        const img = new Image();
-        const objectUrl = URL.createObjectURL(file);
-        
-        img.onload = () => {
-          if (onProgress) onProgress(40);
-          else setUploadProgress(40);
+  const dataUrlToBlob = (dataUrl: string): Blob => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)![1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
 
-          // Resolution limit of 2,000 pixels
-          let width = img.width;
-          let height = img.height;
-          const MAX_SIZE = 2000;
-
-          if (width > MAX_SIZE || height > MAX_SIZE) {
-            if (width > height) {
-              height = Math.round((height * MAX_SIZE) / width);
-              width = MAX_SIZE;
-            } else {
-              width = Math.round((width * MAX_SIZE) / height);
-              height = MAX_SIZE;
-            }
-          }
-
-          // Draw to canvas for high-quality output
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          
-          if (!ctx) {
-            reject(new Error("Could not get canvas context"));
-            return;
-          }
-
-          // Use maximum quality image smoothing
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          if (onProgress) onProgress(70);
-          else setUploadProgress(70);
-
-          // Compress to JPEG with 0.8 quality to reduce size while maintaining quality
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          
-          URL.revokeObjectURL(objectUrl);
-          
-          if (onProgress) onProgress(100);
-          else setUploadProgress(100);
-          
-          resolve(dataUrl);
-        };
-
-        img.onerror = (error) => {
-          URL.revokeObjectURL(objectUrl);
-          console.error("Image load error:", error);
-          reject(error);
-        };
-
-        img.src = objectUrl;
-      } catch (error) {
-        console.error("Upload failed:", error);
-        reject(error);
-      }
+  const fileToBase64 = (file: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
     });
   };
 
-  const handleCoverFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setIsUploading(true);
-      setUploadProgress(0);
-      try {
-        const url = await handleImageUpload(e.target.files[0]);
-        setProjCover(url);
-      } catch (error) {
-        alert("Failed to upload cover image.");
-      } finally {
-        setIsUploading(false);
-      }
-    }
+  const compressImage = (file: File, maxWidth = 2000, quality = 0.8): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = (maxWidth / width) * height;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Canvas toBlob failed'));
+          }, 'image/jpeg', quality);
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
   };
 
-  const handleCatCoverFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setIsUploading(true);
-      setUploadProgress(0);
-      try {
-        const url = await handleImageUpload(e.target.files[0]);
-        setCatCover(url);
-      } catch (error) {
-        alert("Failed to upload category cover image.");
-      } finally {
-        setIsUploading(false);
-      }
-    }
-  };
-
-  const handleAdditionalFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploading(true);
-      setUploadProgress(0);
-      try {
-        const files = Array.from(e.target.files) as File[];
-        const progressMap = new Map<string, number>();
+  const handleImageUpload = async (file: File): Promise<string> => {
+    if (!auth.currentUser) throw new Error("Not authenticated");
+    
+    const storageRef = ref(storage, `projects/${auth.currentUser.uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`);
+    
+    // Use a Promise to handle timeout and cancellation
+    const uploadWithTimeout = (data: Blob | File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(storageRef, data);
         
-        const uploadPromises = files.map(async (file) => {
-          const fileId = `${file.name}-${file.lastModified}`;
-          progressMap.set(fileId, 0);
-          
-          const url = await handleImageUpload(file, (progress) => {
-            progressMap.set(fileId, progress);
-            let totalProgress = 0;
-            progressMap.forEach(p => totalProgress += p);
-            setUploadProgress(totalProgress / files.length);
-          });
+        // Set a 30-second timeout to allow high-res images to upload fully
+        const timer = setTimeout(() => {
+          uploadTask.cancel();
+          reject(new Error("Storage timeout"));
+        }, 30000);
+
+        uploadTask.on('state_changed', 
+          null, 
+          (error) => {
+            clearTimeout(timer);
+            reject(error);
+          }, 
+          async () => {
+            clearTimeout(timer);
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadURL);
+          }
+        );
+      });
+    };
+
+    try {
+      // Try uploading the ORIGINAL file first for maximum quality and "correct resolution"
+      return await uploadWithTimeout(file);
+    } catch (error: any) {
+      // Log as warning, not error, to avoid alarming the user
+      console.warn("Storage upload slow or failed, using Base64 fallback for speed:", error.message);
+      
+      // Fallback to Base64 with compression ONLY if Storage fails
+      try {
+        // We need to be very aggressive with compression for Base64 to stay under Firestore's 1MB limit
+        let quality = 0.5;
+        let maxWidth = 800;
+        let base64 = "";
+        
+        const smallBlob = await compressImage(file, maxWidth, quality);
+        base64 = await fileToBase64(smallBlob);
+        
+        if (base64.length > 800000) {
+          const tinyBlob = await compressImage(file, 600, 0.3);
+          base64 = await fileToBase64(tinyBlob);
+        }
+        
+        return base64;
+      } catch (fallbackError) {
+        console.error("Base64 fallback failed:", fallbackError);
+        throw error;
+      }
+    }
+  };
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      const localUrl = URL.createObjectURL(file);
+      setProjCover(localUrl);
+      
+      const uploadPromise = handleImageUpload(file).then(url => {
+        setProjCover(url);
+        pendingUploads.current.delete(localUrl);
+        URL.revokeObjectURL(localUrl);
+        return url;
+      });
+      pendingUploads.current.set(localUrl, uploadPromise);
+    }
+  };
+
+  const handleCatCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      const localUrl = URL.createObjectURL(file);
+      setCatCover(localUrl);
+      
+      const uploadPromise = handleImageUpload(file).then(url => {
+        setCatCover(url);
+        pendingUploads.current.delete(localUrl);
+        URL.revokeObjectURL(localUrl);
+        return url;
+      });
+      pendingUploads.current.set(localUrl, uploadPromise);
+    }
+  };
+
+  const handleAdditionalFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      Array.from(e.target.files).forEach(file => {
+        const localUrl = URL.createObjectURL(file);
+        setProjImages(prev => [...prev, localUrl]);
+        
+        const uploadPromise = handleImageUpload(file).then(url => {
+          setProjImages(prev => prev.map(u => u === localUrl ? url : u));
+          pendingUploads.current.delete(localUrl);
           return url;
         });
-
-        const urls = await Promise.all(uploadPromises);
-        setProjImages(prev => [...prev, ...urls]);
-      } catch (error) {
-        alert("Failed to upload some images.");
-      } finally {
-        setIsUploading(false);
-      }
+        pendingUploads.current.set(localUrl, uploadPromise);
+      });
     }
   };
 
   const handleSetCover = (dataUrl: string) => {
-    // Only set as cover if not already set
     if (!projCover) {
       setProjCover(dataUrl);
     }
@@ -946,71 +971,37 @@ const AdminDashboard = ({
     }
   };
 
-  const handleCanvasImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploading(true);
-      setUploadProgress(0);
-      try {
-        const files = Array.from(e.target.files);
-        const progressMap = new Map<string, number>();
+  const handleCanvasImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      Array.from(e.target.files).forEach((file, index) => {
+        const localUrl = URL.createObjectURL(file);
+        const tempId = `img-${Date.now()}-${index}`;
         
-        const uploadPromises = files.map(async (file, index) => {
-          const fileId = `${file.name}-${file.lastModified}-${index}`;
-          progressMap.set(fileId, 0);
-          
-          const url = await handleImageUpload(file, (progress) => {
-            progressMap.set(fileId, progress);
-            let totalProgress = 0;
-            progressMap.forEach(p => totalProgress += p);
-            setUploadProgress(totalProgress / files.length);
-          });
+        const img = new Image();
+        img.src = localUrl;
+        img.onload = () => {
+          const newItem: CanvasItem = {
+            id: tempId,
+            type: 'image',
+            src: localUrl,
+            x: (800 - img.naturalWidth) / 2 + (index * 20), 
+            y: (450 - img.naturalHeight) / 2 + (index * 20),
+            width: img.naturalWidth,
+            height: img.naturalHeight,
+            rotation: 0,
+            scaleX: 1,
+            scaleY: 1
+          };
+          updateCanvasItems(prev => [...prev, newItem]);
+        };
+
+        const uploadPromise = handleImageUpload(file).then(url => {
+          setCanvasItems(prev => prev.map(item => item.id === tempId ? { ...item, src: url } : item));
+          pendingUploads.current.delete(tempId);
           return url;
         });
-
-        const urls = await Promise.all(uploadPromises);
-        
-        // Process each image to add to canvas
-        const newItems: CanvasItem[] = [];
-        
-        for (let i = 0; i < urls.length; i++) {
-          const url = urls[i];
-          await new Promise<void>((resolve) => {
-            const img = new Image();
-            img.src = url;
-            img.onload = () => {
-              // No resolution limits for canvas items
-              let w = img.naturalWidth;
-              let h = img.naturalHeight;
-              
-              // Offset each new image slightly so they don't stack perfectly on top of each other
-              const offset = i * 20;
-
-              const newItem: CanvasItem = {
-                id: `img-${Date.now()}-${i}`,
-                type: 'image',
-                src: url,
-                x: (800 - w) / 2 + offset, 
-                y: (450 - h) / 2 + offset,
-                width: w,
-                height: h,
-                rotation: 0,
-                scaleX: 1,
-                scaleY: 1
-              };
-              newItems.push(newItem);
-              resolve();
-            };
-            img.onerror = () => resolve();
-          });
-        }
-        
-        updateCanvasItems((prev: CanvasItem[]) => [...prev, ...newItems]);
-
-      } catch (error) {
-        alert("Failed to upload images.");
-      } finally {
-        setIsUploading(false);
-      }
+        pendingUploads.current.set(tempId, uploadPromise);
+      });
     }
   };
 
@@ -1024,7 +1015,6 @@ const AdminDashboard = ({
         order: categories.length,
         coverImage: catCover
       });
-      await refreshCategories();
       setCatName('');
       setCatCover('');
       setIsAddingCategory(false);
@@ -1052,7 +1042,6 @@ const AdminDashboard = ({
         slug: catName.toLowerCase().replace(/\s+/g, '-'),
         coverImage: catCover
       });
-      await refreshCategories();
       setCatName('');
       setCatCover('');
       setEditingCategory(null);
@@ -1075,32 +1064,41 @@ const AdminDashboard = ({
     e.preventDefault();
     setIsSaving(true);
     setIsSaved(false);
+
     try {
+      // Wait for any ongoing uploads
+      if (pendingUploads.current.size > 0) {
+        await Promise.all(Array.from(pendingUploads.current.values()));
+      }
+
       const projectData = {
         name: projName,
         categoryId: projCatId,
         coverImage: projCover,
         images: projImages,
         description: projDesc,
+        status: projStatus,
         canvasData: canvasItems,
         canvasBackgroundColor: canvasBgColor,
         canvasHeight: canvasHeight,
-        createdAt: editingProject ? editingProject.createdAt : serverTimestamp()
+        createdAt: editingProject?.createdAt || serverTimestamp()
       };
 
       if (editingProject) {
         await updateDoc(doc(db, 'projects', editingProject.id), projectData);
-        await refreshProjects();
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 3000);
         setIsAddingProject(false);
         setEditingProject(null);
+        resetProjectForm();
       } else {
         await addDoc(collection(db, 'projects'), projectData);
-        await refreshProjects();
         resetProjectForm();
+        setIsAddingProject(false);
+        setEditingProject(null);
       }
     } catch (err) {
+      console.error("Error saving project:", err);
       handleFirestoreError(err, OperationType.WRITE, 'projects');
     } finally {
       setIsSaving(false);
@@ -1113,6 +1111,7 @@ const AdminDashboard = ({
     setProjCover('');
     setProjImages([]);
     setProjDesc('');
+    setProjStatus('published');
     setCanvasItems([]);
     setCanvasHeight(450);
     setCanvasHistory([[]]);
@@ -1120,6 +1119,7 @@ const AdminDashboard = ({
     setCanvasBgColor('#1a1a1a');
     setEditingProject(null);
     setIsAddingProject(false);
+    pendingUploads.current.clear();
   };
 
   const handleDeleteProject = (id: string) => {
@@ -1136,10 +1136,8 @@ const AdminDashboard = ({
     try {
       if (type === 'category') {
         await deleteDoc(doc(db, 'categories', id));
-        await refreshCategories();
       } else if (type === 'project') {
         await deleteDoc(doc(db, 'projects', id));
-        await refreshProjects();
       } else if (type === 'message') {
         await deleteDoc(doc(db, 'messages', id));
       }
@@ -1301,8 +1299,8 @@ const AdminDashboard = ({
                       </div>
                     </div>
                   </div>
-                  <button type="submit" disabled={isUploading} className="px-6 py-3 bg-orange-accent text-black font-bold rounded-xl disabled:opacity-50">
-                    {isUploading ? 'Uploading...' : 'Save'}
+                  <button type="submit" disabled={isSaving} className="px-6 py-3 bg-orange-accent text-black font-bold rounded-xl disabled:opacity-50">
+                    {isSaving ? 'Saving...' : 'Save'}
                   </button>
                   <button type="button" onClick={() => { setIsAddingCategory(false); setEditingCategory(null); setCatCover(''); setCatName(''); }} className="px-6 py-3 glass rounded-xl">Cancel</button>
                 </div>
@@ -1405,6 +1403,26 @@ const AdminDashboard = ({
                       </div>
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                      Visibility <span className="text-orange-accent">*</span>
+                    </label>
+                    <div className="relative">
+                      <select 
+                        value={projStatus}
+                        onChange={(e) => setProjStatus(e.target.value as 'draft' | 'published')}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent text-white appearance-none transition-all"
+                        required
+                      >
+                        <option value="published" className="bg-gray-900 text-white">Published</option>
+                        <option value="draft" className="bg-gray-900 text-white">Draft (Hidden)</option>
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-4">
@@ -1449,27 +1467,6 @@ const AdminDashboard = ({
 
                 </div>
 
-                {isUploading && (
-                  <div className="space-y-2 bg-black/40 p-4 rounded-xl border border-white/5">
-                    <div className="flex justify-between items-center text-xs font-bold">
-                      <span className="flex items-center gap-2 text-white">
-                        <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-orange-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Optimizing & Uploading...
-                      </span>
-                      <span className="text-orange-accent">{Math.round(uploadProgress)}%</span>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-orange-accent to-blue-accent h-full rounded-full transition-all duration-300 ease-out"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
                 <div className="space-y-2 pt-3 border-t border-white/5">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
                     <Layout className="w-3 h-3 text-blue-accent" /> Canvas Editor (Compose your project)
@@ -1502,19 +1499,26 @@ const AdminDashboard = ({
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-white/10">
-                  <button 
-                    type="submit" 
-                    disabled={isUploading || isSaving} 
-                    className="flex-1 py-3 bg-orange-accent text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-orange-accent/20"
-                  >
-                    {isSaving ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-                    ) : isSaved ? (
-                      <><Check className="w-4 h-4" /> Saved!</>
-                    ) : (
-                      <><Send className="w-4 h-4" /> {editingProject ? 'Update Project' : 'Publish Project'}</>
+                  <div className="flex-1 flex flex-col gap-1">
+                    <button 
+                      type="submit" 
+                      disabled={isSaving} 
+                      className="w-full py-3 bg-orange-accent text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-orange-accent/20"
+                    >
+                      {isSaving ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                      ) : isSaved ? (
+                        <><Check className="w-4 h-4" /> Saved!</>
+                      ) : (
+                        <><Send className="w-4 h-4" /> {editingProject ? 'Update Project' : 'Publish Project'}</>
+                      )}
+                    </button>
+                    {pendingUploads.current.size > 0 && !isSaving && (
+                      <p className="text-[10px] text-blue-accent font-bold animate-pulse text-center">
+                        Images are uploading... Click Publish to finish.
+                      </p>
                     )}
-                  </button>
+                  </div>
                   <button type="button" onClick={resetProjectForm} className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10">
                     Cancel
                   </button>
@@ -1527,6 +1531,13 @@ const AdminDashboard = ({
                 <div key={proj.id} className="glass rounded-3xl overflow-hidden group">
                   <div className="aspect-video relative">
                     <img src={proj.coverImage} className="w-full h-full object-cover" alt="" />
+                    <div className="absolute top-3 left-3 flex gap-2">
+                      {proj.status === 'draft' ? (
+                        <span className="px-2 py-1 bg-gray-900/80 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-md border border-white/10 backdrop-blur-md">Draft</span>
+                      ) : (
+                        <span className="px-2 py-1 bg-green-500/80 text-white text-[10px] font-bold uppercase tracking-widest rounded-md border border-green-400/20 backdrop-blur-md">Published</span>
+                      )}
+                    </div>
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                       <button 
                         onClick={() => {
@@ -1536,6 +1547,7 @@ const AdminDashboard = ({
                           setProjCover(proj.coverImage);
                           setProjImages(proj.images || []);
                           setProjDesc(proj.description);
+                          setProjStatus(proj.status || 'published');
                           setCanvasItems(proj.canvasData || []);
                           setCanvasHeight(proj.canvasHeight || 450);
                           setCanvasHistory([proj.canvasData || []]);
@@ -2466,8 +2478,11 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
+  // Filter for published projects only (or projects without status field for backward compatibility)
+  const publishedProjects = projects.filter(p => !p.status || p.status === 'published');
+
   const categoryProjects = selectedCategory 
-    ? projects.filter(p => p.categoryId === selectedCategory.id)
+    ? publishedProjects.filter(p => p.categoryId === selectedCategory.id)
     : [];
 
   return (
@@ -2484,7 +2499,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {categories.map((cat, idx) => {
-              const catProjects = projects.filter(p => p.categoryId === cat.id);
+              const catProjects = publishedProjects.filter(p => p.categoryId === cat.id);
               return (
                 <motion.div
                   key={cat.id}
@@ -2937,25 +2952,22 @@ export default function App() {
 
   const adminEmail = "sayedart1999@gmail.com";
 
-  const fetchCategories = async () => {
-    try {
-      const snapshot = await getDocs(query(collection(db, 'categories'), orderBy('order')));
-      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
-      setCategories(cats);
-    } catch (err) {
-      console.error("Error fetching categories:", err);
+  // Migration: Ensure all projects have a status
+  useEffect(() => {
+    if (isAdmin && projects.length > 0) {
+      const projectsToUpdate = projects.filter(p => !p.status);
+      if (projectsToUpdate.length > 0) {
+        console.log(`Migrating ${projectsToUpdate.length} projects to 'published' status...`);
+        projectsToUpdate.forEach(async (p) => {
+          try {
+            await updateDoc(doc(db, 'projects', p.id), { status: 'published' });
+          } catch (err) {
+            console.error(`Failed to migrate project ${p.id}:`, err);
+          }
+        });
+      }
     }
-  };
-
-  const fetchProjects = async () => {
-    try {
-      const snapshot = await getDocs(query(collection(db, 'projects'), orderBy('createdAt', 'desc')));
-      const projs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-      setProjects(projs);
-    } catch (err) {
-      console.error("Error fetching projects:", err);
-    }
-  };
+  }, [isAdmin, projects]);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
@@ -2963,13 +2975,50 @@ export default function App() {
       setIsAdmin(u?.email === adminEmail && u?.emailVerified);
     });
 
-    fetchCategories();
-    fetchProjects();
+    // Real-time categories
+    const unsubscribeCats = onSnapshot(query(collection(db, 'categories'), orderBy('order')), (snapshot) => {
+      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+      setCategories(cats);
+    }, (err) => {
+      console.error("Error fetching categories:", err);
+    });
 
     return () => {
       unsubscribeAuth();
+      unsubscribeCats();
     };
   }, []);
+
+  useEffect(() => {
+    let unsubscribeProjs: (() => void) | undefined;
+
+    // For projects, we use a conditional query to avoid permission errors
+    // Admins see everything, public sees only published
+    const projectsRef = collection(db, 'projects');
+    let projsQuery;
+
+    if (isAdmin) {
+      projsQuery = query(projectsRef, orderBy('createdAt', 'desc'));
+    } else {
+      // Public query: only published projects
+      // Note: This will not return projects without the 'status' field.
+      // We should migrate existing data or handle this.
+      projsQuery = query(projectsRef, where('status', '==', 'published'), orderBy('createdAt', 'desc'));
+    }
+
+    unsubscribeProjs = onSnapshot(projsQuery, (snapshot) => {
+      const projs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+      setProjects(projs);
+    }, (err) => {
+      console.error("Error fetching projects:", err);
+      // If the query fails (e.g. due to missing index or permission), fallback to empty
+      if (!isAdmin) setProjects([]);
+    });
+
+    return () => {
+      if (unsubscribeProjs) unsubscribeProjs();
+    };
+  }, [isAdmin]);
 
   useEffect(() => {
     let unsubscribeMsgs: (() => void) | undefined;
@@ -3043,8 +3092,6 @@ export default function App() {
             projects={projects} 
             messages={messages}
             onClose={() => setShowAdmin(false)} 
-            refreshCategories={fetchCategories}
-            refreshProjects={fetchProjects}
           />
         )}
       </AnimatePresence>

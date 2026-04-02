@@ -8,6 +8,24 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Prevent libraries from trying to overwrite window.fetch
+      if (window.fetch) {
+        const originalFetch = window.fetch;
+        try {
+          Object.defineProperty(window, 'fetch', {
+            configurable: false,
+            enumerable: true,
+            get: () => originalFetch,
+            set: () => {
+              console.warn('Attempted to overwrite window.fetch. This was blocked to prevent errors.');
+            }
+          });
+        } catch (e) {
+          console.error('Failed to lock window.fetch:', e);
+        }
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
