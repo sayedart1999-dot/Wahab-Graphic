@@ -860,11 +860,11 @@ const AdminDashboard = ({
       return new Promise((resolve, reject) => {
         const uploadTask = uploadBytesResumable(storageRef, data);
         
-        // Set a 30-second timeout to allow high-res images to upload fully
+        // Set a 60-second timeout to allow even very large high-res images to upload fully
         const timer = setTimeout(() => {
           uploadTask.cancel();
           reject(new Error("Storage timeout"));
-        }, 30000);
+        }, 60000);
 
         uploadTask.on('state_changed', 
           null, 
@@ -890,17 +890,18 @@ const AdminDashboard = ({
       
       // Fallback to Base64 with compression ONLY if Storage fails
       try {
-        // We need to be very aggressive with compression for Base64 to stay under Firestore's 1MB limit
-        let quality = 0.5;
-        let maxWidth = 800;
+        // We target a higher resolution for fallback while staying under Firestore's 1MB limit
+        let quality = 0.7;
+        let maxWidth = 1500;
         let base64 = "";
         
         const smallBlob = await compressImage(file, maxWidth, quality);
         base64 = await fileToBase64(smallBlob);
         
-        if (base64.length > 800000) {
-          const tinyBlob = await compressImage(file, 600, 0.3);
-          base64 = await fileToBase64(tinyBlob);
+        // If still too large for Firestore (1MB limit), try a more aggressive compression
+        if (base64.length > 900000) {
+          const mediumBlob = await compressImage(file, 1000, 0.5);
+          base64 = await fileToBase64(mediumBlob);
         }
         
         return base64;
@@ -1306,7 +1307,7 @@ const AdminDashboard = ({
                 </div>
                 {catCover && (
                   <div className="w-32 h-32 rounded-xl overflow-hidden border border-white/10">
-                    <img src={catCover} alt="Cover Preview" className="w-full h-full object-cover" />
+                    <img src={catCover} alt="Cover Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                   </div>
                 )}
               </form>
@@ -1317,7 +1318,7 @@ const AdminDashboard = ({
                 <div key={cat.id} className="glass p-6 rounded-3xl flex justify-between items-center group relative overflow-hidden">
                   {cat.coverImage && (
                     <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
-                      <img src={cat.coverImage} alt={cat.name} className="w-full h-full object-cover" />
+                      <img src={cat.coverImage} alt={cat.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className="relative z-10">
@@ -1451,7 +1452,7 @@ const AdminDashboard = ({
                       </div>
                     ) : (
                       <div className="relative inline-block group rounded-xl overflow-hidden border border-white/10">
-                        <img src={projCover} alt="Cover Preview" className="h-24 w-auto object-cover" />
+                        <img src={projCover} alt="Cover Preview" referrerPolicy="no-referrer" className="h-24 w-auto object-cover" />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button 
                             type="button"
@@ -1530,7 +1531,7 @@ const AdminDashboard = ({
               {projects.map(proj => (
                 <div key={proj.id} className="glass rounded-3xl overflow-hidden group">
                   <div className="aspect-video relative">
-                    <img src={proj.coverImage} className="w-full h-full object-cover" alt="" />
+                    <img src={proj.coverImage} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="" />
                     <div className="absolute top-3 left-3 flex gap-2">
                       {proj.status === 'draft' ? (
                         <span className="px-2 py-1 bg-gray-900/80 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-md border border-white/10 backdrop-blur-md">Draft</span>
@@ -1699,6 +1700,8 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                     key={item.id}
                     src={item.src}
                     alt=""
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedCanvasIdx(idx);
@@ -1712,7 +1715,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       transform: `rotate(${item.rotation || 0}deg)`,
                       transformOrigin: 'top left',
                       zIndex: 10,
-                      imageRendering: 'auto'
+                      imageRendering: 'high-quality'
                     }}
                     className="cursor-zoom-in select-none drop-shadow-xl hover:scale-[1.02] transition-transform duration-300"
                   />
@@ -1728,7 +1731,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                     className="rounded-[2rem] overflow-hidden glass border-white/10 shadow-xl break-inside-avoid cursor-pointer group relative"
                     onClick={() => setSelectedImageIdx(idx)}
                   >
-                    <img src={img} className="w-full h-auto group-hover:scale-105 transition-transform duration-500" alt={`${project.name} - ${idx + 1}`} />
+                    <img src={img} referrerPolicy="no-referrer" className="w-full h-auto group-hover:scale-105 transition-transform duration-500" alt={`${project.name} - ${idx + 1}`} />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
@@ -1821,6 +1824,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                         src={project.images[selectedImageIdx]} 
                         className="max-w-full max-h-full object-contain select-none shadow-2xl" 
                         alt={`${project.name} - Enlarge ${selectedImageIdx + 1}`} 
+                        referrerPolicy="no-referrer"
                       />
                     </TransformComponent>
                   </>
@@ -1905,7 +1909,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                     >
                       <div
                         style={{
-                          aspectRatio: `${project.canvasData[selectedCanvasIdx].width * (project.canvasData[selectedCanvasIdx].scaleX || 1)} / ${project.canvasData[selectedCanvasIdx].height * (project.canvasData[selectedCanvasIdx].scaleY || 1)}`,
+                          aspectRatio: `${(project.canvasData[selectedCanvasIdx].width || 1) * (project.canvasData[selectedCanvasIdx].scaleX || 1)} / ${(project.canvasData[selectedCanvasIdx].height || 1) * (project.canvasData[selectedCanvasIdx].scaleY || 1)}`,
                           maxWidth: '100%',
                           maxHeight: '100%',
                           display: 'flex',
@@ -1915,9 +1919,11 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       >
                         <img 
                           src={project.canvasData[selectedCanvasIdx].src} 
-                          style={{ width: '100%', height: '100%', objectFit: 'fill' }}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'high-quality' }}
                           className="select-none shadow-2xl" 
                           alt="Enlarged view" 
+                          referrerPolicy="no-referrer"
+                          crossOrigin="anonymous"
                         />
                       </div>
                     </TransformComponent>
@@ -2116,7 +2122,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
       <div className="max-w-[1600px] mx-auto px-6 grid grid-cols-2 md:grid-cols-3 items-center">
         {/* Logo (Left) */}
         <a href="#home" onClick={() => handleNavLinkClick('home')} className="flex items-center gap-3 relative z-10 justify-self-start">
-          <img src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" alt="Wahab Graphic Logo" className="w-10 h-10 rounded-lg shadow-lg object-cover" />
+          <img src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" alt="Wahab Graphic Logo" referrerPolicy="no-referrer" className="w-10 h-10 rounded-lg shadow-lg object-cover" />
           <span className="text-2xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
         </a>
 
@@ -2906,7 +2912,7 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
       }`}
     >
       <div className="w-10 h-10 bg-black/50 rounded overflow-hidden flex-shrink-0 border border-white/10 relative">
-        <img src={item.src} className="w-full h-full object-cover" alt="layer" />
+        <img src={item.src} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="layer" />
       </div>
       
       <div className="flex-1 min-w-0">
@@ -3052,7 +3058,7 @@ export default function App() {
       <footer className="py-12 border-t border-white/5">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
-            <img src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" alt="Wahab Graphic Logo" className="w-8 h-8 rounded-md opacity-80 object-cover" />
+            <img src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" alt="Wahab Graphic Logo" referrerPolicy="no-referrer" className="w-8 h-8 rounded-md opacity-80 object-cover" />
             <span className="text-xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
           </div>
           
