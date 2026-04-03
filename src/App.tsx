@@ -793,21 +793,46 @@ const AdminDashboard = ({
     setHistoryStep(newHistory.length - 1);
   };
 
-  const handleUndo = () => {
+  const handleUndo = React.useCallback(() => {
     if (historyStep > 0) {
       const newStep = historyStep - 1;
       setHistoryStep(newStep);
       setCanvasItems(canvasHistory[newStep]);
     }
-  };
+  }, [historyStep, canvasHistory]);
 
-  const handleRedo = () => {
+  const handleRedo = React.useCallback(() => {
     if (historyStep < canvasHistory.length - 1) {
       const newStep = historyStep + 1;
       setHistoryStep(newStep);
       setCanvasItems(canvasHistory[newStep]);
     }
-  };
+  }, [historyStep, canvasHistory]);
+
+  // Keyboard Shortcuts for Undo/Redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isAddingProject) return;
+
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      if (e.ctrlKey || e.metaKey) {
+        if (e.shiftKey && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          handleRedo();
+        } else if (e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          handleUndo();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAddingProject, handleUndo, handleRedo]);
 
   const dataUrlToBlob = (dataUrl: string): Blob => {
     const arr = dataUrl.split(',');
