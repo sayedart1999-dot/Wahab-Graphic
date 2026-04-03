@@ -46,7 +46,8 @@ import {
   Undo2,
   Redo2,
   Loader2,
-  Check
+  Check,
+  AlertCircle
 } from 'lucide-react';
 import { 
   db, 
@@ -748,13 +749,24 @@ const AdminDashboard = ({
   // Form States
   const [catName, setCatName] = useState('');
   const [catCover, setCatCover] = useState('');
+  const catCoverRef = React.useRef(catCover);
+  useEffect(() => { catCoverRef.current = catCover; }, [catCover]);
   const [projName, setProjName] = useState('');
   const [projCatId, setProjCatId] = useState('');
   const [projCover, setProjCover] = useState('');
+  const projCoverRef = React.useRef(projCover);
+  useEffect(() => { projCoverRef.current = projCover; }, [projCover]);
+
   const [projImages, setProjImages] = useState<string[]>([]);
+  const projImagesRef = React.useRef(projImages);
+  useEffect(() => { projImagesRef.current = projImages; }, [projImages]);
+
   const [projDesc, setProjDesc] = useState('');
   const [projStatus, setProjStatus] = useState<'draft' | 'published'>('published');
+
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
+  const canvasItemsRef = React.useRef(canvasItems);
+  useEffect(() => { canvasItemsRef.current = canvasItems; }, [canvasItems]);
   const [canvasHeight, setCanvasHeight] = useState(450);
   const [canvasBgColor, setCanvasBgColor] = useState('#1a1a1a');
   const [isSaving, setIsSaving] = useState(false);
@@ -860,11 +872,11 @@ const AdminDashboard = ({
       return new Promise((resolve, reject) => {
         const uploadTask = uploadBytesResumable(storageRef, data);
         
-        // Set a 60-second timeout to allow even very large high-res images to upload fully
+        // Set a 5-minute timeout to allow even the largest high-res images to upload fully
         const timer = setTimeout(() => {
           uploadTask.cancel();
           reject(new Error("Storage timeout"));
-        }, 60000);
+        }, 300000);
 
         uploadTask.on('state_changed', 
           null, 
@@ -921,7 +933,6 @@ const AdminDashboard = ({
       const uploadPromise = handleImageUpload(file).then(url => {
         setProjCover(url);
         pendingUploads.current.delete(localUrl);
-        URL.revokeObjectURL(localUrl);
         return url;
       });
       pendingUploads.current.set(localUrl, uploadPromise);
@@ -937,7 +948,6 @@ const AdminDashboard = ({
       const uploadPromise = handleImageUpload(file).then(url => {
         setCatCover(url);
         pendingUploads.current.delete(localUrl);
-        URL.revokeObjectURL(localUrl);
         return url;
       });
       pendingUploads.current.set(localUrl, uploadPromise);
@@ -1010,11 +1020,17 @@ const AdminDashboard = ({
     e.preventDefault();
     setIsSaving(true);
     try {
+      // Wait for any ongoing uploads
+      if (pendingUploads.current.size > 0) {
+        await Promise.all(Array.from(pendingUploads.current.values()));
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
       await addDoc(collection(db, 'categories'), {
         name: catName,
         slug: catName.toLowerCase().replace(/\s+/g, '-'),
         order: categories.length,
-        coverImage: catCover
+        coverImage: catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current
       });
       setCatName('');
       setCatCover('');
@@ -1038,10 +1054,16 @@ const AdminDashboard = ({
     if (!editingCategory) return;
     setIsSaving(true);
     try {
+      // Wait for any ongoing uploads
+      if (pendingUploads.current.size > 0) {
+        await Promise.all(Array.from(pendingUploads.current.values()));
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
       await updateDoc(doc(db, 'categories', editingCategory.id), {
         name: catName,
         slug: catName.toLowerCase().replace(/\s+/g, '-'),
-        coverImage: catCover
+        coverImage: catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current
       });
       setCatName('');
       setCatCover('');
@@ -1067,19 +1089,29 @@ const AdminDashboard = ({
     setIsSaved(false);
 
     try {
-      // Wait for any ongoing uploads
+      // Wait for any ongoing uploads and get the final URLs
       if (pendingUploads.current.size > 0) {
         await Promise.all(Array.from(pendingUploads.current.values()));
+        // Give React a moment to process the state updates from the resolved promises
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
+
+      // Final check to ensure no blob URLs are saved
+      const finalProjCover = projCoverRef.current.startsWith('blob:') ? '' : projCoverRef.current;
+      const finalProjImages = projImagesRef.current.filter(url => !url.startsWith('blob:'));
+      const finalCanvasItems = canvasItemsRef.current.map(item => ({
+        ...item,
+        src: item.src.startsWith('blob:') ? '' : item.src
+      })).filter(item => item.src !== '');
 
       const projectData = {
         name: projName,
         categoryId: projCatId,
-        coverImage: projCover,
-        images: projImages,
+        coverImage: finalProjCover,
+        images: finalProjImages,
         description: projDesc,
         status: projStatus,
-        canvasData: canvasItems,
+        canvasData: finalCanvasItems,
         canvasBackgroundColor: canvasBgColor,
         canvasHeight: canvasHeight,
         createdAt: editingProject?.createdAt || serverTimestamp()
@@ -1610,8 +1642,13 @@ const AdminDashboard = ({
 const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => void }) => {
   const [selectedImageIdx, setSelectedImageIdx] = useState<number | null>(null);
   const [selectedCanvasIdx, setSelectedCanvasIdx] = useState<number | null>(null);
+  const [imageError, setImageError] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [selectedImageIdx, selectedCanvasIdx]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -1701,7 +1738,6 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                     src={item.src}
                     alt=""
                     referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedCanvasIdx(idx);
@@ -1715,7 +1751,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       transform: `rotate(${item.rotation || 0}deg)`,
                       transformOrigin: 'top left',
                       zIndex: 10,
-                      imageRendering: 'high-quality'
+                      imageRendering: 'auto'
                     }}
                     className="cursor-zoom-in select-none drop-shadow-xl hover:scale-[1.02] transition-transform duration-300"
                   />
@@ -1820,12 +1856,29 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       wrapperClass="!w-full !h-full"
                       contentClass="!w-full !h-full flex items-center justify-center"
                     >
-                      <img 
-                        src={project.images[selectedImageIdx]} 
-                        className="max-w-full max-h-full object-contain select-none shadow-2xl" 
-                        alt={`${project.name} - Enlarge ${selectedImageIdx + 1}`} 
-                        referrerPolicy="no-referrer"
-                      />
+                      {imageError ? (
+                        <div className="flex flex-col items-center justify-center p-12 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl max-w-md mx-auto text-center">
+                          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
+                            <AlertCircle className="w-8 h-8 text-red-500" />
+                          </div>
+                          <h3 className="text-xl font-bold text-white mb-2">Image Failed to Load</h3>
+                          <p className="text-gray-400 text-sm leading-relaxed">
+                            The image resource could not be retrieved. This can happen if the upload was interrupted or the local preview expired.
+                          </p>
+                        </div>
+                      ) : (
+                        <img 
+                          key={project.images[selectedImageIdx]}
+                          src={project.images[selectedImageIdx]} 
+                          className="max-w-full max-h-full object-contain select-none shadow-2xl" 
+                          alt={`${project.name} - Enlarge ${selectedImageIdx + 1}`} 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            console.error("Image failed to load in modal:", project.images[selectedImageIdx]);
+                            setImageError(true);
+                          }}
+                        />
+                      )}
                     </TransformComponent>
                   </>
                 )}
@@ -1907,24 +1960,35 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       wrapperClass="!w-full !h-full"
                       contentClass="!w-full !h-full flex items-center justify-center"
                     >
-                      <div
-                        style={{
-                          aspectRatio: `${(project.canvasData[selectedCanvasIdx].width || 1) * (project.canvasData[selectedCanvasIdx].scaleX || 1)} / ${(project.canvasData[selectedCanvasIdx].height || 1) * (project.canvasData[selectedCanvasIdx].scaleY || 1)}`,
-                          maxWidth: '100%',
-                          maxHeight: '100%',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <img 
-                          src={project.canvasData[selectedCanvasIdx].src} 
-                          style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'high-quality' }}
-                          className="select-none shadow-2xl" 
-                          alt="Enlarged view" 
-                          referrerPolicy="no-referrer"
-                          crossOrigin="anonymous"
-                        />
+                      <div className="relative w-full h-full flex items-center justify-center p-4">
+                        {imageError ? (
+                          <div className="flex flex-col items-center justify-center p-12 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl max-w-md mx-auto text-center">
+                            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
+                              <AlertCircle className="w-8 h-8 text-red-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">Canvas Image Failed</h3>
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                              This canvas element could not be loaded.
+                            </p>
+                          </div>
+                        ) : (
+                          <img 
+                            key={project.canvasData[selectedCanvasIdx].src}
+                            src={project.canvasData[selectedCanvasIdx].src} 
+                            className="max-w-full max-h-full object-contain select-none shadow-2xl" 
+                            style={{ imageRendering: 'auto' }}
+                            alt="Enlarged view" 
+                            referrerPolicy="no-referrer"
+                            onLoad={(e) => {
+                              const img = e.currentTarget;
+                              console.log(`Image loaded: ${img.naturalWidth}x${img.naturalHeight}`);
+                            }}
+                            onError={(e) => {
+                              console.error("Image failed to load in modal:", project.canvasData[selectedCanvasIdx].src);
+                              setImageError(true);
+                            }}
+                          />
+                        )}
                       </div>
                     </TransformComponent>
                   </>
@@ -3013,7 +3077,24 @@ export default function App() {
     }
 
     unsubscribeProjs = onSnapshot(projsQuery, (snapshot) => {
-      const projs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+      const projs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Filter out blob URLs from images and canvasData
+        const images = (data.images || []).filter((url: string) => !url.startsWith('blob:'));
+        const canvasData = (data.canvasData || []).map((item: any) => ({
+          ...item,
+          src: item.src?.startsWith('blob:') ? '' : item.src
+        })).filter((item: any) => item.src !== '');
+        const coverImage = data.coverImage?.startsWith('blob:') ? '' : data.coverImage;
+
+        return { 
+          id: doc.id, 
+          ...data,
+          images,
+          canvasData,
+          coverImage
+        } as Project;
+      });
       setProjects(projs);
     }, (err) => {
       console.error("Error fetching projects:", err);
