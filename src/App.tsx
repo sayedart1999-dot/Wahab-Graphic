@@ -359,13 +359,22 @@ const CanvasDesignEditor = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [canvasHeight]);
 
+  const handleDeleteSelected = React.useCallback(() => {
+    if (selectedId) {
+      setItems(prevItems => prevItems.filter(item => item.id !== selectedId));
+      selectShape(null);
+    }
+  }, [selectedId, setItems]);
+
   // Keyboard listener for Undo/Redo, Arrow keys, and Zoom keys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target as HTMLElement).isContentEditable;
+
       if (e.key === 'Control' || e.key === 'Meta') keys.current.ctrl = true;
       if (e.code === 'Space') {
         keys.current.space = true;
-        if (!(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+        if (!isInput) {
           e.preventDefault();
         }
       }
@@ -376,6 +385,13 @@ const CanvasDesignEditor = ({
       } else if (keys.current.space && !keys.current.ctrl) {
         setIsPanMode(true);
         setIsZoomMode(false);
+      }
+
+      if (isInput) return;
+
+      if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        handleDeleteSelected();
       }
 
       if (selectedId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
@@ -428,7 +444,7 @@ const CanvasDesignEditor = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [onUndo, onRedo, selectedId, setItems]);
+  }, [onUndo, onRedo, selectedId, setItems, handleDeleteSelected]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -490,13 +506,6 @@ const CanvasDesignEditor = ({
     e.evt.preventDefault();
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop += e.evt.deltaY;
-    }
-  };
-
-  const handleDeleteSelected = () => {
-    if (selectedId) {
-      setItems(items.filter(item => item.id !== selectedId));
-      selectShape(null);
     }
   };
 
