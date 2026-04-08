@@ -338,7 +338,8 @@ const CanvasDesignEditor = ({
       selectShape(null);
       // Wait for state update to remove transformer
       setTimeout(() => {
-        const dataUrl = stageRef.current.toDataURL({ pixelRatio: 5 });
+        // Reduced pixelRatio from 5 to 2 for better performance and smaller file sizes
+        const dataUrl = stageRef.current.toDataURL({ pixelRatio: 2 });
         onSetCover(dataUrl);
       }, 0);
     }
@@ -780,6 +781,7 @@ const AdminDashboard = ({
   const [canvasBgColor, setCanvasBgColor] = useState('#1a1a1a');
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const pendingUploads = React.useRef<Map<string, Promise<string>>>(new Map());
 
   // History State
@@ -795,6 +797,7 @@ const AdminDashboard = ({
     }
 
     setCanvasItems(resolvedItems);
+    canvasItemsRef.current = resolvedItems;
     
     const newHistory = canvasHistory.slice(0, historyStep + 1);
     newHistory.push(resolvedItems);
@@ -867,6 +870,12 @@ const AdminDashboard = ({
   const compressImage = (file: File, maxWidth = 2000, quality = 0.8): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      
+      // Safety timeout for compression
+      const timeout = setTimeout(() => {
+        reject(new Error("Compression timeout"));
+      }, 15000);
+
       reader.readAsDataURL(file);
       reader.onload = (event) => {
         const img = new Image();
@@ -887,18 +896,40 @@ const AdminDashboard = ({
           ctx?.drawImage(img, 0, 0, width, height);
 
           canvas.toBlob((blob) => {
+            clearTimeout(timeout);
             if (blob) resolve(blob);
             else reject(new Error('Canvas toBlob failed'));
           }, 'image/jpeg', quality);
         };
+        img.onerror = () => {
+          clearTimeout(timeout);
+          reject(new Error("Image load failed for compression"));
+        };
       };
-      reader.onerror = (error) => reject(error);
+      reader.onerror = (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      };
     });
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
     if (!auth.currentUser) throw new Error("Not authenticated");
     
+    // Optimization: If the file is large (> 1MB), compress it locally BEFORE uploading to Storage.
+    // This makes the upload much faster and more reliable for high-res images.
+    let dataToUpload: Blob | File = file;
+    if (file.size > 1024 * 1024) { // > 1MB
+      try {
+        console.log(`Compressing large image (${(file.size / 1024 / 1024).toFixed(2)}MB) before upload...`);
+        dataToUpload = await compressImage(file, 2000, 0.85);
+        console.log(`Compressed to ${(dataToUpload.size / 1024 / 1024).toFixed(2)}MB`);
+      } catch (compressErr) {
+        console.warn("Compression failed, uploading original:", compressErr);
+        dataToUpload = file;
+      }
+    }
+
     const storageRef = ref(storage, `projects/${auth.currentUser.uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`);
     
     // Use a Promise to handle timeout and cancellation
@@ -906,11 +937,11 @@ const AdminDashboard = ({
       return new Promise((resolve, reject) => {
         const uploadTask = uploadBytesResumable(storageRef, data);
         
-        // Set a 5-minute timeout to allow even the largest high-res images to upload fully
+        // Set a 2-minute timeout (down from 5) for better UX
         const timer = setTimeout(() => {
           uploadTask.cancel();
           reject(new Error("Storage timeout"));
-        }, 300000);
+        }, 120000);
 
         uploadTask.on('state_changed', 
           null, 
@@ -928,15 +959,12 @@ const AdminDashboard = ({
     };
 
     try {
-      // Try uploading the ORIGINAL file first for maximum quality and "correct resolution"
-      return await uploadWithTimeout(file);
+      return await uploadWithTimeout(dataToUpload);
     } catch (error: any) {
-      // Log as warning, not error, to avoid alarming the user
-      console.warn("Storage upload slow or failed, using Base64 fallback for speed:", error.message);
+      console.warn("Storage upload failed or timed out, using Base64 fallback:", error.message);
       
       // Fallback to Base64 with compression ONLY if Storage fails
       try {
-        // We target a higher resolution for fallback while staying under Firestore's 1MB limit
         let quality = 0.7;
         let maxWidth = 1500;
         let base64 = "";
@@ -944,7 +972,6 @@ const AdminDashboard = ({
         const smallBlob = await compressImage(file, maxWidth, quality);
         base64 = await fileToBase64(smallBlob);
         
-        // If still too large for Firestore (1MB limit), try a more aggressive compression
         if (base64.length > 900000) {
           const mediumBlob = await compressImage(file, 1000, 0.5);
           base64 = await fileToBase64(mediumBlob);
@@ -963,13 +990,18 @@ const AdminDashboard = ({
       const file = e.target.files[0];
       const localUrl = URL.createObjectURL(file);
       setProjCover(localUrl);
+      projCoverRef.current = localUrl;
       
       const uploadPromise = handleImageUpload(file).then(url => {
         setProjCover(url);
-        pendingUploads.current.delete(localUrl);
+        projCoverRef.current = url;
+        pendingUploads.current.delete('projCover');
         return url;
+      }).catch(err => {
+        pendingUploads.current.delete('projCover');
+        throw err;
       });
-      pendingUploads.current.set(localUrl, uploadPromise);
+      pendingUploads.current.set('projCover', uploadPromise);
     }
   };
 
@@ -978,13 +1010,18 @@ const AdminDashboard = ({
       const file = e.target.files[0];
       const localUrl = URL.createObjectURL(file);
       setCatCover(localUrl);
+      catCoverRef.current = localUrl;
       
       const uploadPromise = handleImageUpload(file).then(url => {
         setCatCover(url);
-        pendingUploads.current.delete(localUrl);
+        catCoverRef.current = url;
+        pendingUploads.current.delete('catCover');
         return url;
+      }).catch(err => {
+        pendingUploads.current.delete('catCover');
+        throw err;
       });
-      pendingUploads.current.set(localUrl, uploadPromise);
+      pendingUploads.current.set('catCover', uploadPromise);
     }
   };
 
@@ -993,11 +1030,16 @@ const AdminDashboard = ({
       Array.from(e.target.files).forEach(file => {
         const localUrl = URL.createObjectURL(file);
         setProjImages(prev => [...prev, localUrl]);
+        projImagesRef.current = [...projImagesRef.current, localUrl];
         
         const uploadPromise = handleImageUpload(file).then(url => {
           setProjImages(prev => prev.map(u => u === localUrl ? url : u));
+          projImagesRef.current = projImagesRef.current.map(u => u === localUrl ? url : u);
           pendingUploads.current.delete(localUrl);
           return url;
+        }).catch(err => {
+          pendingUploads.current.delete(localUrl);
+          throw err;
         });
         pendingUploads.current.set(localUrl, uploadPromise);
       });
@@ -1005,8 +1047,28 @@ const AdminDashboard = ({
   };
 
   const handleSetCover = (dataUrl: string) => {
-    if (!projCover) {
-      setProjCover(dataUrl);
+    setProjCover(dataUrl);
+    projCoverRef.current = dataUrl;
+    
+    // If it's a data URL (from canvas), upload it to Storage so we don't save huge Base64 to Firestore
+    if (dataUrl.startsWith('data:')) {
+      try {
+        const blob = dataUrlToBlob(dataUrl);
+        const file = new File([blob], "canvas_cover.jpg", { type: "image/jpeg" });
+        
+        const uploadPromise = handleImageUpload(file).then(url => {
+          setProjCover(url);
+          projCoverRef.current = url;
+          pendingUploads.current.delete(dataUrl);
+          return url;
+        }).catch(err => {
+          pendingUploads.current.delete(dataUrl);
+          throw err;
+        });
+        pendingUploads.current.set(dataUrl, uploadPromise);
+      } catch (err) {
+        console.error("Failed to upload canvas cover:", err);
+      }
     }
   };
 
@@ -1041,9 +1103,16 @@ const AdminDashboard = ({
         };
 
         const uploadPromise = handleImageUpload(file).then(url => {
-          setCanvasItems(prev => prev.map(item => item.id === tempId ? { ...item, src: url } : item));
+          setCanvasItems(prev => {
+            const next = prev.map(item => item.id === tempId ? { ...item, src: url } : item);
+            canvasItemsRef.current = next;
+            return next;
+          });
           pendingUploads.current.delete(tempId);
           return url;
+        }).catch(err => {
+          pendingUploads.current.delete(tempId);
+          throw err;
         });
         pendingUploads.current.set(tempId, uploadPromise);
       });
@@ -1053,24 +1122,35 @@ const AdminDashboard = ({
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    setSaveError(null);
     try {
       // Wait for any ongoing uploads
       if (pendingUploads.current.size > 0) {
-        await Promise.all(Array.from(pendingUploads.current.values()));
-        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log(`Waiting for ${pendingUploads.current.size} category uploads...`);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Upload timed out. Please try again.")), 180000)
+        );
+        await Promise.race([
+          Promise.all(Array.from(pendingUploads.current.values())),
+          timeoutPromise
+        ]);
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
+
+      const finalCatCover = catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current;
 
       await addDoc(collection(db, 'categories'), {
         name: catName,
         slug: catName.toLowerCase().replace(/\s+/g, '-'),
         order: categories.length,
-        coverImage: catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current
+        coverImage: finalCatCover
       });
       setCatName('');
       setCatCover('');
       setIsAddingCategory(false);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'categories');
+    } catch (err: any) {
+      console.error("Error adding category:", err);
+      setSaveError(err.message || "Failed to add category.");
     } finally {
       setIsSaving(false);
     }
@@ -1087,23 +1167,34 @@ const AdminDashboard = ({
     e.preventDefault();
     if (!editingCategory) return;
     setIsSaving(true);
+    setSaveError(null);
     try {
       // Wait for any ongoing uploads
       if (pendingUploads.current.size > 0) {
-        await Promise.all(Array.from(pendingUploads.current.values()));
-        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log(`Waiting for ${pendingUploads.current.size} category update uploads...`);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Upload timed out. Please try again.")), 180000)
+        );
+        await Promise.race([
+          Promise.all(Array.from(pendingUploads.current.values())),
+          timeoutPromise
+        ]);
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
+
+      const finalCatCover = catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current;
 
       await updateDoc(doc(db, 'categories', editingCategory.id), {
         name: catName,
         slug: catName.toLowerCase().replace(/\s+/g, '-'),
-        coverImage: catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current
+        coverImage: finalCatCover
       });
       setCatName('');
       setCatCover('');
       setEditingCategory(null);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'categories');
+    } catch (err: any) {
+      console.error("Error updating category:", err);
+      setSaveError(err.message || "Failed to update category.");
     } finally {
       setIsSaving(false);
     }
@@ -1121,17 +1212,33 @@ const AdminDashboard = ({
     e.preventDefault();
     setIsSaving(true);
     setIsSaved(false);
+    setSaveError(null);
 
     try {
       // Wait for any ongoing uploads and get the final URLs
       if (pendingUploads.current.size > 0) {
-        await Promise.all(Array.from(pendingUploads.current.values()));
+        console.log(`Waiting for ${pendingUploads.current.size} uploads...`);
+        // Use a timeout to prevent hanging forever
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Image upload timed out. Please try again.")), 180000)
+        );
+        
+        await Promise.race([
+          Promise.all(Array.from(pendingUploads.current.values())),
+          timeoutPromise
+        ]);
+        
         // Give React a moment to process the state updates from the resolved promises
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       // Final check to ensure no blob URLs are saved
       const finalProjCover = projCoverRef.current.startsWith('blob:') ? '' : projCoverRef.current;
+      
+      if (!finalProjCover && projCoverRef.current.startsWith('blob:')) {
+        throw new Error("Cover image failed to upload. Please try re-uploading the cover.");
+      }
+
       const finalProjImages = projImagesRef.current.filter(url => !url.startsWith('blob:'));
       const finalCanvasItems = canvasItemsRef.current.map(item => ({
         ...item,
@@ -1164,9 +1271,10 @@ const AdminDashboard = ({
         setIsAddingProject(false);
         setEditingProject(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving project:", err);
-      handleFirestoreError(err, OperationType.WRITE, 'projects');
+      setSaveError(err.message || "An error occurred while saving the project.");
+      // Don't call handleFirestoreError here as we want to show the error in our own UI
     } finally {
       setIsSaving(false);
     }
@@ -1186,6 +1294,7 @@ const AdminDashboard = ({
     setCanvasBgColor('#1a1a1a');
     setEditingProject(null);
     setIsAddingProject(false);
+    setSaveError(null);
     pendingUploads.current.clear();
   };
 
@@ -1232,25 +1341,25 @@ const AdminDashboard = ({
 
         <div className="flex gap-4 mb-8">
           <button 
-            onClick={() => setActiveTab('projects')}
+            onClick={() => { setActiveTab('projects'); setSaveError(null); }}
             className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'projects' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
           >
             Manage Projects
           </button>
           <button 
-            onClick={() => setActiveTab('categories')}
+            onClick={() => { setActiveTab('categories'); setSaveError(null); }}
             className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'categories' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
           >
             Manage Folders
           </button>
           <button 
-            onClick={() => setActiveTab('messages')}
+            onClick={() => { setActiveTab('messages'); setSaveError(null); }}
             className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'messages' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
           >
             Messages ({messages.length})
           </button>
           <button 
-            onClick={() => setActiveTab('notes')}
+            onClick={() => { setActiveTab('notes'); setSaveError(null); }}
             className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'notes' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
           >
             Style Notes
@@ -1339,6 +1448,12 @@ const AdminDashboard = ({
 
             {(isAddingCategory || editingCategory) && (
               <form onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory} className="glass p-6 rounded-3xl flex flex-col gap-4">
+                {saveError && (
+                  <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    {saveError}
+                  </div>
+                )}
                 <div className="flex gap-4 items-end">
                   <div className="flex-1 space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{editingCategory ? 'Edit Folder Name' : 'Folder Name'}</label>
@@ -1567,6 +1682,12 @@ const AdminDashboard = ({
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-white/10">
                   <div className="flex-1 flex flex-col gap-1">
+                    {saveError && (
+                      <div className="mb-2 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        {saveError}
+                      </div>
+                    )}
                     <button 
                       type="submit" 
                       disabled={isSaving} 
