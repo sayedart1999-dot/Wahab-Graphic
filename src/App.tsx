@@ -184,7 +184,7 @@ const SERVICES: Service[] = [
 const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: { 
   item: CanvasItem, 
   isSelected: boolean, 
-  onSelect: () => void, 
+  onSelect: (e: any) => void, 
   onChange: (newItem: CanvasItem) => void,
   readOnly?: boolean
 }) => {
@@ -291,7 +291,7 @@ const CanvasDesignEditor = ({
   onSetCover?: (dataUrl: string) => void,
   onClear?: () => void
 }) => {
-  const [selectedId, selectShape] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const stageRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -316,11 +316,14 @@ const CanvasDesignEditor = ({
   const trRef = React.useRef<any>(null);
 
   useEffect(() => {
-    if (selectedId && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
+    if (selectedIds.length > 0 && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
       const attach = () => {
-        const node = stageRef.current?.findOne('#' + selectedId);
-        if (node) {
-          trRef.current.nodes([node]);
+        const nodes = selectedIds.map(id => stageRef.current?.findOne('#' + id)).filter(Boolean);
+        if (nodes.length > 0) {
+          trRef.current.nodes(nodes);
+          trRef.current.getLayer()?.batchDraw();
+        } else {
+          trRef.current.nodes([]);
           trRef.current.getLayer()?.batchDraw();
         }
       };
@@ -331,11 +334,11 @@ const CanvasDesignEditor = ({
       trRef.current.nodes([]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedId, items.length, isZoomMode, isPanMode]);
+  }, [selectedIds, items.length, isZoomMode, isPanMode]);
 
   const handleSetCover = () => {
     if (stageRef.current && onSetCover) {
-      selectShape(null);
+      setSelectedIds([]);
       // Wait for state update to remove transformer
       setTimeout(() => {
         // Reduced pixelRatio from 5 to 2 for better performance and smaller file sizes
@@ -361,11 +364,11 @@ const CanvasDesignEditor = ({
   }, [canvasHeight]);
 
   const handleDeleteSelected = React.useCallback(() => {
-    if (selectedId) {
-      setItems(prevItems => prevItems.filter(item => item.id !== selectedId));
-      selectShape(null);
+    if (selectedIds.length > 0) {
+      setItems(prevItems => prevItems.filter(item => !selectedIds.includes(item.id)));
+      setSelectedIds([]);
     }
-  }, [selectedId, setItems]);
+  }, [selectedIds, setItems]);
 
   // Keyboard listener for Undo/Redo, Arrow keys, and Zoom keys
   useEffect(() => {
@@ -390,15 +393,15 @@ const CanvasDesignEditor = ({
 
       if (isInput) return;
 
-      if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
+      if (selectedIds.length > 0 && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         handleDeleteSelected();
       }
 
-      if (selectedId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (selectedIds.length > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
         setItems(prevItems => prevItems.map(item => {
-          if (item.id === selectedId) {
+          if (selectedIds.includes(item.id)) {
             const step = e.shiftKey ? 10 : 1;
             let newX = item.x;
             let newY = item.y;
@@ -445,7 +448,7 @@ const CanvasDesignEditor = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [onUndo, onRedo, selectedId, setItems, handleDeleteSelected]);
+  }, [onUndo, onRedo, selectedIds, setItems, handleDeleteSelected]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -498,7 +501,7 @@ const CanvasDesignEditor = ({
 
     const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
     if (clickedOnEmpty) {
-      selectShape(null);
+      setSelectedIds([]);
     }
   };
 
@@ -591,13 +594,13 @@ const CanvasDesignEditor = ({
           >
             <Redo2 className="w-4 h-4" />
           </button>
-          {selectedId && (
+          {selectedIds.length > 0 && (
             <button 
               type="button"
               onClick={handleDeleteSelected}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2"
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2 font-sans"
             >
-              <Trash2 className="w-4 h-4" /> Remove
+              <Trash2 className="w-4 h-4" /> Remove ({selectedIds.length})
             </button>
           )}
         </div>
@@ -662,8 +665,19 @@ const CanvasDesignEditor = ({
                     <URLImage
                       key={item.id}
                       item={item}
-                      isSelected={item.id === selectedId}
-                      onSelect={() => selectShape(item.id)}
+                      isSelected={selectedIds.includes(item.id)}
+                      onSelect={(e: any) => {
+                        const isShift = e.evt.shiftKey;
+                        if (isShift) {
+                          setSelectedIds(prev => 
+                            prev.includes(item.id) 
+                              ? prev.filter(id => id !== item.id) 
+                              : [...prev, item.id]
+                          );
+                        } else {
+                          setSelectedIds([item.id]);
+                        }
+                      }}
                       onChange={(newItem: CanvasItem) => {
                         const newItems = items.slice();
                         newItems[i] = newItem;
@@ -675,7 +689,7 @@ const CanvasDesignEditor = ({
                 </Group>
                 <Transformer
                   ref={trRef}
-                  visible={!!selectedId && !isZoomMode && !isPanMode}
+                  visible={selectedIds.length > 0 && !isZoomMode && !isPanMode}
                   boundBoxFunc={(oldBox, newBox) => {
                     if (newBox.width < 5 || newBox.height < 5) {
                       return oldBox;
@@ -715,8 +729,19 @@ const CanvasDesignEditor = ({
                         key={item.id}
                         item={item}
                         originalIndex={originalIndex}
-                        isSelected={selectedId === item.id}
-                        onSelect={() => selectShape(item.id)}
+                        isSelected={selectedIds.includes(item.id)}
+                        onSelect={(e: any) => {
+                          const isShift = e.shiftKey;
+                          if (isShift) {
+                            setSelectedIds(prev => 
+                              prev.includes(item.id) 
+                                ? prev.filter(id => id !== item.id) 
+                                : [...prev, item.id]
+                            );
+                          } else {
+                            setSelectedIds([item.id]);
+                          }
+                        }}
                         onMoveUp={() => moveLayer(item.id, 'up')}
                         onMoveDown={() => moveLayer(item.id, 'down')}
                         itemsLength={items.length}
@@ -922,7 +947,8 @@ const AdminDashboard = ({
     if (file.size > 1024 * 1024) { // > 1MB
       try {
         console.log(`Compressing large image (${(file.size / 1024 / 1024).toFixed(2)}MB) before upload...`);
-        dataToUpload = await compressImage(file, 2000, 0.85);
+        // Optimized: Reduced quality to 0.6 and maxWidth to 1600 for faster uploads on slow connections
+        dataToUpload = await compressImage(file, 1600, 0.6);
         console.log(`Compressed to ${(dataToUpload.size / 1024 / 1024).toFixed(2)}MB`);
       } catch (compressErr) {
         console.warn("Compression failed, uploading original:", compressErr);
@@ -937,14 +963,17 @@ const AdminDashboard = ({
       return new Promise((resolve, reject) => {
         const uploadTask = uploadBytesResumable(storageRef, data);
         
-        // Set a 2-minute timeout (down from 5) for better UX
+        // Reduced attempt timeout to 90s to trigger retries faster on stalled connections
         const timer = setTimeout(() => {
           uploadTask.cancel();
-          reject(new Error("Storage timeout"));
-        }, 120000);
+          reject(new Error("Storage per-attempt timeout (90s exceeded)"));
+        }, 90000);
 
         uploadTask.on('state_changed', 
-          null, 
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            if (progress > 0) console.log(`Upload progress: ${progress.toFixed(0)}%`);
+          }, 
           (error) => {
             clearTimeout(timer);
             reject(error);
@@ -958,31 +987,26 @@ const AdminDashboard = ({
       });
     };
 
-    try {
-      return await uploadWithTimeout(dataToUpload);
-    } catch (error: any) {
-      console.warn("Storage upload failed or timed out, using Base64 fallback:", error.message);
-      
-      // Fallback to Base64 with compression ONLY if Storage fails
+    let attempts = 0;
+    const maxAttempts = 2;
+
+    while (attempts < maxAttempts) {
       try {
-        let quality = 0.7;
-        let maxWidth = 1500;
-        let base64 = "";
+        return await uploadWithTimeout(dataToUpload);
+      } catch (error: any) {
+        attempts++;
+        console.error(`Upload attempt ${attempts} failed:`, error.message);
         
-        const smallBlob = await compressImage(file, maxWidth, quality);
-        base64 = await fileToBase64(smallBlob);
-        
-        if (base64.length > 900000) {
-          const mediumBlob = await compressImage(file, 1000, 0.5);
-          base64 = await fileToBase64(mediumBlob);
+        if (attempts >= maxAttempts) {
+          // Removed Base64 fallback to prevent Firestore document size limit errors (1MB limit).
+          throw new Error(`Upload failed after ${maxAttempts} attempts: ${error.message}. Please check your connection and try again.`);
         }
         
-        return base64;
-      } catch (fallbackError) {
-        console.error("Base64 fallback failed:", fallbackError);
-        throw error;
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
+    throw new Error("Critical upload failure");
   };
 
   const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1128,7 +1152,8 @@ const AdminDashboard = ({
       if (pendingUploads.current.size > 0) {
         console.log(`Waiting for ${pendingUploads.current.size} category uploads...`);
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Upload timed out. Please try again.")), 180000)
+          // Extended overall timeout to 10 minutes to allow for multiple retry cycles
+          setTimeout(() => reject(new Error("Image upload timed out. Please check your connection.")), 600000)
         );
         await Promise.race([
           Promise.all(Array.from(pendingUploads.current.values())),
@@ -1138,13 +1163,20 @@ const AdminDashboard = ({
       }
 
       const finalCatCover = catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current;
-
-      await addDoc(collection(db, 'categories'), {
+      const categoryData = {
         name: catName,
         slug: catName.toLowerCase().replace(/\s+/g, '-'),
         order: categories.length,
         coverImage: finalCatCover
-      });
+      };
+
+      // Size check
+      const sizeEstimate = JSON.stringify(categoryData).length;
+      if (sizeEstimate > 1000000) {
+        throw new Error("Folder data is too large. Please use a smaller cover image.");
+      }
+
+      await addDoc(collection(db, 'categories'), categoryData);
       setCatName('');
       setCatCover('');
       setIsAddingCategory(false);
@@ -1173,7 +1205,8 @@ const AdminDashboard = ({
       if (pendingUploads.current.size > 0) {
         console.log(`Waiting for ${pendingUploads.current.size} category update uploads...`);
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Upload timed out. Please try again.")), 180000)
+          // Extended overall timeout to 10 minutes to allow for multiple retry cycles
+          setTimeout(() => reject(new Error("Image upload timed out. Please check your connection.")), 600000)
         );
         await Promise.race([
           Promise.all(Array.from(pendingUploads.current.values())),
@@ -1183,12 +1216,19 @@ const AdminDashboard = ({
       }
 
       const finalCatCover = catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current;
-
-      await updateDoc(doc(db, 'categories', editingCategory.id), {
+      const categoryData = {
         name: catName,
         slug: catName.toLowerCase().replace(/\s+/g, '-'),
         coverImage: finalCatCover
-      });
+      };
+
+      // Size check
+      const sizeEstimate = JSON.stringify(categoryData).length;
+      if (sizeEstimate > 1000000) {
+        throw new Error("Folder data is too large. Please use a smaller cover image.");
+      }
+
+      await updateDoc(doc(db, 'categories', editingCategory.id), categoryData);
       setCatName('');
       setCatCover('');
       setEditingCategory(null);
@@ -1218,9 +1258,9 @@ const AdminDashboard = ({
       // Wait for any ongoing uploads and get the final URLs
       if (pendingUploads.current.size > 0) {
         console.log(`Waiting for ${pendingUploads.current.size} uploads...`);
-        // Use a timeout to prevent hanging forever
+        // Extended overall timeout to 10 minutes to allow for multiple retry cycles across multiple and large images
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Image upload timed out. Please try again.")), 180000)
+          setTimeout(() => reject(new Error("Image upload timed out. Please check your connection and try again.")), 600000)
         );
         
         await Promise.race([
@@ -1257,6 +1297,12 @@ const AdminDashboard = ({
         canvasHeight: canvasHeight,
         createdAt: editingProject?.createdAt || serverTimestamp()
       };
+
+      // Size check before writing to Firestore (1MB limit)
+      const sizeEstimate = JSON.stringify(projectData).length;
+      if (sizeEstimate > 1000000) {
+        throw new Error("Project data is too large (over 1MB). This usually happens if images failed to upload and are being saved as Base64. Please re-upload your images or simplify the canvas.");
+      }
 
       if (editingProject) {
         await updateDoc(doc(db, 'projects', editingProject.id), projectData);
@@ -3110,7 +3156,7 @@ const Contact = () => {
   );
 };
 
-const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: () => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
+const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: (e: any) => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
   const style = {
     transform: CSS.Transform.toString(transform),
