@@ -3,7 +3,6 @@ import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'motion/react';
-import { GlassScene } from './components/GlassScene';
 import { 
   Palette, 
   Layers, 
@@ -3327,8 +3326,6 @@ export default function App() {
 
   return (
     <div className="relative">
-      <CustomCursor />
-      <GlassScene />
       <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} />
       <Hero />
       <About />

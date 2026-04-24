@@ -1,29 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Dancing+Script:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
+  --font-display: "Inter", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-script: "Dancing Script", cursive;
 
-  --color-orange-accent: #ff6a00;
-  --color-blue-accent: #00a3ff;
-  --color-dark-bg: #0a0502;
-  --color-deep-brown: #2a1810;
+  --color-orange-accent: #ff7a1a;
+  --color-blue-accent: #38bdf8;
+  --color-dark-bg: #0f1115;
+  --color-deep-brown: #161a22;
 }
 
 @layer base {
   body {
-    @apply bg-dark-bg text-white font-sans selection:bg-orange-accent selection:text-white;
-    background: radial-gradient(circle at 50% 40%, var(--color-deep-brown) 0%, var(--color-dark-bg) 100%);
+    @apply bg-dark-bg text-gray-100 font-sans selection:bg-orange-accent selection:text-black;
+    background: var(--color-dark-bg);
     min-height: 100vh;
-    background-attachment: fixed;
-    cursor: none;
-  }
-
-  a, button, [role="button"], input, textarea, select {
-    cursor: none !important;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -33,27 +26,30 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    @apply border shadow-sm;
+    background: var(--color-deep-brown);
+    border-color: rgba(148, 163, 184, 0.18);
   }
   
   .orange-glow {
-    text-shadow: 0 0 30px rgba(255, 106, 0, 0.6);
+    text-shadow: none;
   }
 
   .blue-glow {
-    text-shadow: 0 0 30px rgba(0, 163, 255, 0.6);
+    text-shadow: none;
   }
 
   .orange-border-glow {
-    box-shadow: 0 0 25px rgba(255, 106, 0, 0.3);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
   }
 
   .blue-border-glow {
-    box-shadow: 0 0 25px rgba(0, 163, 255, 0.3);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60;
+    @apply text-gray-100;
+    background: none;
   }
 }
 
@@ -63,11 +59,10 @@
 
 /* Orbit animation for floating icons */
 @keyframes orbit {
-  from { transform: rotate(0deg) translateX(100px) rotate(0deg); }
-  to   { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+  from { transform: none; }
+  to   { transform: none; }
 }
 
 .animate-orbit {
-  animation: orbit 20s linear infinite;
+  animation: none;
 }
-
