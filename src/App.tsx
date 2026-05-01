@@ -998,7 +998,11 @@ const AdminDashboard = ({
     try {
       let finalCatCover = catCover;
       if (catCover.startsWith('blob:') || catCover.startsWith('data:')) {
-        finalCatCover = await uploadToCloudinary(catCover);
+        try {
+          finalCatCover = await uploadToCloudinary(catCover);
+        } catch (uploadErr: any) {
+          throw new Error(`Upload failed: ${uploadErr.message}`);
+        }
       }
 
       const { error } = await supabase
@@ -1017,7 +1021,7 @@ const AdminDashboard = ({
       setIsAddingCategory(false);
     } catch (err: any) {
       console.error("Error adding category:", err);
-      setSaveError(err.message || "Failed to add category.");
+      setSaveError(err.message || "Failed to add folder.");
     } finally {
       setIsSaving(false);
     }
@@ -1038,7 +1042,11 @@ const AdminDashboard = ({
     try {
       let finalCatCover = catCover;
       if (catCover.startsWith('blob:') || catCover.startsWith('data:')) {
-        finalCatCover = await uploadToCloudinary(catCover);
+        try {
+          finalCatCover = await uploadToCloudinary(catCover);
+        } catch (uploadErr: any) {
+          throw new Error(`Upload failed: ${uploadErr.message}`);
+        }
       }
 
       const { error } = await supabase
@@ -1057,7 +1065,7 @@ const AdminDashboard = ({
       setEditingCategory(null);
     } catch (err: any) {
       console.error("Error updating category:", err);
-      setSaveError(err.message || "Failed to update category.");
+      setSaveError(err.message || "Failed to update folder.");
     } finally {
       setIsSaving(false);
     }

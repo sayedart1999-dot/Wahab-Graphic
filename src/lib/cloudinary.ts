@@ -10,7 +10,15 @@ export const uploadToCloudinary = async (file: File | string): Promise<string> =
   }
 
   const formData = new FormData();
-  formData.append('file', file);
+  
+  if (typeof file === 'string' && file.startsWith('blob:')) {
+    const response = await fetch(file);
+    const blob = await response.blob();
+    formData.append('file', blob);
+  } else {
+    formData.append('file', file);
+  }
+  
   formData.append('upload_preset', uploadPreset);
 
   const response = await fetch(
@@ -22,8 +30,10 @@ export const uploadToCloudinary = async (file: File | string): Promise<string> =
   );
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Upload failed');
+    const errorData = await response.json().catch(() => ({}));
+    console.error('Cloudinary Upload Error:', errorData);
+    const errorMessage = errorData.error?.message || errorData.message || 'Upload failed';
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();
