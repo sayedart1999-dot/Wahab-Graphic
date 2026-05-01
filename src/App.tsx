@@ -49,32 +49,8 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
-import { 
-  db, 
-  auth, 
-  storage,
-  signInWithGoogle, 
-  logOut, 
-  handleFirestoreError, 
-  OperationType 
-} from './firebase';
-import { 
-  collection, 
-  onSnapshot, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  query, 
-  orderBy, 
-  serverTimestamp,
-  Timestamp,
-  getDocs,
-  where
-} from 'firebase/firestore';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, uploadBytesResumable, getDownloadURL, uploadBytes, uploadString } from 'firebase/storage';
-
+import { supabase } from './lib/supabase';
+import { uploadToCloudinary, uploadMultipleToCloudinary } from './lib/cloudinary';
 import { 
   Stage, 
   Layer, 
@@ -110,7 +86,7 @@ interface Project {
   images: string[];
   description: string;
   status: 'draft' | 'published';
-  createdAt: Timestamp;
+  createdAt: string; // Changed from Timestamp for Supabase
   canvasData?: CanvasItem[];
   canvasBackgroundColor?: string;
   canvasHeight?: number;
@@ -184,7 +160,7 @@ const SERVICES: Service[] = [
 const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: { 
   item: CanvasItem, 
   isSelected: boolean, 
-  onSelect: (e: any) => void, 
+  onSelect: () => void, 
   onChange: (newItem: CanvasItem) => void,
   readOnly?: boolean
 }) => {
@@ -291,7 +267,7 @@ const CanvasDesignEditor = ({
   onSetCover?: (dataUrl: string) => void,
   onClear?: () => void
 }) => {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedId, selectShape] = useState<string | null>(null);
   const stageRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -316,14 +292,11 @@ const CanvasDesignEditor = ({
   const trRef = React.useRef<any>(null);
 
   useEffect(() => {
-    if (selectedIds.length > 0 && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
+    if (selectedId && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
       const attach = () => {
-        const nodes = selectedIds.map(id => stageRef.current?.findOne('#' + id)).filter(Boolean);
-        if (nodes.length > 0) {
-          trRef.current.nodes(nodes);
-          trRef.current.getLayer()?.batchDraw();
-        } else {
-          trRef.current.nodes([]);
+        const node = stageRef.current?.findOne('#' + selectedId);
+        if (node) {
+          trRef.current.nodes([node]);
           trRef.current.getLayer()?.batchDraw();
         }
       };
@@ -334,11 +307,11 @@ const CanvasDesignEditor = ({
       trRef.current.nodes([]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedIds, items.length, isZoomMode, isPanMode]);
+  }, [selectedId, items.length, isZoomMode, isPanMode]);
 
   const handleSetCover = () => {
     if (stageRef.current && onSetCover) {
-      setSelectedIds([]);
+      selectShape(null);
       // Wait for state update to remove transformer
       setTimeout(() => {
         // Reduced pixelRatio from 5 to 2 for better performance and smaller file sizes
@@ -364,11 +337,11 @@ const CanvasDesignEditor = ({
   }, [canvasHeight]);
 
   const handleDeleteSelected = React.useCallback(() => {
-    if (selectedIds.length > 0) {
-      setItems(prevItems => prevItems.filter(item => !selectedIds.includes(item.id)));
-      setSelectedIds([]);
+    if (selectedId) {
+      setItems(prevItems => prevItems.filter(item => item.id !== selectedId));
+      selectShape(null);
     }
-  }, [selectedIds, setItems]);
+  }, [selectedId, setItems]);
 
   // Keyboard listener for Undo/Redo, Arrow keys, and Zoom keys
   useEffect(() => {
@@ -393,15 +366,15 @@ const CanvasDesignEditor = ({
 
       if (isInput) return;
 
-      if (selectedIds.length > 0 && (e.key === 'Delete' || e.key === 'Backspace')) {
+      if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         handleDeleteSelected();
       }
 
-      if (selectedIds.length > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (selectedId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
         setItems(prevItems => prevItems.map(item => {
-          if (selectedIds.includes(item.id)) {
+          if (item.id === selectedId) {
             const step = e.shiftKey ? 10 : 1;
             let newX = item.x;
             let newY = item.y;
@@ -448,7 +421,7 @@ const CanvasDesignEditor = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [onUndo, onRedo, selectedIds, setItems, handleDeleteSelected]);
+  }, [onUndo, onRedo, selectedId, setItems, handleDeleteSelected]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -501,7 +474,7 @@ const CanvasDesignEditor = ({
 
     const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
     if (clickedOnEmpty) {
-      setSelectedIds([]);
+      selectShape(null);
     }
   };
 
@@ -594,13 +567,13 @@ const CanvasDesignEditor = ({
           >
             <Redo2 className="w-4 h-4" />
           </button>
-          {selectedIds.length > 0 && (
+          {selectedId && (
             <button 
               type="button"
               onClick={handleDeleteSelected}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2 font-sans"
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2"
             >
-              <Trash2 className="w-4 h-4" /> Remove ({selectedIds.length})
+              <Trash2 className="w-4 h-4" /> Remove
             </button>
           )}
         </div>
@@ -665,19 +638,8 @@ const CanvasDesignEditor = ({
                     <URLImage
                       key={item.id}
                       item={item}
-                      isSelected={selectedIds.includes(item.id)}
-                      onSelect={(e: any) => {
-                        const isShift = e.evt.shiftKey;
-                        if (isShift) {
-                          setSelectedIds(prev => 
-                            prev.includes(item.id) 
-                              ? prev.filter(id => id !== item.id) 
-                              : [...prev, item.id]
-                          );
-                        } else {
-                          setSelectedIds([item.id]);
-                        }
-                      }}
+                      isSelected={item.id === selectedId}
+                      onSelect={() => selectShape(item.id)}
                       onChange={(newItem: CanvasItem) => {
                         const newItems = items.slice();
                         newItems[i] = newItem;
@@ -689,7 +651,7 @@ const CanvasDesignEditor = ({
                 </Group>
                 <Transformer
                   ref={trRef}
-                  visible={selectedIds.length > 0 && !isZoomMode && !isPanMode}
+                  visible={!!selectedId && !isZoomMode && !isPanMode}
                   boundBoxFunc={(oldBox, newBox) => {
                     if (newBox.width < 5 || newBox.height < 5) {
                       return oldBox;
@@ -729,19 +691,8 @@ const CanvasDesignEditor = ({
                         key={item.id}
                         item={item}
                         originalIndex={originalIndex}
-                        isSelected={selectedIds.includes(item.id)}
-                        onSelect={(e: any) => {
-                          const isShift = e.shiftKey;
-                          if (isShift) {
-                            setSelectedIds(prev => 
-                              prev.includes(item.id) 
-                                ? prev.filter(id => id !== item.id) 
-                                : [...prev, item.id]
-                            );
-                          } else {
-                            setSelectedIds([item.id]);
-                          }
-                        }}
+                        isSelected={selectedId === item.id}
+                        onSelect={() => selectShape(item.id)}
                         onMoveUp={() => moveLayer(item.id, 'up')}
                         onMoveDown={() => moveLayer(item.id, 'down')}
                         itemsLength={items.length}
@@ -939,74 +890,7 @@ const AdminDashboard = ({
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    if (!auth.currentUser) throw new Error("Not authenticated");
-    
-    // Optimization: If the file is large (> 1MB), compress it locally BEFORE uploading to Storage.
-    // This makes the upload much faster and more reliable for high-res images.
-    let dataToUpload: Blob | File = file;
-    if (file.size > 1024 * 1024) { // > 1MB
-      try {
-        console.log(`Compressing large image (${(file.size / 1024 / 1024).toFixed(2)}MB) before upload...`);
-        // Optimized: Reduced quality to 0.6 and maxWidth to 1600 for faster uploads on slow connections
-        dataToUpload = await compressImage(file, 1600, 0.6);
-        console.log(`Compressed to ${(dataToUpload.size / 1024 / 1024).toFixed(2)}MB`);
-      } catch (compressErr) {
-        console.warn("Compression failed, uploading original:", compressErr);
-        dataToUpload = file;
-      }
-    }
-
-    const storageRef = ref(storage, `projects/${auth.currentUser.uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`);
-    
-    // Use a Promise to handle timeout and cancellation
-    const uploadWithTimeout = (data: Blob | File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const uploadTask = uploadBytesResumable(storageRef, data);
-        
-        // Reduced attempt timeout to 90s to trigger retries faster on stalled connections
-        const timer = setTimeout(() => {
-          uploadTask.cancel();
-          reject(new Error("Storage per-attempt timeout (90s exceeded)"));
-        }, 90000);
-
-        uploadTask.on('state_changed', 
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            if (progress > 0) console.log(`Upload progress: ${progress.toFixed(0)}%`);
-          }, 
-          (error) => {
-            clearTimeout(timer);
-            reject(error);
-          }, 
-          async () => {
-            clearTimeout(timer);
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(downloadURL);
-          }
-        );
-      });
-    };
-
-    let attempts = 0;
-    const maxAttempts = 2;
-
-    while (attempts < maxAttempts) {
-      try {
-        return await uploadWithTimeout(dataToUpload);
-      } catch (error: any) {
-        attempts++;
-        console.error(`Upload attempt ${attempts} failed:`, error.message);
-        
-        if (attempts >= maxAttempts) {
-          // Removed Base64 fallback to prevent Firestore document size limit errors (1MB limit).
-          throw new Error(`Upload failed after ${maxAttempts} attempts: ${error.message}. Please check your connection and try again.`);
-        }
-        
-        // Wait a bit before retrying
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
-    throw new Error("Critical upload failure");
+    return await uploadToCloudinary(file);
   };
 
   const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1015,17 +899,6 @@ const AdminDashboard = ({
       const localUrl = URL.createObjectURL(file);
       setProjCover(localUrl);
       projCoverRef.current = localUrl;
-      
-      const uploadPromise = handleImageUpload(file).then(url => {
-        setProjCover(url);
-        projCoverRef.current = url;
-        pendingUploads.current.delete('projCover');
-        return url;
-      }).catch(err => {
-        pendingUploads.current.delete('projCover');
-        throw err;
-      });
-      pendingUploads.current.set('projCover', uploadPromise);
     }
   };
 
@@ -1035,17 +908,6 @@ const AdminDashboard = ({
       const localUrl = URL.createObjectURL(file);
       setCatCover(localUrl);
       catCoverRef.current = localUrl;
-      
-      const uploadPromise = handleImageUpload(file).then(url => {
-        setCatCover(url);
-        catCoverRef.current = url;
-        pendingUploads.current.delete('catCover');
-        return url;
-      }).catch(err => {
-        pendingUploads.current.delete('catCover');
-        throw err;
-      });
-      pendingUploads.current.set('catCover', uploadPromise);
     }
   };
 
@@ -1125,20 +987,6 @@ const AdminDashboard = ({
           };
           updateCanvasItems(prev => [...prev, newItem]);
         };
-
-        const uploadPromise = handleImageUpload(file).then(url => {
-          setCanvasItems(prev => {
-            const next = prev.map(item => item.id === tempId ? { ...item, src: url } : item);
-            canvasItemsRef.current = next;
-            return next;
-          });
-          pendingUploads.current.delete(tempId);
-          return url;
-        }).catch(err => {
-          pendingUploads.current.delete(tempId);
-          throw err;
-        });
-        pendingUploads.current.set(tempId, uploadPromise);
       });
     }
   };
@@ -1148,35 +996,22 @@ const AdminDashboard = ({
     setIsSaving(true);
     setSaveError(null);
     try {
-      // Wait for any ongoing uploads
-      if (pendingUploads.current.size > 0) {
-        console.log(`Waiting for ${pendingUploads.current.size} category uploads...`);
-        const timeoutPromise = new Promise((_, reject) => 
-          // Extended overall timeout to 10 minutes to allow for multiple retry cycles
-          setTimeout(() => reject(new Error("Image upload timed out. Please check your connection.")), 600000)
-        );
-        await Promise.race([
-          Promise.all(Array.from(pendingUploads.current.values())),
-          timeoutPromise
-        ]);
-        await new Promise(resolve => setTimeout(resolve, 200));
+      let finalCatCover = catCover;
+      if (catCover.startsWith('blob:') || catCover.startsWith('data:')) {
+        finalCatCover = await uploadToCloudinary(catCover);
       }
 
-      const finalCatCover = catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current;
-      const categoryData = {
-        name: catName,
-        slug: catName.toLowerCase().replace(/\s+/g, '-'),
-        order: categories.length,
-        coverImage: finalCatCover
-      };
+      const { error } = await supabase
+        .from('categories')
+        .insert([{
+          name: catName,
+          slug: catName.toLowerCase().replace(/\s+/g, '-'),
+          order: categories.length,
+          cover_image: finalCatCover
+        }]);
 
-      // Size check
-      const sizeEstimate = JSON.stringify(categoryData).length;
-      if (sizeEstimate > 1000000) {
-        throw new Error("Folder data is too large. Please use a smaller cover image.");
-      }
+      if (error) throw error;
 
-      await addDoc(collection(db, 'categories'), categoryData);
       setCatName('');
       setCatCover('');
       setIsAddingCategory(false);
@@ -1192,7 +1027,7 @@ const AdminDashboard = ({
     setEditingCategory(cat);
     setCatName(cat.name);
     setCatCover(cat.coverImage || '');
-    setIsAddingCategory(false); // Close add form if open
+    setIsAddingCategory(false);
   };
 
   const handleUpdateCategory = async (e: React.FormEvent) => {
@@ -1201,34 +1036,22 @@ const AdminDashboard = ({
     setIsSaving(true);
     setSaveError(null);
     try {
-      // Wait for any ongoing uploads
-      if (pendingUploads.current.size > 0) {
-        console.log(`Waiting for ${pendingUploads.current.size} category update uploads...`);
-        const timeoutPromise = new Promise((_, reject) => 
-          // Extended overall timeout to 10 minutes to allow for multiple retry cycles
-          setTimeout(() => reject(new Error("Image upload timed out. Please check your connection.")), 600000)
-        );
-        await Promise.race([
-          Promise.all(Array.from(pendingUploads.current.values())),
-          timeoutPromise
-        ]);
-        await new Promise(resolve => setTimeout(resolve, 200));
+      let finalCatCover = catCover;
+      if (catCover.startsWith('blob:') || catCover.startsWith('data:')) {
+        finalCatCover = await uploadToCloudinary(catCover);
       }
 
-      const finalCatCover = catCoverRef.current.startsWith('blob:') ? '' : catCoverRef.current;
-      const categoryData = {
-        name: catName,
-        slug: catName.toLowerCase().replace(/\s+/g, '-'),
-        coverImage: finalCatCover
-      };
+      const { error } = await supabase
+        .from('categories')
+        .update({
+          name: catName,
+          slug: catName.toLowerCase().replace(/\s+/g, '-'),
+          cover_image: finalCatCover
+        })
+        .eq('id', editingCategory.id);
 
-      // Size check
-      const sizeEstimate = JSON.stringify(categoryData).length;
-      if (sizeEstimate > 1000000) {
-        throw new Error("Folder data is too large. Please use a smaller cover image.");
-      }
+      if (error) throw error;
 
-      await updateDoc(doc(db, 'categories', editingCategory.id), categoryData);
       setCatName('');
       setCatCover('');
       setEditingCategory(null);
@@ -1244,7 +1067,7 @@ const AdminDashboard = ({
     setDeleteConfirmation({ 
       type: 'category', 
       id, 
-      message: 'Are you sure you want to delete this category? All projects in it will remain but be uncategorized.' 
+      message: 'Are you sure you want to delete this category?' 
     });
   };
 
@@ -1255,64 +1078,56 @@ const AdminDashboard = ({
     setSaveError(null);
 
     try {
-      // Wait for any ongoing uploads and get the final URLs
-      if (pendingUploads.current.size > 0) {
-        console.log(`Waiting for ${pendingUploads.current.size} uploads...`);
-        // Extended overall timeout to 10 minutes to allow for multiple retry cycles across multiple and large images
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Image upload timed out. Please check your connection and try again.")), 600000)
-        );
-        
-        await Promise.race([
-          Promise.all(Array.from(pendingUploads.current.values())),
-          timeoutPromise
-        ]);
-        
-        // Give React a moment to process the state updates from the resolved promises
-        await new Promise(resolve => setTimeout(resolve, 200));
+      // 1. Upload Cover Image if it's new (blob/data URL)
+      let finalCover = projCover;
+      if (projCover.startsWith('blob:') || projCover.startsWith('data:')) {
+        console.log("Uploading cover image to Cloudinary...");
+        finalCover = await uploadToCloudinary(projCover);
       }
 
-      // Final check to ensure no blob URLs are saved
-      const finalProjCover = projCoverRef.current.startsWith('blob:') ? '' : projCoverRef.current;
-      
-      if (!finalProjCover && projCoverRef.current.startsWith('blob:')) {
-        throw new Error("Cover image failed to upload. Please try re-uploading the cover.");
-      }
+      // 2. Upload Canvas Images if they are blobs
+      const finalCanvasItems = await Promise.all(canvasItems.map(async (item) => {
+        if (item.src.startsWith('blob:') || item.src.startsWith('data:')) {
+          const uploadedUrl = await uploadToCloudinary(item.src);
+          return { ...item, src: uploadedUrl };
+        }
+        return item;
+      }));
 
-      const finalProjImages = projImagesRef.current.filter(url => !url.startsWith('blob:'));
-      const finalCanvasItems = canvasItemsRef.current.map(item => ({
-        ...item,
-        src: item.src.startsWith('blob:') ? '' : item.src
-      })).filter(item => item.src !== '');
-
+      // Create project data for Supabase
       const projectData = {
         name: projName,
-        categoryId: projCatId,
-        coverImage: finalProjCover,
-        images: finalProjImages,
+        category_id: projCatId,
+        cover_image: finalCover,
+        images: [], // Images are now mainly in canvasData
         description: projDesc,
         status: projStatus,
-        canvasData: finalCanvasItems,
-        canvasBackgroundColor: canvasBgColor,
-        canvasHeight: canvasHeight,
-        createdAt: editingProject?.createdAt || serverTimestamp()
+        canvas_data: finalCanvasItems,
+        canvas_background_color: canvasBgColor,
+        canvas_height: canvasHeight,
+        created_at: editingProject?.createdAt || new Date().toISOString()
       };
 
-      // Size check before writing to Firestore (1MB limit)
-      const sizeEstimate = JSON.stringify(projectData).length;
-      if (sizeEstimate > 1000000) {
-        throw new Error("Project data is too large (over 1MB). This usually happens if images failed to upload and are being saved as Base64. Please re-upload your images or simplify the canvas.");
-      }
-
       if (editingProject) {
-        await updateDoc(doc(db, 'projects', editingProject.id), projectData);
+        const { error } = await supabase
+          .from('portfolio_projects')
+          .update(projectData)
+          .eq('id', editingProject.id);
+        
+        if (error) throw error;
+        
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 3000);
         setIsAddingProject(false);
         setEditingProject(null);
         resetProjectForm();
       } else {
-        await addDoc(collection(db, 'projects'), projectData);
+        const { error } = await supabase
+          .from('portfolio_projects')
+          .insert([projectData]);
+        
+        if (error) throw error;
+
         resetProjectForm();
         setIsAddingProject(false);
         setEditingProject(null);
@@ -1320,7 +1135,6 @@ const AdminDashboard = ({
     } catch (err: any) {
       console.error("Error saving project:", err);
       setSaveError(err.message || "An error occurred while saving the project.");
-      // Don't call handleFirestoreError here as we want to show the error in our own UI
     } finally {
       setIsSaving(false);
     }
@@ -1356,15 +1170,20 @@ const AdminDashboard = ({
     if (!deleteConfirmation) return;
     const { type, id } = deleteConfirmation;
     try {
-      if (type === 'category') {
-        await deleteDoc(doc(db, 'categories', id));
-      } else if (type === 'project') {
-        await deleteDoc(doc(db, 'projects', id));
-      } else if (type === 'message') {
-        await deleteDoc(doc(db, 'messages', id));
-      }
+      let table = '';
+      if (type === 'category') table = 'categories';
+      else if (type === 'project') table = 'portfolio_projects';
+      else if (type === 'message') table = 'messages';
+
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, type === 'category' ? 'categories' : type === 'project' ? 'projects' : 'messages');
+      console.error("Error deleting item:", err);
+      alert("Failed to delete item.");
     } finally {
       setDeleteConfirmation(null);
     }
@@ -1764,7 +1583,7 @@ const AdminDashboard = ({
               {projects.map(proj => (
                 <div key={proj.id} className="glass rounded-3xl overflow-hidden group">
                   <div className="aspect-video relative">
-                    <img src={proj.coverImage} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="" />
+                    <img src={proj.coverImage || undefined} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="" />
                     <div className="absolute top-3 left-3 flex gap-2">
                       {proj.status === 'draft' ? (
                         <span className="px-2 py-1 bg-gray-900/80 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-md border border-white/10 backdrop-blur-md">Draft</span>
@@ -1936,7 +1755,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                 {project.canvasData.map((item, idx) => (
                   <img
                     key={item.id}
-                    src={item.src}
+                    src={item.src || undefined}
                     alt=""
                     referrerPolicy="no-referrer"
                     onClick={(e) => {
@@ -1968,7 +1787,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                     className="rounded-[2rem] overflow-hidden glass border-white/10 shadow-xl break-inside-avoid cursor-pointer group relative"
                     onClick={() => setSelectedImageIdx(idx)}
                   >
-                    <img src={img} referrerPolicy="no-referrer" className="w-full h-auto group-hover:scale-105 transition-transform duration-500" alt={`${project.name} - ${idx + 1}`} />
+                    <img src={img || undefined} referrerPolicy="no-referrer" className="w-full h-auto group-hover:scale-105 transition-transform duration-500" alt={`${project.name} - ${idx + 1}`} />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
@@ -2070,7 +1889,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       ) : (
                         <img 
                           key={project.images[selectedImageIdx]}
-                          src={project.images[selectedImageIdx]} 
+                          src={project.images[selectedImageIdx] || undefined} 
                           className="max-w-full max-h-full object-contain select-none shadow-2xl" 
                           alt={`${project.name} - Enlarge ${selectedImageIdx + 1}`} 
                           referrerPolicy="no-referrer"
@@ -2175,7 +1994,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                         ) : (
                           <img 
                             key={project.canvasData[selectedCanvasIdx].src}
-                            src={project.canvasData[selectedCanvasIdx].src} 
+                            src={project.canvasData[selectedCanvasIdx].src || undefined} 
                             className="max-w-full max-h-full object-contain select-none shadow-2xl" 
                             style={{ imageRendering: 'auto' }}
                             alt="Enlarged view" 
@@ -2804,7 +2623,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                         style={{ zIndex: 10 + i }}
                       >
                         <img
-                          src={p.coverImage}
+                          src={p.coverImage || undefined}
                           alt=""
                           className="w-full h-full object-cover rounded-lg shadow-inner"
                           style={{ imageRendering: 'auto' }}
@@ -2875,7 +2694,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                     onClick={() => setSelectedProject(project)}
                   >
                     <img 
-                      src={project.coverImage} 
+                      src={project.coverImage || undefined} 
                       alt={project.name} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       style={{ imageRendering: 'auto' }}
@@ -3021,18 +2840,23 @@ const Contact = () => {
   const [formData, setFormData] = useState({ fullName: '', email: '', subject: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'messages'), {
-        ...formData,
-        createdAt: serverTimestamp()
-      });
+      const { error } = await supabase
+        .from('messages')
+        .insert([{
+          ...formData,
+          created_at: new Date().toISOString()
+        }]);
+      
+      if (error) throw error;
+
       alert('Message sent successfully!');
       setFormData({ fullName: '', email: '', subject: '', message: '' });
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'messages');
+      console.error("Error sending message:", err);
       alert('Failed to send message. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -3098,7 +2922,7 @@ const Contact = () => {
             </div>
 
             <div className="p-10 lg:p-16">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleContactSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Full Name</label>
@@ -3156,7 +2980,7 @@ const Contact = () => {
   );
 };
 
-const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: (e: any) => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
+const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: () => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -3177,7 +3001,7 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
       }`}
     >
       <div className="w-10 h-10 bg-black/50 rounded overflow-hidden flex-shrink-0 border border-white/10 relative">
-        <img src={item.src} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="layer" />
+        <img src={item.src || undefined} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="layer" />
       </div>
       
       <div className="flex-1 min-w-0">
@@ -3214,7 +3038,7 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
 };
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -3223,105 +3047,163 @@ export default function App() {
 
   const adminEmail = "sayedart1999@gmail.com";
 
-  // Migration: Ensure all projects have a status
-  useEffect(() => {
-    if (isAdmin && projects.length > 0) {
-      const projectsToUpdate = projects.filter(p => !p.status);
-      if (projectsToUpdate.length > 0) {
-        console.log(`Migrating ${projectsToUpdate.length} projects to 'published' status...`);
-        projectsToUpdate.forEach(async (p) => {
-          try {
-            await updateDoc(doc(db, 'projects', p.id), { status: 'published' });
-          } catch (err) {
-            console.error(`Failed to migrate project ${p.id}:`, err);
-          }
-        });
+  const logOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
       }
-    }
-  }, [isAdmin, projects]);
+    });
+    if (error) console.error("Error signing in:", error);
+  };
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+    // Auth state management with Supabase
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
       setUser(u);
-      setIsAdmin(u?.email === adminEmail && u?.emailVerified);
+      setIsAdmin(u?.email === adminEmail);
     });
 
-    // Real-time categories
-    const unsubscribeCats = onSnapshot(query(collection(db, 'categories'), orderBy('order')), (snapshot) => {
-      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
-      setCategories(cats);
-    }, (err) => {
-      console.error("Error fetching categories:", err);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      setIsAdmin(u?.email === adminEmail);
     });
+
+    // Initial fetch for categories
+    const fetchCats = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('order', { ascending: true });
+        
+        if (error) {
+          console.error("Error fetching categories:", error);
+          if (error.code === 'PGRST204' || error.code === 'PGRST205') {
+            console.warn("Categories table might be missing. Please create it in Supabase.");
+          }
+        } else {
+          setCategories(data as Category[]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    };
+
+    fetchCats();
+
+    // Subscribe to real-time changes for categories
+    const catsChannel = supabase.channel('categories_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        fetchCats();
+      })
+      .subscribe();
 
     return () => {
-      unsubscribeAuth();
-      unsubscribeCats();
+      subscription.unsubscribe();
+      supabase.removeChannel(catsChannel);
     };
   }, []);
 
   useEffect(() => {
-    let unsubscribeProjs: (() => void) | undefined;
+    // Fetch projects with Supabase
+    const fetchProjs = async () => {
+      try {
+        let query = supabase
+          .from('portfolio_projects')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-    // For projects, we use a conditional query to avoid permission errors
-    // Admins see everything, public sees only published
-    const projectsRef = collection(db, 'projects');
-    let projsQuery;
+        // First attempt with status filter if not admin
+        if (!isAdmin) {
+          const { data, error } = await query.eq('status', 'published');
+          
+          if (error) {
+            // If column doesn't exist, try fetching without the filter
+            if (error.code === '42703') { 
+              console.warn("Status column missing in projects table, fetching all.");
+              const { data: allData, error: allErr } = await supabase
+                .from('portfolio_projects')
+                .select('*')
+                .order('created_at', { ascending: false });
+              
+              if (allErr) throw allErr;
+              processProjects(allData);
+            } else {
+              throw error;
+            }
+          } else {
+            processProjects(data);
+          }
+        } else {
+          const { data, error } = await query;
+          if (error) throw error;
+          processProjects(data);
+        }
+      } catch (err: any) {
+        console.error("Error fetching projects:", err);
+        setProjects([]);
+      }
+    };
 
-    if (isAdmin) {
-      projsQuery = query(projectsRef, orderBy('createdAt', 'desc'));
-    } else {
-      // Public query: only published projects
-      // Note: This will not return projects without the 'status' field.
-      // We should migrate existing data or handle this.
-      projsQuery = query(projectsRef, where('status', '==', 'published'), orderBy('createdAt', 'desc'));
-    }
-
-    unsubscribeProjs = onSnapshot(projsQuery, (snapshot) => {
-      const projs = snapshot.docs.map(doc => {
-        const data = doc.data();
-        // Filter out blob URLs from images and canvasData
-        const images = (data.images || []).filter((url: string) => !url.startsWith('blob:'));
-        const canvasData = (data.canvasData || []).map((item: any) => ({
-          ...item,
-          src: item.src?.startsWith('blob:') ? '' : item.src
-        })).filter((item: any) => item.src !== '');
-        const coverImage = data.coverImage?.startsWith('blob:') ? '' : data.coverImage;
-
-        return { 
-          id: doc.id, 
-          ...data,
-          images,
-          canvasData,
-          coverImage
-        } as Project;
-      });
+    const processProjects = (data: any[] | null) => {
+      const projs = (data || []).map(p => ({
+        ...p,
+        coverImage: p.cover_image,
+        categoryId: p.category_id,
+        canvasData: p.canvas_data,
+        canvasBackgroundColor: p.canvas_background_color,
+        canvasHeight: p.canvas_height,
+        createdAt: p.created_at
+      })) as Project[];
       setProjects(projs);
-    }, (err) => {
-      console.error("Error fetching projects:", err);
-      // If the query fails (e.g. due to missing index or permission), fallback to empty
-      if (!isAdmin) setProjects([]);
-    });
+    };
+
+    fetchProjs();
+
+    // Real-time changes for projects
+    const projsChannel = supabase.channel('projects_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'portfolio_projects' }, () => {
+        fetchProjs();
+      })
+      .subscribe();
 
     return () => {
-      if (unsubscribeProjs) unsubscribeProjs();
+      supabase.removeChannel(projsChannel);
     };
   }, [isAdmin]);
 
   useEffect(() => {
-    let unsubscribeMsgs: (() => void) | undefined;
+    const fetchMsgs = async () => {
+      if (!isAdmin) {
+        setMessages([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) console.error("Error fetching messages:", error);
+      else setMessages(data || []);
+    };
 
-    if (isAdmin) {
-      unsubscribeMsgs = onSnapshot(query(collection(db, 'messages'), orderBy('createdAt', 'desc')), (snapshot) => {
-        const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setMessages(msgs);
-      });
-    } else {
-      setMessages([]);
-    }
+    fetchMsgs();
+
+    const msgsChannel = supabase.channel('messages_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+        fetchMsgs();
+      })
+      .subscribe();
 
     return () => {
-      if (unsubscribeMsgs) unsubscribeMsgs();
+      supabase.removeChannel(msgsChannel);
     };
   }, [isAdmin]);
 
