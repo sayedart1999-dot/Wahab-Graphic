@@ -1005,16 +1005,24 @@ const AdminDashboard = ({
         }
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('categories')
         .insert([{
           name: catName,
           slug: catName.toLowerCase().replace(/\s+/g, '-'),
           order: categories.length,
           cover_image: finalCatCover
-        }]);
+        }])
+        .select();
 
       if (error) throw error;
+      if (data) {
+        const newCat = {
+          ...data[0],
+          coverImage: data[0].cover_image
+        } as Category;
+        setCategories([...categories, newCat]);
+      }
 
       setCatName('');
       setCatCover('');
@@ -1049,16 +1057,24 @@ const AdminDashboard = ({
         }
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('categories')
         .update({
           name: catName,
           slug: catName.toLowerCase().replace(/\s+/g, '-'),
           cover_image: finalCatCover
         })
-        .eq('id', editingCategory.id);
+        .eq('id', editingCategory.id)
+        .select();
 
       if (error) throw error;
+      if (data) {
+        const updatedCat = {
+          ...data[0],
+          coverImage: data[0].cover_image
+        } as Category;
+        setCategories(categories.map(c => c.id === editingCategory.id ? updatedCat : c));
+      }
 
       setCatName('');
       setCatCover('');
@@ -3097,7 +3113,11 @@ export default function App() {
             console.warn("Categories table might be missing. Please create it in Supabase.");
           }
         } else {
-          setCategories(data as Category[]);
+          const mappedCats = (data || []).map(c => ({
+            ...c,
+            coverImage: c.cover_image
+          })) as Category[];
+          setCategories(mappedCats);
         }
       } catch (err) {
         console.error("Failed to fetch categories:", err);
