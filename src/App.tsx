@@ -718,12 +718,16 @@ const AdminDashboard = ({
   categories, 
   projects, 
   messages,
-  onClose
+  onClose,
+  setCategories,
+  setProjects
 }: { 
   categories: Category[], 
   projects: Project[], 
   messages: any[],
-  onClose: () => void
+  onClose: () => void,
+  setCategories: React.Dispatch<React.SetStateAction<Category[]>>,
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 }) => {
   const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages' | 'notes'>('projects');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -1133,12 +1137,26 @@ const AdminDashboard = ({
       };
 
       if (editingProject) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('portfolio_projects')
           .update(projectData)
-          .eq('id', editingProject.id);
+          .eq('id', editingProject.id)
+          .select();
         
         if (error) throw error;
+        
+        if (data) {
+          const updatedProj = {
+            ...data[0],
+            categoryId: data[0].category_id,
+            coverImage: data[0].cover_image,
+            createdAt: data[0].created_at,
+            canvasData: data[0].canvas_data,
+            canvasBackgroundColor: data[0].canvas_background_color,
+            canvasHeight: data[0].canvas_height
+          } as Project;
+          setProjects(projects.map(p => p.id === editingProject.id ? updatedProj : p));
+        }
         
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 3000);
@@ -1146,12 +1164,26 @@ const AdminDashboard = ({
         setEditingProject(null);
         resetProjectForm();
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('portfolio_projects')
-          .insert([projectData]);
+          .insert([projectData])
+          .select();
         
         if (error) throw error;
 
+        if (data) {
+          const newProj = {
+            ...data[0],
+            categoryId: data[0].category_id,
+            coverImage: data[0].cover_image,
+            createdAt: data[0].created_at,
+            canvasData: data[0].canvas_data,
+            canvasBackgroundColor: data[0].canvas_background_color,
+            canvasHeight: data[0].canvas_height
+          } as Project;
+          setProjects([...projects, newProj]);
+        }
+ 
         resetProjectForm();
         setIsAddingProject(false);
         setEditingProject(null);
@@ -3289,7 +3321,9 @@ export default function App() {
             categories={categories} 
             projects={projects} 
             messages={messages}
-            onClose={() => setShowAdmin(false)} 
+            onClose={() => setShowAdmin(false)}
+            setCategories={setCategories}
+            setProjects={setProjects}
           />
         )}
       </AnimatePresence>
