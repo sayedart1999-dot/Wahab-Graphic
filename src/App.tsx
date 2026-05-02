@@ -1122,10 +1122,15 @@ const AdminDashboard = ({
         return item;
       }));
 
+      const selectedCategory = categories.find(c => c.id === projCatId);
+      const categoryName = selectedCategory ? selectedCategory.name : 'General';
+
       // Create project data for Supabase
       const projectData = {
-        name: projName,
+        title: projName.trim() || 'Untitled Project',
+        name: projName.trim() || 'Untitled Project',
         category_id: projCatId,
+        category: categoryName,
         cover_image: finalCover,
         images: [], // Images are now mainly in canvasData
         description: projDesc,
