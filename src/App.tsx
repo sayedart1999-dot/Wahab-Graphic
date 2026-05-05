@@ -160,7 +160,7 @@ const SERVICES: Service[] = [
 const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: { 
   item: CanvasItem, 
   isSelected: boolean, 
-  onSelect: () => void, 
+  onSelect: (e: any) => void, 
   onChange: (newItem: CanvasItem) => void,
   readOnly?: boolean
 }) => {
@@ -267,11 +267,30 @@ const CanvasDesignEditor = ({
   onSetCover?: (dataUrl: string) => void,
   onClear?: () => void
 }) => {
-  const [selectedId, selectShape] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const stageRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ width: 800, height: canvasHeight, scale: 1 });
+
+  const selectShape = (id: string | null, isShift?: boolean) => {
+    if (id === null) {
+      setSelectedIds([]);
+      return;
+    }
+
+    if (isShift) {
+      setSelectedIds(prev => {
+        if (prev.includes(id)) {
+          return prev.filter(i => i !== id);
+        } else {
+          return [...prev, id];
+        }
+      });
+    } else {
+      setSelectedIds([id]);
+    }
+  };
 
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -292,11 +311,14 @@ const CanvasDesignEditor = ({
   const trRef = React.useRef<any>(null);
 
   useEffect(() => {
-    if (selectedId && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
+    if (selectedIds.length > 0 && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
       const attach = () => {
-        const node = stageRef.current?.findOne('#' + selectedId);
-        if (node) {
-          trRef.current.nodes([node]);
+        const nodes = selectedIds
+          .map(id => stageRef.current?.findOne('#' + id))
+          .filter(Boolean);
+        
+        if (nodes.length > 0) {
+          trRef.current.nodes(nodes);
           trRef.current.getLayer()?.batchDraw();
         }
       };
@@ -307,11 +329,11 @@ const CanvasDesignEditor = ({
       trRef.current.nodes([]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedId, items.length, isZoomMode, isPanMode]);
+  }, [selectedIds, items.length, isZoomMode, isPanMode]);
 
   const handleSetCover = () => {
     if (stageRef.current && onSetCover) {
-      selectShape(null);
+      setSelectedIds([]);
       // Wait for state update to remove transformer
       setTimeout(() => {
         // Reduced pixelRatio from 5 to 2 for better performance and smaller file sizes
@@ -337,11 +359,11 @@ const CanvasDesignEditor = ({
   }, [canvasHeight]);
 
   const handleDeleteSelected = React.useCallback(() => {
-    if (selectedId) {
-      setItems(prevItems => prevItems.filter(item => item.id !== selectedId));
-      selectShape(null);
+    if (selectedIds.length > 0) {
+      setItems(prevItems => prevItems.filter(item => !selectedIds.includes(item.id)));
+      setSelectedIds([]);
     }
-  }, [selectedId, setItems]);
+  }, [selectedIds, setItems]);
 
   // Keyboard listener for Undo/Redo, Arrow keys, and Zoom keys
   useEffect(() => {
@@ -366,15 +388,15 @@ const CanvasDesignEditor = ({
 
       if (isInput) return;
 
-      if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
+      if (selectedIds.length > 0 && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         handleDeleteSelected();
       }
 
-      if (selectedId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (selectedIds.length > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
         setItems(prevItems => prevItems.map(item => {
-          if (item.id === selectedId) {
+          if (selectedIds.includes(item.id)) {
             const step = e.shiftKey ? 10 : 1;
             let newX = item.x;
             let newY = item.y;
@@ -421,7 +443,7 @@ const CanvasDesignEditor = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [onUndo, onRedo, selectedId, setItems, handleDeleteSelected]);
+  }, [onUndo, onRedo, selectedIds, setItems, handleDeleteSelected]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -474,7 +496,7 @@ const CanvasDesignEditor = ({
 
     const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
     if (clickedOnEmpty) {
-      selectShape(null);
+      setSelectedIds([]);
     }
   };
 
@@ -567,13 +589,13 @@ const CanvasDesignEditor = ({
           >
             <Redo2 className="w-4 h-4" />
           </button>
-          {selectedId && (
+          {selectedIds.length > 0 && (
             <button 
               type="button"
               onClick={handleDeleteSelected}
               className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2"
             >
-              <Trash2 className="w-4 h-4" /> Remove
+              <Trash2 className="w-4 h-4" /> Remove ({selectedIds.length})
             </button>
           )}
         </div>
@@ -638,8 +660,8 @@ const CanvasDesignEditor = ({
                     <URLImage
                       key={item.id}
                       item={item}
-                      isSelected={item.id === selectedId}
-                      onSelect={() => selectShape(item.id)}
+                      isSelected={selectedIds.includes(item.id)}
+                      onSelect={(e) => selectShape(item.id, e?.evt?.shiftKey)}
                       onChange={(newItem: CanvasItem) => {
                         const newItems = items.slice();
                         newItems[i] = newItem;
@@ -651,7 +673,7 @@ const CanvasDesignEditor = ({
                 </Group>
                 <Transformer
                   ref={trRef}
-                  visible={!!selectedId && !isZoomMode && !isPanMode}
+                  visible={selectedIds.length > 0 && !isZoomMode && !isPanMode}
                   boundBoxFunc={(oldBox, newBox) => {
                     if (newBox.width < 5 || newBox.height < 5) {
                       return oldBox;
@@ -691,8 +713,8 @@ const CanvasDesignEditor = ({
                         key={item.id}
                         item={item}
                         originalIndex={originalIndex}
-                        isSelected={selectedId === item.id}
-                        onSelect={() => selectShape(item.id)}
+                        isSelected={selectedIds.includes(item.id)}
+                        onSelect={(e) => selectShape(item.id, e?.shiftKey)}
                         onMoveUp={() => moveLayer(item.id, 'up')}
                         onMoveDown={() => moveLayer(item.id, 'down')}
                         itemsLength={items.length}
@@ -3041,7 +3063,7 @@ const Contact = () => {
   );
 };
 
-const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: () => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
+const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: (e: React.MouseEvent) => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
   const style = {
     transform: CSS.Transform.toString(transform),
