@@ -203,38 +203,28 @@ const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: {
           if (readOnly) return;
           const node = shapeRef.current;
           if (!node) return;
-
-          const scaleX = node.scaleX();
-          const scaleY = node.scaleY();
-          
-          const width = node.width();
-          const height = node.height();
-          
-          const currentWidth = width * scaleX;
-          const currentHeight = height * scaleY;
-          
-          const snappedWidth = Math.max(10, Math.round(currentWidth / 10) * 10);
-          const snappedHeight = Math.max(10, Math.round(currentHeight / 10) * 10);
-          
-          node.scaleX(snappedWidth / width);
-          node.scaleY(snappedHeight / height);
-          
-          node.x(Math.round(node.x() / 10) * 10);
-          node.y(Math.round(node.y() / 10) * 10);
+          // During transform, we don't snap to avoid breaking relative spacing in multi-selection
+          node.batchDraw();
         }}
         onTransformEnd={(e) => {
           if (readOnly) return;
           const node = shapeRef.current;
           const scaleX = node.scaleX();
           const scaleY = node.scaleY();
+          
+          // Snap values only at the end
+          const finalX = Math.round(node.x() / 10) * 10;
+          const finalY = Math.round(node.y() / 10) * 10;
+          const finalScaleX = scaleX;
+          const finalScaleY = scaleY;
 
           onChange({
             ...item,
-            x: Math.round(node.x() / 10) * 10,
-            y: Math.round(node.y() / 10) * 10,
+            x: finalX,
+            y: finalY,
             rotation: Math.round(node.rotation()),
-            scaleX: scaleX,
-            scaleY: scaleY,
+            scaleX: finalScaleX,
+            scaleY: finalScaleY,
           });
         }}
       />
@@ -663,9 +653,14 @@ const CanvasDesignEditor = ({
                       isSelected={selectedIds.includes(item.id)}
                       onSelect={(e) => selectShape(item.id, e?.evt?.shiftKey)}
                       onChange={(newItem: CanvasItem) => {
-                        const newItems = items.slice();
-                        newItems[i] = newItem;
-                        setItems(newItems);
+                        setItems(prevItems => {
+                          const newItems = [...prevItems];
+                          const index = newItems.findIndex(i => i.id === newItem.id);
+                          if (index !== -1) {
+                            newItems[index] = newItem;
+                          }
+                          return newItems;
+                        });
                       }}
                       readOnly={isZoomMode || isPanMode}
                     />
@@ -790,28 +785,34 @@ const AdminDashboard = ({
   const [canvasHistory, setCanvasHistory] = useState<CanvasItem[][]>([[]]);
   const [historyStep, setHistoryStep] = useState(0);
 
-  const updateCanvasItems = (newItems: CanvasItem[] | ((prev: CanvasItem[]) => CanvasItem[])) => {
-    let resolvedItems: CanvasItem[];
-    if (typeof newItems === 'function') {
-      resolvedItems = newItems(canvasItems);
-    } else {
-      resolvedItems = newItems;
-    }
+  const historyTimeoutRef = React.useRef<any>(null);
 
-    setCanvasItems(resolvedItems);
-    canvasItemsRef.current = resolvedItems;
-    
-    const newHistory = canvasHistory.slice(0, historyStep + 1);
-    newHistory.push(resolvedItems);
-    setCanvasHistory(newHistory);
-    setHistoryStep(newHistory.length - 1);
+  const updateCanvasItems = (newItems: CanvasItem[] | ((prev: CanvasItem[]) => CanvasItem[])) => {
+    setCanvasItems(prev => {
+      const resolved = typeof newItems === 'function' ? newItems(prev) : newItems;
+      canvasItemsRef.current = resolved;
+      
+      if (historyTimeoutRef.current) clearTimeout(historyTimeoutRef.current);
+      historyTimeoutRef.current = setTimeout(() => {
+        setCanvasHistory(prevHistory => {
+          const newHistory = prevHistory.slice(0, historyStep + 1);
+          newHistory.push(resolved);
+          setHistoryStep(newHistory.length - 1);
+          return newHistory;
+        });
+      }, 500); 
+      
+      return resolved;
+    });
   };
 
   const handleUndo = React.useCallback(() => {
     if (historyStep > 0) {
       const newStep = historyStep - 1;
       setHistoryStep(newStep);
-      setCanvasItems(canvasHistory[newStep]);
+      const itemsAtStep = canvasHistory[newStep];
+      setCanvasItems(itemsAtStep);
+      canvasItemsRef.current = itemsAtStep;
     }
   }, [historyStep, canvasHistory]);
 
@@ -819,7 +820,9 @@ const AdminDashboard = ({
     if (historyStep < canvasHistory.length - 1) {
       const newStep = historyStep + 1;
       setHistoryStep(newStep);
-      setCanvasItems(canvasHistory[newStep]);
+      const itemsAtStep = canvasHistory[newStep];
+      setCanvasItems(itemsAtStep);
+      canvasItemsRef.current = itemsAtStep;
     }
   }, [historyStep, canvasHistory]);
 
