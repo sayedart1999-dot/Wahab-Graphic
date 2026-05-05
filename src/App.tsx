@@ -160,7 +160,7 @@ const SERVICES: Service[] = [
 const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: { 
   item: CanvasItem, 
   isSelected: boolean, 
-  onSelect: (e: any) => void, 
+  onSelect: () => void, 
   onChange: (newItem: CanvasItem) => void,
   readOnly?: boolean
 }) => {
@@ -206,39 +206,32 @@ const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: {
 
           const scaleX = node.scaleX();
           const scaleY = node.scaleY();
+          
           const width = node.width();
           const height = node.height();
           
           const currentWidth = width * scaleX;
           const currentHeight = height * scaleY;
           
-          // Snap width and height to 10px grid during transform
           const snappedWidth = Math.max(10, Math.round(currentWidth / 10) * 10);
           const snappedHeight = Math.max(10, Math.round(currentHeight / 10) * 10);
           
           node.scaleX(snappedWidth / width);
           node.scaleY(snappedHeight / height);
           
-          // Snap position to 10px grid during transform
           node.x(Math.round(node.x() / 10) * 10);
           node.y(Math.round(node.y() / 10) * 10);
-          
-          node.batchDraw();
         }}
         onTransformEnd={(e) => {
           if (readOnly) return;
           const node = shapeRef.current;
           const scaleX = node.scaleX();
           const scaleY = node.scaleY();
-          
-          // Final snap for good measure
-          const finalX = Math.round(node.x() / 10) * 10;
-          const finalY = Math.round(node.y() / 10) * 10;
 
           onChange({
             ...item,
-            x: finalX,
-            y: finalY,
+            x: Math.round(node.x() / 10) * 10,
+            y: Math.round(node.y() / 10) * 10,
             rotation: Math.round(node.rotation()),
             scaleX: scaleX,
             scaleY: scaleY,
@@ -274,30 +267,11 @@ const CanvasDesignEditor = ({
   onSetCover?: (dataUrl: string) => void,
   onClear?: () => void
 }) => {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedId, selectShape] = useState<string | null>(null);
   const stageRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ width: 800, height: canvasHeight, scale: 1 });
-
-  const selectShape = (id: string | null, isShift?: boolean) => {
-    if (id === null) {
-      setSelectedIds([]);
-      return;
-    }
-
-    if (isShift) {
-      setSelectedIds(prev => {
-        if (prev.includes(id)) {
-          return prev.filter(i => i !== id);
-        } else {
-          return [...prev, id];
-        }
-      });
-    } else {
-      setSelectedIds([id]);
-    }
-  };
 
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -318,14 +292,11 @@ const CanvasDesignEditor = ({
   const trRef = React.useRef<any>(null);
 
   useEffect(() => {
-    if (selectedIds.length > 0 && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
+    if (selectedId && trRef.current && stageRef.current && !isZoomMode && !isPanMode) {
       const attach = () => {
-        const nodes = selectedIds
-          .map(id => stageRef.current?.findOne('#' + id))
-          .filter(Boolean);
-        
-        if (nodes.length > 0) {
-          trRef.current.nodes(nodes);
+        const node = stageRef.current?.findOne('#' + selectedId);
+        if (node) {
+          trRef.current.nodes([node]);
           trRef.current.getLayer()?.batchDraw();
         }
       };
@@ -336,11 +307,11 @@ const CanvasDesignEditor = ({
       trRef.current.nodes([]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedIds, items.length, isZoomMode, isPanMode]);
+  }, [selectedId, items.length, isZoomMode, isPanMode]);
 
   const handleSetCover = () => {
     if (stageRef.current && onSetCover) {
-      setSelectedIds([]);
+      selectShape(null);
       // Wait for state update to remove transformer
       setTimeout(() => {
         // Reduced pixelRatio from 5 to 2 for better performance and smaller file sizes
@@ -366,11 +337,11 @@ const CanvasDesignEditor = ({
   }, [canvasHeight]);
 
   const handleDeleteSelected = React.useCallback(() => {
-    if (selectedIds.length > 0) {
-      setItems(prevItems => prevItems.filter(item => !selectedIds.includes(item.id)));
-      setSelectedIds([]);
+    if (selectedId) {
+      setItems(prevItems => prevItems.filter(item => item.id !== selectedId));
+      selectShape(null);
     }
-  }, [selectedIds, setItems]);
+  }, [selectedId, setItems]);
 
   // Keyboard listener for Undo/Redo, Arrow keys, and Zoom keys
   useEffect(() => {
@@ -395,15 +366,15 @@ const CanvasDesignEditor = ({
 
       if (isInput) return;
 
-      if (selectedIds.length > 0 && (e.key === 'Delete' || e.key === 'Backspace')) {
+      if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         handleDeleteSelected();
       }
 
-      if (selectedIds.length > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (selectedId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
         setItems(prevItems => prevItems.map(item => {
-          if (selectedIds.includes(item.id)) {
+          if (item.id === selectedId) {
             const step = e.shiftKey ? 10 : 1;
             let newX = item.x;
             let newY = item.y;
@@ -450,7 +421,7 @@ const CanvasDesignEditor = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [onUndo, onRedo, selectedIds, setItems, handleDeleteSelected]);
+  }, [onUndo, onRedo, selectedId, setItems, handleDeleteSelected]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -503,7 +474,7 @@ const CanvasDesignEditor = ({
 
     const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
     if (clickedOnEmpty) {
-      setSelectedIds([]);
+      selectShape(null);
     }
   };
 
@@ -596,13 +567,13 @@ const CanvasDesignEditor = ({
           >
             <Redo2 className="w-4 h-4" />
           </button>
-          {selectedIds.length > 0 && (
+          {selectedId && (
             <button 
               type="button"
               onClick={handleDeleteSelected}
               className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2"
             >
-              <Trash2 className="w-4 h-4" /> Remove ({selectedIds.length})
+              <Trash2 className="w-4 h-4" /> Remove
             </button>
           )}
         </div>
@@ -667,17 +638,12 @@ const CanvasDesignEditor = ({
                     <URLImage
                       key={item.id}
                       item={item}
-                      isSelected={selectedIds.includes(item.id)}
-                      onSelect={(e) => selectShape(item.id, e?.evt?.shiftKey)}
+                      isSelected={item.id === selectedId}
+                      onSelect={() => selectShape(item.id)}
                       onChange={(newItem: CanvasItem) => {
-                        setItems(prevItems => {
-                          const newItems = [...prevItems];
-                          const index = newItems.findIndex(i => i.id === newItem.id);
-                          if (index !== -1) {
-                            newItems[index] = newItem;
-                          }
-                          return newItems;
-                        });
+                        const newItems = items.slice();
+                        newItems[i] = newItem;
+                        setItems(newItems);
                       }}
                       readOnly={isZoomMode || isPanMode}
                     />
@@ -685,20 +651,12 @@ const CanvasDesignEditor = ({
                 </Group>
                 <Transformer
                   ref={trRef}
-                  visible={selectedIds.length > 0 && !isZoomMode && !isPanMode}
+                  visible={!!selectedId && !isZoomMode && !isPanMode}
                   boundBoxFunc={(oldBox, newBox) => {
-                    const snappedWidth = Math.round(newBox.width / 10) * 10;
-                    const snappedHeight = Math.round(newBox.height / 10) * 10;
-                    if (snappedWidth < 10 || snappedHeight < 10) {
+                    if (newBox.width < 5 || newBox.height < 5) {
                       return oldBox;
                     }
-                    return {
-                      ...newBox,
-                      width: snappedWidth,
-                      height: snappedHeight,
-                      x: Math.round(newBox.x / 10) * 10,
-                      y: Math.round(newBox.y / 10) * 10,
-                    };
+                    return newBox;
                   }}
                 />
               </Layer>
@@ -733,8 +691,8 @@ const CanvasDesignEditor = ({
                         key={item.id}
                         item={item}
                         originalIndex={originalIndex}
-                        isSelected={selectedIds.includes(item.id)}
-                        onSelect={(e) => selectShape(item.id, e?.shiftKey)}
+                        isSelected={selectedId === item.id}
+                        onSelect={() => selectShape(item.id)}
                         onMoveUp={() => moveLayer(item.id, 'up')}
                         onMoveDown={() => moveLayer(item.id, 'down')}
                         itemsLength={items.length}
@@ -810,34 +768,28 @@ const AdminDashboard = ({
   const [canvasHistory, setCanvasHistory] = useState<CanvasItem[][]>([[]]);
   const [historyStep, setHistoryStep] = useState(0);
 
-  const historyTimeoutRef = React.useRef<any>(null);
-
   const updateCanvasItems = (newItems: CanvasItem[] | ((prev: CanvasItem[]) => CanvasItem[])) => {
-    setCanvasItems(prev => {
-      const resolved = typeof newItems === 'function' ? newItems(prev) : newItems;
-      canvasItemsRef.current = resolved;
-      
-      if (historyTimeoutRef.current) clearTimeout(historyTimeoutRef.current);
-      historyTimeoutRef.current = setTimeout(() => {
-        setCanvasHistory(prevHistory => {
-          const newHistory = prevHistory.slice(0, historyStep + 1);
-          newHistory.push(resolved);
-          setHistoryStep(newHistory.length - 1);
-          return newHistory;
-        });
-      }, 500); 
-      
-      return resolved;
-    });
+    let resolvedItems: CanvasItem[];
+    if (typeof newItems === 'function') {
+      resolvedItems = newItems(canvasItems);
+    } else {
+      resolvedItems = newItems;
+    }
+
+    setCanvasItems(resolvedItems);
+    canvasItemsRef.current = resolvedItems;
+    
+    const newHistory = canvasHistory.slice(0, historyStep + 1);
+    newHistory.push(resolvedItems);
+    setCanvasHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
   };
 
   const handleUndo = React.useCallback(() => {
     if (historyStep > 0) {
       const newStep = historyStep - 1;
       setHistoryStep(newStep);
-      const itemsAtStep = canvasHistory[newStep];
-      setCanvasItems(itemsAtStep);
-      canvasItemsRef.current = itemsAtStep;
+      setCanvasItems(canvasHistory[newStep]);
     }
   }, [historyStep, canvasHistory]);
 
@@ -845,9 +797,7 @@ const AdminDashboard = ({
     if (historyStep < canvasHistory.length - 1) {
       const newStep = historyStep + 1;
       setHistoryStep(newStep);
-      const itemsAtStep = canvasHistory[newStep];
-      setCanvasItems(itemsAtStep);
-      canvasItemsRef.current = itemsAtStep;
+      setCanvasItems(canvasHistory[newStep]);
     }
   }, [historyStep, canvasHistory]);
 
@@ -1798,6 +1748,39 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [project.canvasData]);
+
+  // Keyboard navigation for lightboxes
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // If image lightbox is open
+      if (selectedImageIdx !== null) {
+        if (e.key === 'ArrowLeft' && selectedImageIdx > 0) {
+          setSelectedImageIdx(selectedImageIdx - 1);
+        } else if (e.key === 'ArrowRight' && project.images && selectedImageIdx < project.images.length - 1) {
+          setSelectedImageIdx(selectedImageIdx + 1);
+        } else if (e.key === 'Escape') {
+          setSelectedImageIdx(null);
+        }
+      } 
+      // If canvas lightbox is open
+      else if (selectedCanvasIdx !== null) {
+        if (e.key === 'ArrowLeft' && selectedCanvasIdx > 0) {
+          setSelectedCanvasIdx(selectedCanvasIdx - 1);
+        } else if (e.key === 'ArrowRight' && project.canvasData && selectedCanvasIdx < project.canvasData.length - 1) {
+          setSelectedCanvasIdx(selectedCanvasIdx + 1);
+        } else if (e.key === 'Escape') {
+          setSelectedCanvasIdx(null);
+        }
+      } 
+      // Close main modal if no lightbox is open
+      else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImageIdx, selectedCanvasIdx, project.images, project.canvasData, onClose]);
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -3091,7 +3074,7 @@ const Contact = () => {
   );
 };
 
-const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: (e: React.MouseEvent) => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
+const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp, onMoveDown, itemsLength }: { item: any, originalIndex: number, isSelected: boolean, onSelect: () => void, onMoveUp: () => void, onMoveDown: () => void, itemsLength: number }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
   const style = {
     transform: CSS.Transform.toString(transform),
