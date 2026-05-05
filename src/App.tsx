@@ -203,7 +203,26 @@ const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: {
           if (readOnly) return;
           const node = shapeRef.current;
           if (!node) return;
-          // During transform, we don't snap to avoid breaking relative spacing in multi-selection
+
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
+          const width = node.width();
+          const height = node.height();
+          
+          const currentWidth = width * scaleX;
+          const currentHeight = height * scaleY;
+          
+          // Snap width and height to 10px grid during transform
+          const snappedWidth = Math.max(10, Math.round(currentWidth / 10) * 10);
+          const snappedHeight = Math.max(10, Math.round(currentHeight / 10) * 10);
+          
+          node.scaleX(snappedWidth / width);
+          node.scaleY(snappedHeight / height);
+          
+          // Snap position to 10px grid during transform
+          node.x(Math.round(node.x() / 10) * 10);
+          node.y(Math.round(node.y() / 10) * 10);
+          
           node.batchDraw();
         }}
         onTransformEnd={(e) => {
@@ -212,19 +231,17 @@ const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: {
           const scaleX = node.scaleX();
           const scaleY = node.scaleY();
           
-          // Snap values only at the end
+          // Final snap for good measure
           const finalX = Math.round(node.x() / 10) * 10;
           const finalY = Math.round(node.y() / 10) * 10;
-          const finalScaleX = scaleX;
-          const finalScaleY = scaleY;
 
           onChange({
             ...item,
             x: finalX,
             y: finalY,
             rotation: Math.round(node.rotation()),
-            scaleX: finalScaleX,
-            scaleY: finalScaleY,
+            scaleX: scaleX,
+            scaleY: scaleY,
           });
         }}
       />
@@ -670,10 +687,18 @@ const CanvasDesignEditor = ({
                   ref={trRef}
                   visible={selectedIds.length > 0 && !isZoomMode && !isPanMode}
                   boundBoxFunc={(oldBox, newBox) => {
-                    if (newBox.width < 5 || newBox.height < 5) {
+                    const snappedWidth = Math.round(newBox.width / 10) * 10;
+                    const snappedHeight = Math.round(newBox.height / 10) * 10;
+                    if (snappedWidth < 10 || snappedHeight < 10) {
                       return oldBox;
                     }
-                    return newBox;
+                    return {
+                      ...newBox,
+                      width: snappedWidth,
+                      height: snappedHeight,
+                      x: Math.round(newBox.x / 10) * 10,
+                      y: Math.round(newBox.y / 10) * 10,
+                    };
                   }}
                 />
               </Layer>
