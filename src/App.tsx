@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { GlassScene } from './components/GlassScene';
 import { 
   Palette, 
@@ -1420,9 +1420,18 @@ const AdminDashboard = ({
               </form>
             )}
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Reorder.Group 
+              axis="y" 
+              values={categories} 
+              onReorder={setCategories}
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
               {categories.map(cat => (
-                <div key={cat.id} className="glass p-6 rounded-3xl flex justify-between items-center group relative overflow-hidden">
+                <Reorder.Item 
+                  key={cat.id} 
+                  value={cat}
+                  className="glass p-6 rounded-3xl flex justify-between items-center group relative overflow-hidden cursor-grab active:cursor-grabbing"
+                >
                   {cat.coverImage && (
                     <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
                       <img src={cat.coverImage} alt={cat.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
@@ -1434,23 +1443,23 @@ const AdminDashboard = ({
                   </div>
                   <div className="relative z-10 flex items-center gap-2">
                     <button 
-                      onClick={() => handleEditCategory(cat)}
+                      onClick={(e) => { e.stopPropagation(); handleEditCategory(cat); }}
                       className="p-3 text-gray-400 hover:text-orange-accent transition-colors bg-black/50 rounded-full"
                       title="Edit Folder"
                     >
                       <Edit2 className="w-5 h-5" />
                     </button>
                     <button 
-                      onClick={() => handleDeleteCategory(cat.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
                       className="p-3 text-gray-400 hover:text-red-500 transition-colors bg-black/50 rounded-full"
                       title="Delete Folder"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
-                </div>
+                </Reorder.Item>
               ))}
-            </div>
+            </Reorder.Group>
           </div>
         )}
 
