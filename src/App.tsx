@@ -47,6 +47,7 @@ import {
   Redo2,
   Loader2,
   Check,
+  ShieldCheck,
   AlertCircle
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
@@ -3245,8 +3246,18 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [stats, setStats] = useState<Stat[]>(() => {
-    const saved = localStorage.getItem('wahab_stats');
-    return saved ? JSON.parse(saved) : [
+    try {
+      const saved = localStorage.getItem('wahab_stats');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Error loading stats from localStorage:", e);
+    }
+    return [
       { id: '1', label: 'Projects', value: '120+', type: 'projects' },
       { id: '2', label: 'Clients', value: '50+', type: 'clients' },
       { id: '3', label: 'Reviews', value: '5 ★', type: 'reviews' }
