@@ -100,6 +100,13 @@ interface Category {
   coverImage?: string;
 }
 
+interface Stat {
+  id: string;
+  label: string;
+  value: string;
+  type: 'projects' | 'clients' | 'reviews';
+}
+
 interface Skill {
   name: string;
   level: number;
@@ -718,16 +725,20 @@ const AdminDashboard = ({
   categories, 
   projects, 
   messages,
+  stats,
   onClose,
   setCategories,
-  setProjects
+  setProjects,
+  setStats
 }: { 
   categories: Category[], 
   projects: Project[], 
   messages: any[],
+  stats: Stat[],
   onClose: () => void,
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>,
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>,
+  setStats: (stats: Stat[]) => void
 }) => {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -745,7 +756,7 @@ const AdminDashboard = ({
     }
   };
 
-  const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages' | 'notes'>('projects');
+  const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages' | 'notes' | 'stats'>('projects');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -1301,12 +1312,69 @@ const AdminDashboard = ({
             Messages ({messages.length})
           </button>
           <button 
+            onClick={() => { setActiveTab('stats'); setSaveError(null); }}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'stats' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
+          >
+            Manage Stats
+          </button>
+          <button 
             onClick={() => { setActiveTab('notes'); setSaveError(null); }}
             className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'notes' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
           >
             Style Notes
           </button>
         </div>
+
+        {activeTab === 'stats' && (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold">Manage Portfolio Stats</h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {stats.map((stat) => (
+                <div key={stat.id} className="glass p-6 rounded-3xl border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-10 h-10 ${stat.type === 'clients' ? 'bg-blue-accent/20' : 'bg-orange-accent/20'} rounded-xl flex items-center justify-center`}>
+                      {stat.type === 'projects' && <Palette className="w-5 h-5 text-orange-accent" />}
+                      {stat.type === 'clients' && <Layers className="w-5 h-5 text-blue-accent" />}
+                      {stat.type === 'reviews' && <Award className="w-5 h-5 text-orange-accent" />}
+                    </div>
+                    <span className="font-bold uppercase text-xs tracking-widest text-gray-400">{stat.type}</span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Value (e.g. 120+)</label>
+                    <input 
+                      type="text" 
+                      value={stat.value}
+                      onChange={(e) => {
+                        const newStats = stats.map(s => s.id === stat.id ? { ...s, value: e.target.value } : s);
+                        setStats(newStats);
+                      }}
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-orange-accent outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Label (e.g. Projects)</label>
+                    <input 
+                      type="text" 
+                      value={stat.label}
+                      onChange={(e) => {
+                        const newStats = stats.map(s => s.id === stat.id ? { ...s, label: e.target.value } : s);
+                        setStats(newStats);
+                      }}
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-orange-accent outline-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-orange-accent/10 border border-orange-accent/20 rounded-2xl">
+              <p className="text-orange-accent text-sm flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" /> Changes to stats are saved automatically to your local browser storage.
+              </p>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'notes' && (
           <div className="space-y-6">
@@ -2392,7 +2460,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
   );
 };
 
-const Hero = () => {
+const Hero = ({ stats }: { stats: Stat[] }) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [imgSize, setImgSize] = useState({ width: 0, height: 0 });
   const [isHovering, setIsHovering] = useState(false);
@@ -2476,33 +2544,19 @@ const Hero = () => {
 
           {/* Horizontal Stats Card */}
           <div className="glass px-6 py-4 rounded-2xl border-white/10 shadow-xl flex flex-wrap items-center gap-6 z-30 w-fit">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-accent/20 rounded-xl flex items-center justify-center">
-                <Palette className="w-5 h-5 text-orange-accent" />
+            {stats.map((stat) => (
+              <div key={stat.id} className="flex items-center gap-3">
+                <div className={`w-10 h-10 ${stat.type === 'clients' ? 'bg-blue-accent/20' : 'bg-orange-accent/20'} rounded-xl flex items-center justify-center`}>
+                  {stat.type === 'projects' && <Palette className="w-5 h-5 text-orange-accent" />}
+                  {stat.type === 'clients' && <Layers className="w-5 h-5 text-blue-accent" />}
+                  {stat.type === 'reviews' && <Award className="w-5 h-5 text-orange-accent" />}
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{stat.value}</p>
+                  <p className="text-xs text-gray-400 font-medium tracking-wide">{stat.label}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-lg font-bold">120+</p>
-                <p className="text-xs text-gray-400 font-medium tracking-wide">Projects</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-accent/20 rounded-xl flex items-center justify-center">
-                <Layers className="w-5 h-5 text-blue-accent" />
-              </div>
-              <div>
-                <p className="text-lg font-bold">50+</p>
-                <p className="text-xs text-gray-400 font-medium tracking-wide">Clients</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-accent/20 rounded-xl flex items-center justify-center">
-                <Award className="w-5 h-5 text-orange-accent" />
-              </div>
-              <div>
-                <p className="text-lg font-bold">5 ★</p>
-                <p className="text-xs text-gray-400 font-medium tracking-wide">Reviews</p>
-              </div>
-            </div>
+            ))}
           </div>
         </motion.div>
 
@@ -3190,6 +3244,18 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [stats, setStats] = useState<Stat[]>(() => {
+    const saved = localStorage.getItem('wahab_stats');
+    return saved ? JSON.parse(saved) : [
+      { id: '1', label: 'Projects', value: '120+', type: 'projects' },
+      { id: '2', label: 'Clients', value: '50+', type: 'clients' },
+      { id: '3', label: 'Reviews', value: '5 ★', type: 'reviews' }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('wahab_stats', JSON.stringify(stats));
+  }, [stats]);
 
   const adminEmail = "sayedart1999@gmail.com";
 
@@ -3362,7 +3428,7 @@ export default function App() {
       <CustomCursor />
       <GlassScene />
       <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} />
-      <Hero />
+      <Hero stats={stats} />
       <About />
       <Portfolio categories={categories} projects={projects} />
       <Skills />
@@ -3411,9 +3477,11 @@ export default function App() {
             categories={categories} 
             projects={projects} 
             messages={messages}
+            stats={stats}
             onClose={() => setShowAdmin(false)}
             setCategories={setCategories}
             setProjects={setProjects}
+            setStats={setStats}
           />
         )}
       </AnimatePresence>
