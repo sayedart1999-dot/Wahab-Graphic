@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion, AnimatePresence, Reorder } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { GlassScene } from './components/GlassScene';
 import { 
   Palette, 
@@ -729,6 +729,22 @@ const AdminDashboard = ({
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>,
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 }) => {
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+  );
+
+  const handleDragEndCategories = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setCategories((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages' | 'notes'>('projects');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -1420,46 +1436,27 @@ const AdminDashboard = ({
               </form>
             )}
 
-            <Reorder.Group 
-              axis="y" 
-              values={categories} 
-              onReorder={setCategories}
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEndCategories}
             >
-              {categories.map(cat => (
-                <Reorder.Item 
-                  key={cat.id} 
-                  value={cat}
-                  className="glass p-6 rounded-3xl flex justify-between items-center group relative overflow-hidden cursor-grab active:cursor-grabbing"
-                >
-                  {cat.coverImage && (
-                    <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
-                      <img src={cat.coverImage} alt={cat.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <div className="relative z-10">
-                    <p className="font-bold text-lg">{cat.name}</p>
-                    <p className="text-xs text-gray-400 font-mono">/{cat.slug}</p>
-                  </div>
-                  <div className="relative z-10 flex items-center gap-2">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleEditCategory(cat); }}
-                      className="p-3 text-gray-400 hover:text-orange-accent transition-colors bg-black/50 rounded-full"
-                      title="Edit Folder"
-                    >
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
-                      className="p-3 text-gray-400 hover:text-red-500 transition-colors bg-black/50 rounded-full"
-                      title="Delete Folder"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </Reorder.Item>
-              ))}
-            </Reorder.Group>
+              <SortableContext 
+                items={categories.map(c => c.id)} 
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categories.map(cat => (
+                    <SortableCategoryItem 
+                      key={cat.id} 
+                      cat={cat} 
+                      onEdit={handleEditCategory} 
+                      onDelete={handleDeleteCategory} 
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </div>
         )}
 
@@ -3139,6 +3136,52 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
     </div>
   );
 };
+
+function SortableCategoryItem({ cat, onEdit, onDelete }: { cat: any, onEdit: (cat: any) => void, onDelete: (id: string) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes} 
+      {...listeners}
+      className={`glass p-6 rounded-3xl flex justify-between items-center group relative overflow-hidden cursor-grab active:cursor-grabbing transition-shadow ${isDragging ? 'shadow-2xl ring-2 ring-orange-accent/50 scale-105' : ''}`}
+    >
+      {cat.coverImage && (
+        <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
+          <img src={cat.coverImage} alt={cat.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+        </div>
+      )}
+      <div className="relative z-10 flex-1">
+        <p className="font-bold text-lg">{cat.name}</p>
+        <p className="text-xs text-gray-400 font-mono">/{cat.slug}</p>
+      </div>
+      <div className="relative z-10 flex items-center gap-2" onPointerDown={e => e.stopPropagation()}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onEdit(cat); }}
+          className="p-3 text-gray-400 hover:text-orange-accent transition-colors bg-black/50 rounded-full cursor-pointer"
+          title="Edit Folder"
+        >
+          <Edit2 className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onDelete(cat.id); }}
+          className="p-3 text-gray-400 hover:text-red-500 transition-colors bg-black/50 rounded-full cursor-pointer"
+          title="Delete Folder"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [user, setUser] = useState<any | null>(null);
