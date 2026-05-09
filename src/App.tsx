@@ -746,14 +746,37 @@ const AdminDashboard = ({
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
   );
 
-  const handleDragEndCategories = (event: DragEndEvent) => {
+  const handleDragEndCategories = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      setCategories((items) => {
-        const oldIndex = items.findIndex((i) => i.id === active.id);
-        const newIndex = items.findIndex((i) => i.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
+      const oldIndex = categories.findIndex((i) => i.id === active.id);
+      const newIndex = categories.findIndex((i) => i.id === over.id);
+      const newCategories = arrayMove(categories, oldIndex, newIndex);
+      
+      // Optimistic update
+      setCategories(newCategories);
+
+      // Persist to Supabase
+      try {
+        const updates = newCategories.map((cat, index) => ({
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          order: index,
+          cover_image: cat.coverImage
+        }));
+
+        const { error } = await supabase
+          .from('categories')
+          .upsert(updates, { onConflict: 'id' });
+
+        if (error) {
+          console.error("Error updating category order in DB:", error);
+          // If update fails, the real-time fetch or next refresh will revert it correctly
+        }
+      } catch (err) {
+        console.error("Failed to persist category order:", err);
+      }
     }
   };
 
@@ -3060,7 +3083,8 @@ const Contact = () => {
                 <div className="flex gap-4">
                   {[
                     { icon: Facebook, color: 'orange', href: 'https://www.facebook.com/profile.php?id=61584994744719' },
-                    { icon: Instagram, color: 'orange', href: 'https://www.instagram.com/_wahab__graphic_/' }
+                    { icon: Instagram, color: 'orange', href: 'https://www.instagram.com/_wahab__graphic_/' },
+                    { icon: Linkedin, color: 'orange', href: 'https://www.linkedin.com/in/abdul-wahab-988726409' }
                   ].map((item, idx) => (
                     <a 
                       key={idx} 
