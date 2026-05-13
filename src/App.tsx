@@ -48,7 +48,9 @@ import {
   Loader2,
   Check,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  FolderOpen,
+  ArrowRight
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { uploadToCloudinary, uploadMultipleToCloudinary } from './lib/cloudinary';
@@ -780,7 +782,8 @@ const AdminDashboard = ({
     }
   };
 
-  const [activeTab, setActiveTab] = useState<'categories' | 'projects' | 'messages' | 'notes' | 'stats'>('projects');
+  const [activeTab, setActiveTab] = useState<'categories' | 'messages' | 'notes' | 'stats'>('categories');
+  const [browsingFolderId, setBrowsingFolderId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -1318,19 +1321,13 @@ const AdminDashboard = ({
 
         <div className="flex gap-4 mb-8">
           <button 
-            onClick={() => { setActiveTab('projects'); setSaveError(null); }}
-            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'projects' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
-          >
-            Manage Projects
-          </button>
-          <button 
-            onClick={() => { setActiveTab('categories'); setSaveError(null); }}
+            onClick={() => { setActiveTab('categories'); setBrowsingFolderId(null); setSaveError(null); }}
             className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'categories' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
           >
             Manage Folders
           </button>
           <button 
-            onClick={() => { setActiveTab('messages'); setSaveError(null); }}
+            onClick={() => { setActiveTab('messages'); setBrowsingFolderId(null); setSaveError(null); }}
             className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'messages' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
           >
             Messages ({messages.length})
@@ -1470,322 +1467,299 @@ const AdminDashboard = ({
 
         {activeTab === 'categories' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold">Folders (Categories)</h3>
-              <button 
-                onClick={() => setIsAddingCategory(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-accent text-black font-bold rounded-xl hover:scale-105 transition-transform"
-              >
-                <FolderPlus className="w-4 h-4" /> Add Folder
-              </button>
-            </div>
-
-            {(isAddingCategory || editingCategory) && (
-              <form onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory} className="glass p-6 rounded-3xl flex flex-col gap-4">
-                {saveError && (
-                  <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    {saveError}
-                  </div>
-                )}
-                <div className="flex gap-4 items-end">
-                  <div className="flex-1 space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{editingCategory ? 'Edit Folder Name' : 'Folder Name'}</label>
-                    <input 
-                      value={catName}
-                      onChange={(e) => setCatName(e.target.value)}
-                      placeholder="e.g. Logo Design"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-accent"
-                      required
-                    />
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Cover Image</label>
-                    <div className="relative">
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={handleCatCoverFileChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        required={!catCover}
-                      />
-                      <div className="w-full bg-white/5 border border-white/10 border-dashed rounded-xl px-4 py-3 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
-                        <Upload className="w-4 h-4" />
-                        <span className="text-sm truncate">{catCover ? 'Image Selected' : 'Upload Cover'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button type="submit" disabled={isSaving} className="px-6 py-3 bg-orange-accent text-black font-bold rounded-xl disabled:opacity-50">
-                    {isSaving ? 'Saving...' : 'Save'}
+            {!browsingFolderId ? (
+              <>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold">Folders (Categories)</h3>
+                  <button 
+                    onClick={() => setIsAddingCategory(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-accent text-black font-bold rounded-xl hover:scale-105 transition-transform"
+                  >
+                    <FolderPlus className="w-4 h-4" /> Add Folder
                   </button>
-                  <button type="button" onClick={() => { setIsAddingCategory(false); setEditingCategory(null); setCatCover(''); setCatName(''); }} className="px-6 py-3 glass rounded-xl">Cancel</button>
-                </div>
-                {catCover && (
-                  <div className="w-32 h-32 rounded-xl overflow-hidden border border-white/10">
-                    <img src={catCover} alt="Cover Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                  </div>
-                )}
-              </form>
-            )}
-
-            <DndContext 
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEndCategories}
-            >
-              <SortableContext 
-                items={categories.map(c => c.id)} 
-                strategy={rectSortingStrategy}
-              >
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {categories.map(cat => (
-                    <SortableCategoryItem 
-                      key={cat.id} 
-                      cat={cat} 
-                      onEdit={handleEditCategory} 
-                      onDelete={handleDeleteCategory} 
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </div>
-        )}
-
-        {activeTab === 'projects' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold">Projects</h3>
-              <button 
-                onClick={() => setIsAddingProject(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-accent text-black font-bold rounded-xl hover:scale-105 transition-transform"
-              >
-                <Plus className="w-4 h-4" /> New Project
-              </button>
-            </div>
-
-            {(isAddingProject || editingProject) && (
-              <form onSubmit={handleAddProject} className="glass p-5 md:p-6 rounded-3xl space-y-5 border-orange-accent/30 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-accent to-blue-accent"></div>
-                
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-orange-accent/20 flex items-center justify-center text-orange-accent">
-                    {editingProject ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  </div>
-                  <h4 className="text-xl font-black tracking-tight text-white">{editingProject ? 'Edit Project' : 'New Project'}</h4>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                      Project Name <span className="text-orange-accent">*</span>
-                    </label>
-                    <input 
-                      value={projName}
-                      onChange={(e) => setProjName(e.target.value)}
-                      placeholder="e.g. Modern Brand Identity"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent transition-all text-white placeholder:text-gray-600"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                      Folder <span className="text-orange-accent">*</span>
-                    </label>
-                    <div className="relative">
-                      <select 
-                        value={projCatId}
-                        onChange={(e) => setProjCatId(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent text-white appearance-none transition-all"
-                        required
-                      >
-                        <option value="" className="bg-gray-900 text-gray-400">Select Folder</option>
-                        {categories.map(cat => (
-                          <option key={cat.id} value={cat.id} className="bg-gray-900 text-white">{cat.name}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                      Visibility <span className="text-orange-accent">*</span>
-                    </label>
-                    <div className="relative">
-                      <select 
-                        value={projStatus}
-                        onChange={(e) => setProjStatus(e.target.value as 'draft' | 'published')}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent text-white appearance-none transition-all"
-                        required
-                      >
-                        <option value="published" className="bg-gray-900 text-white">Published</option>
-                        <option value="draft" className="bg-gray-900 text-white">Draft (Hidden)</option>
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                      <ImageIcon className="w-3 h-3 text-orange-accent" /> Cover Image <span className="text-orange-accent">*</span>
-                    </label>
-                    
-                    {!projCover ? (
-                      <div className="relative group">
-                        <input 
-                          type="file"
-                          accept="image/*"
-                          onChange={handleCoverFileChange}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          required={!editingProject}
-                        />
-                        <div className="w-full border border-dashed border-white/20 rounded-xl px-4 py-6 flex flex-col items-center justify-center gap-2 group-hover:border-orange-accent/50 group-hover:bg-orange-accent/5 transition-all">
-                          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-orange-accent group-hover:scale-110 transition-all">
-                            <Upload className="w-4 h-4" />
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-white">Click or drag image</p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="relative inline-block group rounded-xl overflow-hidden border border-white/10">
-                        <img src={projCover} alt="Cover Preview" referrerPolicy="no-referrer" className="h-24 w-auto object-cover" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button 
-                            type="button"
-                            onClick={() => setProjCover('')}
-                            className="bg-red-500 text-white rounded-full p-2 hover:scale-110 transition-transform shadow-xl"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-
-                <div className="space-y-2 pt-3 border-t border-white/5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                    <Layout className="w-3 h-3 text-blue-accent" /> Canvas Editor (Compose your project)
-                  </label>
-                  <CanvasDesignEditor 
-                    items={canvasItems} 
-                    setItems={updateCanvasItems} 
-                    onUploadImage={handleCanvasImageUpload} 
-                    backgroundColor={canvasBgColor}
-                    setBackgroundColor={setCanvasBgColor}
-                    canvasHeight={canvasHeight}
-                    setCanvasHeight={setCanvasHeight}
-                    onUndo={handleUndo}
-                    onRedo={handleRedo}
-                    onSetCover={handleSetCover}
-                    onClear={handleClearCanvas}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                    <FileText className="w-3 h-3 text-gray-400" /> Description
-                  </label>
-                  <textarea 
-                    value={projDesc}
-                    onChange={(e) => setProjDesc(e.target.value)}
-                    placeholder="Describe the project details..."
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent h-24 text-white placeholder:text-gray-600 resize-none transition-all"
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-white/10">
-                  <div className="flex-1 flex flex-col gap-1">
+                {(isAddingCategory || editingCategory) && (
+                  <form onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory} className="glass p-6 rounded-3xl flex flex-col gap-4">
                     {saveError && (
-                      <div className="mb-2 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
+                      <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
                         {saveError}
                       </div>
                     )}
-                    <button 
-                      type="submit" 
-                      disabled={isSaving} 
-                      className="w-full py-3 bg-orange-accent text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-orange-accent/20"
-                    >
-                      {isSaving ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-                      ) : isSaved ? (
-                        <><Check className="w-4 h-4" /> Saved!</>
-                      ) : (
-                        <><Send className="w-4 h-4" /> {editingProject ? 'Update Project' : 'Publish Project'}</>
-                      )}
-                    </button>
-                    {pendingUploads.current.size > 0 && !isSaving && (
-                      <p className="text-[10px] text-blue-accent font-bold animate-pulse text-center">
-                        Images are uploading... Click Publish to finish.
-                      </p>
+                    <div className="flex gap-4 items-end">
+                      <div className="flex-1 space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{editingCategory ? 'Edit Folder Name' : 'Folder Name'}</label>
+                        <input 
+                          value={catName}
+                          onChange={(e) => setCatName(e.target.value)}
+                          placeholder="e.g. Logo Design"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-accent"
+                          required
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Cover Image</label>
+                        <div className="relative">
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleCatCoverFileChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            required={!catCover}
+                          />
+                          <div className="w-full bg-white/5 border border-white/10 border-dashed rounded-xl px-4 py-3 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+                            <Upload className="w-4 h-4" />
+                            <span className="text-sm truncate">{catCover ? 'Image Selected' : 'Upload Cover'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button type="submit" disabled={isSaving} className="px-6 py-3 bg-orange-accent text-black font-bold rounded-xl disabled:opacity-50">
+                        {isSaving ? 'Saving...' : 'Save'}
+                      </button>
+                      <button type="button" onClick={() => { setIsAddingCategory(false); setEditingCategory(null); setCatCover(''); setCatName(''); }} className="px-6 py-3 glass rounded-xl">Cancel</button>
+                    </div>
+                    {catCover && (
+                      <div className="w-32 h-32 rounded-xl overflow-hidden border border-white/10">
+                        <img src={catCover} alt="Cover Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                      </div>
                     )}
-                  </div>
-                  <button type="button" onClick={resetProjectForm} className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
+                  </form>
+                )}
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map(proj => (
-                <div key={proj.id} className="glass rounded-3xl overflow-hidden group">
-                  <div className="aspect-video relative">
-                    <img src={proj.coverImage || undefined} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="" />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      {proj.status === 'draft' ? (
-                        <span className="px-2 py-1 bg-gray-900/80 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-md border border-white/10 backdrop-blur-md">Draft</span>
-                      ) : (
-                        <span className="px-2 py-1 bg-green-500/80 text-white text-[10px] font-bold uppercase tracking-widest rounded-md border border-green-400/20 backdrop-blur-md">Published</span>
-                      )}
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEndCategories}
+                >
+                  <SortableContext 
+                    items={categories.map(c => c.id)} 
+                    strategy={rectSortingStrategy}
+                  >
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {categories.map(cat => (
+                        <SortableCategoryItem 
+                          key={cat.id} 
+                          cat={cat} 
+                          onEdit={handleEditCategory} 
+                          onDelete={handleDeleteCategory} 
+                          onBrowse={(id) => setBrowsingFolderId(id)}
+                        />
+                      ))}
                     </div>
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                      <button 
-                        onClick={() => {
-                          setEditingProject(proj);
-                          setProjName(proj.name);
-                          setProjCatId(proj.categoryId);
-                          setProjCover(proj.coverImage);
-                          setProjImages(proj.images || []);
-                          setProjDesc(proj.description);
-                          setProjStatus(proj.status || 'published');
-                          setCanvasItems(proj.canvasData || []);
-                          setCanvasHeight(proj.canvasHeight || 450);
-                          setCanvasHistory([proj.canvasData || []]);
-                          setHistoryStep(0);
-                          setCanvasBgColor(proj.canvasBackgroundColor || '#1a1a1a');
-                          setIsAddingProject(true);
-                        }}
-                        className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteProject(proj.id)}
-                        className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                  </SortableContext>
+                </DndContext>
+              </>
+            ) : (
+              <div className="space-y-6">
+                {/* Project List Content */}
+                {(isAddingProject || editingProject) && (
+                  <form onSubmit={handleAddProject} className="glass p-5 md:p-6 rounded-3xl space-y-5 border-orange-accent/30 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-accent to-blue-accent"></div>
+                    
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-full bg-orange-accent/20 flex items-center justify-center text-orange-accent">
+                        {editingProject ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      </div>
+                      <h4 className="text-xl font-black tracking-tight text-white">{editingProject ? 'Edit Project' : 'New Project'}</h4>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                          Project Name <span className="text-orange-accent">*</span>
+                        </label>
+                        <input 
+                          value={projName}
+                          onChange={(e) => setProjName(e.target.value)}
+                          placeholder="e.g. Modern Brand Identity"
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent transition-all text-white placeholder:text-gray-600"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                          Folder Location
+                        </label>
+                        <div className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-gray-400 font-bold flex items-center gap-2">
+                          <Folder className="w-4 h-4" /> {categories.find(c => c.id === browsingFolderId)?.name}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                          Visibility <span className="text-orange-accent">*</span>
+                        </label>
+                        <div className="relative">
+                          <select 
+                            value={projStatus}
+                            onChange={(e) => setProjStatus(e.target.value as 'draft' | 'published')}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent text-white appearance-none transition-all"
+                            required
+                          >
+                            <option value="published" className="bg-gray-900 text-white">Published</option>
+                            <option value="draft" className="bg-gray-900 text-white">Draft (Hidden)</option>
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                          <ImageIcon className="w-3 h-3 text-orange-accent" /> Cover Image <span className="text-orange-accent">*</span>
+                        </label>
+                        
+                        {!projCover ? (
+                          <div className="relative group">
+                            <input 
+                              type="file"
+                              accept="image/*"
+                              onChange={handleCoverFileChange}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              required={!editingProject}
+                            />
+                            <div className="w-full border border-dashed border-white/20 rounded-xl px-4 py-6 flex flex-col items-center justify-center gap-2 group-hover:border-orange-accent/50 group-hover:bg-orange-accent/5 transition-all">
+                              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-orange-accent group-hover:scale-110 transition-all">
+                                <Upload className="w-4 h-4" />
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs font-bold text-white">Click or drag image</p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative inline-block group rounded-xl overflow-hidden border border-white/10">
+                            <img src={projCover} alt="Cover Preview" referrerPolicy="no-referrer" className="h-24 w-auto object-cover" />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button 
+                                type="button"
+                                onClick={() => setProjCover('')}
+                                className="bg-red-500 text-white rounded-full p-2 hover:scale-110 transition-transform shadow-xl"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="text-xs font-bold tracking-tight text-gray-300">Layout Canvas</label>
+                        <CanvasDesignEditor 
+                          items={canvasItems} 
+                          setItems={updateCanvasItems} 
+                          onUploadImage={handleCanvasImageUpload} 
+                          backgroundColor={canvasBgColor}
+                          setBackgroundColor={setCanvasBgColor}
+                          canvasHeight={canvasHeight}
+                          setCanvasHeight={setCanvasHeight}
+                          onUndo={handleUndo}
+                          onRedo={handleRedo}
+                          onSetCover={handleSetCover}
+                          onClear={handleClearCanvas}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                        <FileText className="w-3 h-3 text-gray-400" /> Description
+                      </label>
+                      <textarea 
+                        value={projDesc}
+                        onChange={(e) => setProjDesc(e.target.value)}
+                        placeholder="Describe the project process..."
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-accent h-32 text-white placeholder:text-gray-600 resize-none transition-all"
+                      />
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-white/10">
+                      <div className="flex-1 flex flex-col gap-1">
+                        {saveError && (
+                          <div className="mb-2 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            {saveError}
+                          </div>
+                        )}
+                        <button 
+                          type="submit" 
+                          disabled={isSaving} 
+                          className="w-full py-3 bg-orange-accent text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-orange-accent/20"
+                        >
+                          {isSaving ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                          ) : (
+                            <><Send className="w-4 h-4" /> {editingProject ? 'Update Project' : 'Publish Project'}</>
+                          )}
+                        </button>
+                      </div>
+                      <button type="button" onClick={resetProjectForm} className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10">
+                        Cancel
                       </button>
                     </div>
-                  </div>
-                  <div className="p-4">
-                    <p className="font-bold">{proj.name}</p>
-                    <p className="text-xs text-gray-500">{categories.find(c => c.id === proj.categoryId)?.name}</p>
-                  </div>
+                  </form>
+                )}
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {projects.filter(p => p.categoryId === browsingFolderId).map(proj => (
+                    <div key={proj.id} className="glass rounded-3xl overflow-hidden group border border-white/5 relative">
+                      <div className="aspect-video relative overflow-hidden">
+                        <img 
+                          src={proj.coverImage} 
+                          alt={proj.name} 
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        />
+                        <div className="absolute top-4 left-4 flex gap-2">
+                          <span className={`px-2 py-1 ${proj.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'} text-black text-[10px] font-bold rounded uppercase`}>
+                            {proj.status}
+                          </span>
+                        </div>
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                          <button 
+                            onClick={() => {
+                              setEditingProject(proj);
+                              setProjName(proj.name);
+                              setProjCatId(proj.categoryId || '');
+                              setProjCover(proj.coverImage);
+                              setProjDesc(proj.description || '');
+                              setProjStatus(proj.status);
+                              setCanvasItems(proj.canvasData || []);
+                              setCanvasHeight(proj.canvasHeight || 450);
+                              setCanvasBgColor(proj.canvasBackgroundColor || '#1a1a1a');
+                              setIsAddingProject(true);
+                            }}
+                            className="w-10 h-10 rounded-full bg-orange-accent text-black flex items-center justify-center hover:scale-110 transition-transform shadow-xl"
+                          >
+                            <Edit2 className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProject(proj.id)}
+                            className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-110 transition-transform shadow-xl"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-4 border-t border-white/5 bg-black/20">
+                        <h4 className="font-bold text-sm truncate">{proj.name}</h4>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+
+                {projects.filter(p => p.categoryId === browsingFolderId).length === 0 && (
+                  <div className="py-20 flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-3xl">
+                    <FolderOpen className="w-12 h-12 mb-4 opacity-20" />
+                    <p className="font-bold uppercase tracking-widest text-xs">No projects in this folder</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -3216,7 +3190,7 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
   );
 };
 
-function SortableCategoryItem({ cat, onEdit, onDelete }: { cat: any, onEdit: (cat: any) => void, onDelete: (id: string) => void }) {
+function SortableCategoryItem({ cat, onEdit, onDelete, onBrowse }: { cat: any, onEdit: (cat: any) => void, onDelete: (id: string) => void, onBrowse: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
   
   const style = {
@@ -3241,6 +3215,13 @@ function SortableCategoryItem({ cat, onEdit, onDelete }: { cat: any, onEdit: (ca
       <div className="relative z-10 flex-1">
         <p className="font-bold text-lg">{cat.name}</p>
         <p className="text-xs text-gray-400 font-mono">/{cat.slug}</p>
+        <button 
+          onPointerDown={e => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onBrowse(cat.id); }}
+          className="mt-3 text-xs font-bold uppercase tracking-widest text-orange-accent hover:text-white transition-colors flex items-center gap-1"
+        >
+          Manage Projects <ArrowRight className="w-3 h-3" />
+        </button>
       </div>
       <div className="relative z-10 flex items-center gap-2" onPointerDown={e => e.stopPropagation()}>
         <button 
