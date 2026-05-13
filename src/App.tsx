@@ -1469,58 +1469,63 @@ const AdminDashboard = ({
           <div className="space-y-6">
             {!browsingFolderId ? (
               <>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-bold">Folders (Categories)</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
+                    <FolderOpen className="w-6 h-6 text-orange-accent" /> Folders <span className="text-gray-500 font-normal">/ Gallery</span>
+                  </h3>
                   <button 
                     onClick={() => setIsAddingCategory(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-accent text-black font-bold rounded-xl hover:scale-105 transition-transform"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-orange-accent text-black font-black rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-orange-accent/20"
                   >
-                    <FolderPlus className="w-4 h-4" /> Add Folder
+                    <FolderPlus className="w-5 h-5" /> Add Folder
                   </button>
                 </div>
 
                 {(isAddingCategory || editingCategory) && (
-                  <form onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory} className="glass p-6 rounded-3xl flex flex-col gap-4">
+                  <form onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory} className="glass p-6 rounded-3xl flex flex-col gap-4 border border-white/5 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-orange-accent"></div>
                     {saveError && (
                       <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
                         {saveError}
                       </div>
                     )}
-                    <div className="flex gap-4 items-end">
-                      <div className="flex-1 space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{editingCategory ? 'Edit Folder Name' : 'Folder Name'}</label>
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                      <div className="flex-1 w-full space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{editingCategory ? 'Edit Folder Name' : 'Folder Name'}</label>
                         <input 
                           value={catName}
                           onChange={(e) => setCatName(e.target.value)}
                           placeholder="e.g. Logo Design"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-accent"
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-accent transition-all"
                           required
                         />
                       </div>
-                      <div className="flex-1 space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Cover Image</label>
+                      <div className="flex-1 w-full space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Cover Image</label>
                         <div className="relative">
                           <input 
                             type="file" 
                             accept="image/*"
                             onChange={handleCatCoverFileChange}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                             required={!catCover}
                           />
-                          <div className="w-full bg-white/5 border border-white/10 border-dashed rounded-xl px-4 py-3 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+                          <div className="w-full bg-black/40 border border-white/10 border-dashed rounded-xl px-4 py-3 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors text-sm text-gray-400">
                             <Upload className="w-4 h-4" />
-                            <span className="text-sm truncate">{catCover ? 'Image Selected' : 'Upload Cover'}</span>
+                            <span className="truncate">{catCover ? 'Change Image' : 'Upload Cover'}</span>
                           </div>
                         </div>
                       </div>
-                      <button type="submit" disabled={isSaving} className="px-6 py-3 bg-orange-accent text-black font-bold rounded-xl disabled:opacity-50">
-                        {isSaving ? 'Saving...' : 'Save'}
-                      </button>
-                      <button type="button" onClick={() => { setIsAddingCategory(false); setEditingCategory(null); setCatCover(''); setCatName(''); }} className="px-6 py-3 glass rounded-xl">Cancel</button>
+                      <div className="flex gap-2 w-full md:w-auto">
+                        <button type="submit" disabled={isSaving} className="flex-1 md:flex-none px-8 py-3 bg-blue-accent text-black font-black rounded-xl disabled:opacity-50 hover:brightness-110 active:scale-95 transition-all">
+                          {isSaving ? 'Saving...' : 'Save'}
+                        </button>
+                        <button type="button" onClick={() => { setIsAddingCategory(false); setEditingCategory(null); setCatCover(''); setCatName(''); }} className="px-6 py-3 glass rounded-xl text-sm font-bold">Cancel</button>
+                      </div>
                     </div>
                     {catCover && (
-                      <div className="w-32 h-32 rounded-xl overflow-hidden border border-white/10">
+                      <div className="w-32 h-20 rounded-xl overflow-hidden border border-white/10">
                         <img src={catCover} alt="Cover Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       </div>
                     )}
@@ -1536,22 +1541,71 @@ const AdminDashboard = ({
                     items={categories.map(c => c.id)} 
                     strategy={rectSortingStrategy}
                   >
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {categories.map(cat => (
                         <SortableCategoryItem 
                           key={cat.id} 
                           cat={cat} 
                           onEdit={handleEditCategory} 
                           onDelete={handleDeleteCategory} 
-                          onBrowse={(id) => setBrowsingFolderId(id)}
+                          onBrowse={(id) => {
+                            setBrowsingFolderId(id);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
                         />
                       ))}
                     </div>
                   </SortableContext>
                 </DndContext>
+                
+                {categories.length === 0 && !isAddingCategory && (
+                  <div className="py-20 flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-[40px]">
+                    <FolderPlus className="w-16 h-16 mb-4 opacity-10" />
+                    <p className="font-bold uppercase tracking-[0.2em] text-xs">No folders yet. Create your first collection!</p>
+                  </div>
+                )}
               </>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-8">
+                {/* Folder Navigation Header */}
+                <div className="flex justify-between items-center bg-zinc-900/50 backdrop-blur-xl p-4 sm:p-5 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-accent/5 to-transparent pointer-events-none"></div>
+                  
+                  <button 
+                    onClick={() => setBrowsingFolderId(null)}
+                    className="flex items-center gap-3 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all font-black text-xs uppercase tracking-widest text-white border border-white/5 hover:border-orange-accent/50"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-orange-accent" /> Back to Folders
+                  </button>
+
+                  <div className="hidden md:flex flex-col items-center">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mb-1">Browsing Directory</span>
+                    <h3 className="text-xl font-black text-white flex items-center gap-2">
+                       <span className="text-orange-accent">#</span> {categories.find(c => c.id === browsingFolderId)?.name}
+                    </h3>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      setProjCatId(browsingFolderId);
+                      setIsAddingProject(true);
+                      setEditingProject(null);
+                      setProjName('');
+                      setProjCover('');
+                      setProjDesc('');
+                      setCanvasItems([]);
+                      setCanvasBgColor('#1a1a1a');
+                      setCanvasHeight(450);
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 bg-orange-accent text-black font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-orange-accent/30 text-xs uppercase tracking-widest"
+                  >
+                    <Plus className="w-5 h-5" /> New Project
+                  </button>
+                </div>
+
+                {/* Project Management Grid or Form */}
+                {/* (The rest of the form and grid logic follows) */}
+
                 {/* Project List Content */}
                 {(isAddingProject || editingProject) && (
                   <form onSubmit={handleAddProject} className="glass p-5 md:p-6 rounded-3xl space-y-5 border-orange-accent/30 relative overflow-hidden">
