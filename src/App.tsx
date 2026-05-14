@@ -166,6 +166,66 @@ const SERVICES: Service[] = [
   },
 ];
 
+const Preloader = () => {
+  return (
+    <motion.div 
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+      className="fixed inset-0 z-[9999] bg-[#0a0502] flex flex-col items-center justify-center p-6"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,106,0,0.05)_0%,transparent_70%)]" />
+      
+      <div className="relative">
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          className="w-32 h-32 md:w-40 md:h-40 rounded-full border-t-2 border-r-2 border-orange-accent/40 border-l-2 border-blue-accent/40 border-b-2 border-white/5"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <motion.img 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" 
+            alt="Logo" 
+            className="w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-[0_0_40px_rgba(255,106,0,0.2)] object-cover" 
+          />
+        </div>
+      </div>
+
+      <div className="mt-12 text-center">
+        <motion.h2 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-white mb-2"
+        >
+          Abdul <span className="text-orange-accent">Wahab</span>
+        </motion.h2>
+        <motion.div 
+          initial={{ width: 0 }}
+          animate={{ width: 200 }}
+          transition={{ duration: 2, ease: "easeInOut" }}
+          className="h-px bg-gradient-to-r from-transparent via-orange-accent/50 to-transparent mx-auto"
+        />
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1 }}
+          className="text-[10px] font-bold uppercase tracking-[0.4em] text-gray-500 mt-4 animate-pulse"
+        >
+          Crafting Visual Stories...
+        </motion.p>
+      </div>
+
+      <div className="absolute bottom-10 text-gray-700 text-[10px] font-mono tracking-widest uppercase">
+        © 2026 Wahab Graphic.
+      </div>
+    </motion.div>
+  );
+};
+
 // --- Canvas Components ---
 const URLImage = ({ item, isSelected, onSelect, onChange, readOnly }: { 
   item: CanvasItem, 
@@ -2425,10 +2485,16 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'py-4 bg-black/80 backdrop-blur-md border-b border-white/10' : 'py-8'}`}>
       <div className="max-w-[1600px] mx-auto px-6 grid grid-cols-2 md:grid-cols-3 items-center">
         {/* Logo (Left) */}
-        <a href="#home" onClick={() => handleNavLinkClick('home')} className="flex items-center gap-3 relative z-10 justify-self-start">
-          <img src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" alt="Wahab Graphic Logo" referrerPolicy="no-referrer" className="w-10 h-10 rounded-lg shadow-lg object-cover" />
-          <span className="text-2xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
-        </a>
+    <a href="#home" onClick={() => handleNavLinkClick('home')} className="flex items-center gap-3 relative z-10 justify-self-start">
+      <img 
+        src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" 
+        alt="Wahab Graphic Logo" 
+        referrerPolicy="no-referrer" 
+        className="w-10 h-10 rounded-lg shadow-lg object-cover" 
+        loading="lazy"
+      />
+      <span className="text-2xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
+    </a>
 
         {/* Desktop Nav - Pill Style (Center) */}
         <div className="hidden md:flex items-center justify-center gap-2 glass px-2 py-2 rounded-full relative justify-self-center">
@@ -2681,12 +2747,13 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
-              <img 
-                src="https://i.imgur.com/NU9hpnH.png" 
-                alt="Abdul Wahab" 
-                className="w-full h-auto object-cover aspect-[4/5] rounded-3xl border-4 border-white/10 transition-all duration-300"
-                referrerPolicy="no-referrer"
-              />
+        <img 
+          src="https://i.imgur.com/NU9hpnH.png" 
+          alt="Abdul Wahab" 
+          className="w-full h-auto object-cover aspect-[4/5] rounded-3xl border-4 border-white/10 transition-all duration-300"
+          referrerPolicy="no-referrer"
+          loading="eager"
+        />
               
               {isHovering && (
                 <div
@@ -2834,6 +2901,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                           className="w-full h-full object-cover rounded-lg shadow-inner"
                           style={{ imageRendering: 'auto' }}
                           referrerPolicy="no-referrer"
+                          loading="lazy"
                         />
                       </div>
                     ))}
@@ -2843,13 +2911,14 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                   <div className="absolute inset-0 z-20 bg-white/5 rounded-3xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 group-hover:top-14 group-hover:border-t-white/20 group-hover:translate-y-2">
                     {cat.coverImage ? (
                       <>
-                        <img 
-                          src={cat.coverImage} 
-                          alt={cat.name} 
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          style={{ imageRendering: 'auto' }}
-                          referrerPolicy="no-referrer"
-                        />
+                    <img 
+                      src={cat.coverImage} 
+                      alt={cat.name} 
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      style={{ imageRendering: 'auto' }}
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       </>
                     ) : (
@@ -2905,6 +2974,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       style={{ imageRendering: 'auto' }}
                       referrerPolicy="no-referrer"
+                      loading="lazy"
                     />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 pb-4 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end">
                       <h3 className="text-lg font-bold text-white text-center drop-shadow-md">{project.name}</h3>
@@ -3301,6 +3371,7 @@ export default function App() {
   const [user, setUser] = useState<any | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
@@ -3344,12 +3415,85 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Auth state management with Supabase
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      setIsAdmin(u?.email === adminEmail);
-    });
+    // Initial load handling
+    const initializeApp = async () => {
+      const start = Date.now();
+      
+      try {
+        // 1. Get session first to determine admin status
+        const { data: { session } } = await supabase.auth.getSession();
+        const u = session?.user ?? null;
+        const isUserAdmin = u?.email === adminEmail;
+        
+        setUser(u);
+        setIsAdmin(isUserAdmin);
+
+        // 2. Fetch categories and projects in parallel
+        const [catsRes, projsRes] = await Promise.all([
+          supabase.from('categories').select('*').order('order', { ascending: true }),
+          isUserAdmin 
+            ? supabase.from('portfolio_projects').select('*').order('created_at', { ascending: false })
+            : supabase.from('portfolio_projects').select('*').eq('status', 'published').order('created_at', { ascending: false })
+        ]);
+
+        if (catsRes.data) {
+          setCategories(catsRes.data.map(c => ({
+            ...c,
+            coverImage: c.cover_image
+          })));
+        }
+
+        if (projsRes.data) {
+          setProjects(projsRes.data.map(p => ({
+            ...p,
+            coverImage: p.cover_image,
+            categoryId: p.category_id,
+            canvasData: p.canvas_data,
+            canvasBackgroundColor: p.canvas_background_color,
+            canvasHeight: p.canvas_height,
+            createdAt: p.created_at
+          })));
+        } else if (projsRes.error && projsRes.error.code === '42703') {
+           // Fallback if status column is missing
+           const { data: allData } = await supabase
+             .from('portfolio_projects')
+             .select('*')
+             .order('created_at', { ascending: false });
+           
+           if (allData) {
+             setProjects(allData.map(p => ({
+               ...p,
+               coverImage: p.cover_image,
+               categoryId: p.category_id,
+               canvasData: p.canvas_data,
+               canvasBackgroundColor: p.canvas_background_color,
+               canvasHeight: p.canvas_height,
+               createdAt: p.created_at
+             })));
+           }
+        }
+
+        if (isUserAdmin) {
+          const { data: msgData } = await supabase
+            .from('messages')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (msgData) setMessages(msgData);
+        }
+
+      } catch (err) {
+        console.error("Initialization error:", err);
+      } finally {
+        const elapsed = Date.now() - start;
+        const minDelay = 1000; // 1 second minimum delay
+        if (elapsed < minDelay) {
+          await new Promise(resolve => setTimeout(resolve, minDelay - elapsed));
+        }
+        setIsInitialLoading(false);
+      }
+    };
+
+    initializeApp();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
@@ -3357,37 +3501,12 @@ export default function App() {
       setIsAdmin(u?.email === adminEmail);
     });
 
-    // Initial fetch for categories
-    const fetchCats = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('*')
-          .order('order', { ascending: true });
-        
-        if (error) {
-          console.error("Error fetching categories:", error);
-          if (error.code === 'PGRST204' || error.code === 'PGRST205') {
-            console.warn("Categories table might be missing. Please create it in Supabase.");
-          }
-        } else {
-          const mappedCats = (data || []).map(c => ({
-            ...c,
-            coverImage: c.cover_image
-          })) as Category[];
-          setCategories(mappedCats);
-        }
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
-      }
-    };
-
-    fetchCats();
-
     // Subscribe to real-time changes for categories
     const catsChannel = supabase.channel('categories_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
-        fetchCats();
+        supabase.from('categories').select('*').order('order', { ascending: true }).then(({ data }) => {
+          if (data) setCategories(data.map(c => ({ ...c, coverImage: c.cover_image })));
+        });
       })
       .subscribe();
 
@@ -3398,6 +3517,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (isInitialLoading) return; // Skip if still inside initial load
+    
     // Fetch projects with Supabase
     const fetchProjs = async () => {
       try {
@@ -3495,6 +3616,10 @@ export default function App() {
 
   return (
     <div className="relative">
+      <AnimatePresence mode="wait">
+        {isInitialLoading && <Preloader key="preloader" />}
+      </AnimatePresence>
+
       <CustomCursor />
       <GlassScene />
       <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} />
@@ -3508,7 +3633,13 @@ export default function App() {
       <footer className="py-12 border-t border-white/5">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
-            <img src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" alt="Wahab Graphic Logo" referrerPolicy="no-referrer" className="w-8 h-8 rounded-md opacity-80 object-cover" />
+            <img 
+              src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" 
+              alt="Wahab Graphic Logo" 
+              referrerPolicy="no-referrer" 
+              className="w-8 h-8 rounded-md opacity-80 object-cover" 
+              loading="lazy"
+            />
             <span className="text-xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
           </div>
           

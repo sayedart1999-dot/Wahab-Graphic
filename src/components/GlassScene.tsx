@@ -133,15 +133,17 @@ export const GlassScene = () => {
         <spotLight position={[20, 20, 20]} angle={0.15} penumbra={1} intensity={1} />
         <pointLight position={[-20, -20, -20]} intensity={0.5} />
         
-        <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
-          <GlassPlus scrollProgress={scrollYProgress} />
-        </Float>
+        <React.Suspense fallback={null}>
+          <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
+            <GlassPlus scrollProgress={scrollYProgress} />
+          </Float>
 
-        {Array.from({ length: 6 }).map((_, i) => (
-          <FloatingCube key={i} index={i} totalCount={6} scrollProgress={scrollYProgress} />
-        ))}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <FloatingCube key={i} index={i} totalCount={6} scrollProgress={scrollYProgress} />
+          ))}
 
-        <Environment preset="city" />
+          <Environment preset="city" />
+        </React.Suspense>
       </Canvas>
     </div>
   );
