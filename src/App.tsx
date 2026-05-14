@@ -1218,8 +1218,9 @@ const AdminDashboard = ({
   const handleSaveStats = async () => {
     setIsSaving(true);
     setSaveError(null);
+    setSaveSuccess(false);
     try {
-      // Upsert stats one by one to ensure accuracy
+      // Upsert stats one by one
       for (const stat of stats) {
         const { error } = await supabase
           .from('portfolio_stats')
@@ -1228,18 +1229,20 @@ const AdminDashboard = ({
             label: stat.label, 
             value: stat.value, 
             type: stat.type 
-          });
-        if (error) throw error;
+          }, { onConflict: 'id' });
+        
+        if (error) {
+          console.error(`Error saving stat ${stat.id}:`, error);
+          throw error;
+        }
       }
       
-      // Update local storage as a cache
       localStorage.setItem('wahab_stats', JSON.stringify(stats));
-      
-      // Temporary success animation handled by isSaving state change in UI
-      // but we could add a toast here if we had a toast library
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
-      console.error("Error saving stats:", err);
-      setSaveError(err.message || "Failed to save stats to cloud.");
+      console.error("Error saving stats to cloud:", err);
+      setSaveError(err.message || "Failed to save stats. Please ensure 'portfolio_stats' table exists.");
     } finally {
       setIsSaving(false);
     }
@@ -1447,10 +1450,10 @@ const AdminDashboard = ({
               <button 
                 onClick={handleSaveStats}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-8 py-3 bg-blue-accent text-black font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-blue-accent/20 disabled:opacity-50"
+                className={`flex items-center gap-2 px-8 py-3 font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl disabled:opacity-50 ${saveSuccess ? 'bg-green-500 text-white' : 'bg-blue-accent text-black shadow-blue-accent/20'}`}
               >
-                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                {isSaving ? 'Updating...' : 'Save to Cloud'}
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : saveSuccess ? <ShieldCheck className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+                {isSaving ? 'Updating...' : saveSuccess ? 'Saved Locally & Cloud!' : 'Save to Cloud'}
               </button>
             </div>
 
@@ -2370,13 +2373,19 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
 };
 
 const CustomCursor = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [mousePosition, setMousePosition] = useState({ x: -100, y: -100 });
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // Disable custom cursor on touch devices for performance and better UX
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouch) return;
+
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
+      if (!isVisible) setIsVisible(true);
     };
 
     const handleMouseDown = () => setIsClicking(true);
@@ -2398,7 +2407,7 @@ const CustomCursor = () => {
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mouseover', handleMouseOver);
@@ -2409,69 +2418,49 @@ const CustomCursor = () => {
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('mouseover', handleMouseOver);
     };
-  }, []);
+  }, [isVisible]);
+
+  if (!isVisible) return null;
 
   return (
-    <div className="hidden md:block">
-      {/* Horizontal Line */}
-      <motion.div
-        className="fixed top-0 left-0 h-[1px] bg-orange-accent/40 pointer-events-none z-[9997]"
-        animate={{
-          x: mousePosition.x - 20,
-          y: mousePosition.y,
-          width: isHovering ? 0 : 40,
-        }}
-        transition={{ 
-          x: { type: 'tween', duration: 0 },
-          y: { type: 'tween', duration: 0 },
-          width: { type: 'spring', damping: 30, stiffness: 300 }
+    <div className="hidden lg:block pointer-events-none">
+      {/* Horizontal Line - GPU Optimized */}
+      <div 
+        className="fixed top-0 left-0 h-[1px] bg-orange-accent/10 z-[9997] w-screen"
+        style={{
+          transform: `translateY(${mousePosition.y}px)`,
+          opacity: isHovering ? 0.2 : 0.4,
+          transition: 'opacity 0.3s ease'
         }}
       />
-      {/* Vertical Line */}
-      <motion.div
-        className="fixed top-0 left-0 w-[1px] bg-orange-accent/40 pointer-events-none z-[9997]"
-        animate={{
-          x: mousePosition.x,
-          y: mousePosition.y - 20,
-          height: isHovering ? 0 : 40,
-        }}
-        transition={{ 
-          x: { type: 'tween', duration: 0 },
-          y: { type: 'tween', duration: 0 },
-          height: { type: 'spring', damping: 30, stiffness: 300 }
+      {/* Vertical Line - GPU Optimized */}
+      <div 
+        className="fixed top-0 left-0 w-[1px] bg-orange-accent/10 z-[9997] h-screen"
+        style={{
+          transform: `translateX(${mousePosition.x}px)`,
+          opacity: isHovering ? 0.2 : 0.4,
+          transition: 'opacity 0.3s ease'
         }}
       />
-      {/* Main Dot */}
-      <motion.div
-        className="fixed top-0 left-0 w-2 h-2 bg-orange-accent rounded-full pointer-events-none z-[9999]"
+
+      <motion.div 
+        className="fixed top-0 left-0 z-[9998]"
         animate={{
-          x: mousePosition.x - 4,
-          y: mousePosition.y - 4,
-          scale: isClicking ? 0.5 : isHovering ? 0 : 1,
+          x: mousePosition.x - (isHovering ? 20 : 8),
+          y: mousePosition.y - (isHovering ? 20 : 8),
+          scale: isClicking ? 0.8 : 1,
         }}
-        transition={{ 
-          x: { type: 'tween', duration: 0 },
-          y: { type: 'tween', duration: 0 },
-          scale: { type: 'spring', damping: 30, stiffness: 300, mass: 0.1 }
-        }}
-      />
-      {/* Expanding Ring on Hover */}
-      <motion.div
-        className="fixed top-0 left-0 w-12 h-12 border-2 border-blue-accent rounded-full pointer-events-none z-[9998]"
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{
-          x: mousePosition.x - 24,
-          y: mousePosition.y - 24,
-          opacity: isHovering ? 1 : 0,
-          scale: isHovering ? 1.2 : 0,
-        }}
-        transition={{ 
-          x: { type: 'tween', duration: 0 },
-          y: { type: 'tween', duration: 0 },
-          opacity: { duration: 0.2 },
-          scale: { type: 'spring', damping: 20, stiffness: 150 }
-        }}
-      />
+        transition={{ type: "spring", damping: 35, stiffness: 450, mass: 0.4 }}
+      >
+        <div className={`
+          relative flex items-center justify-center transition-all duration-300
+          ${isHovering 
+            ? 'w-10 h-10 border-2 border-orange-accent bg-orange-accent/5 rounded-full shadow-[0_0_15px_rgba(255,106,0,0.2)]' 
+            : 'w-4 h-4 border border-orange-accent/40 rounded-full'}
+        `}>
+          <div className={`w-1 h-1 bg-orange-accent rounded-full ${isHovering ? 'animate-pulse' : ''}`} />
+        </div>
+      </motion.div>
     </div>
   );
 };
@@ -3426,6 +3415,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
@@ -3581,9 +3571,19 @@ export default function App() {
       })
       .subscribe();
 
+    // Subscribe to real-time changes for stats
+    const statsChannel = supabase.channel('stats_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'portfolio_stats' }, () => {
+        supabase.from('portfolio_stats').select('*').order('id', { ascending: true }).then(({ data }) => {
+          if (data && data.length > 0) setStats(data);
+        });
+      })
+      .subscribe();
+
     return () => {
       subscription.unsubscribe();
       supabase.removeChannel(catsChannel);
+      supabase.removeChannel(statsChannel);
     };
   }, []);
 
