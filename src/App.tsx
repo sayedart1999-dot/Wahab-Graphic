@@ -50,7 +50,9 @@ import {
   ShieldCheck,
   AlertCircle,
   FolderOpen,
-  ArrowRight
+  ArrowRight,
+  Save,
+  BarChart3
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { uploadToCloudinary, uploadMultipleToCloudinary } from './lib/cloudinary';
@@ -1213,6 +1215,36 @@ const AdminDashboard = ({
     });
   };
 
+  const handleSaveStats = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      // Upsert stats one by one to ensure accuracy
+      for (const stat of stats) {
+        const { error } = await supabase
+          .from('portfolio_stats')
+          .upsert({ 
+            id: stat.id, 
+            label: stat.label, 
+            value: stat.value, 
+            type: stat.type 
+          });
+        if (error) throw error;
+      }
+      
+      // Update local storage as a cache
+      localStorage.setItem('wahab_stats', JSON.stringify(stats));
+      
+      // Temporary success animation handled by isSaving state change in UI
+      // but we could add a toast here if we had a toast library
+    } catch (err: any) {
+      console.error("Error saving stats:", err);
+      setSaveError(err.message || "Failed to save stats to cloud.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -1408,21 +1440,34 @@ const AdminDashboard = ({
 
         {activeTab === 'stats' && (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold">Manage Portfolio Stats</h3>
+            <div className="flex justify-between items-center bg-white/5 p-5 rounded-[2.5rem] border border-white/10">
+              <h3 className="text-xl font-bold flex items-center gap-3">
+                <BarChart3 className="w-6 h-6 text-orange-accent" /> Portfolio Statistics
+              </h3>
+              <button 
+                onClick={handleSaveStats}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-8 py-3 bg-blue-accent text-black font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-blue-accent/20 disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                {isSaving ? 'Updating...' : 'Save to Cloud'}
+              </button>
+            </div>
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {stats.map((stat) => (
-                <div key={stat.id} className="glass p-6 rounded-3xl border-white/5 space-y-4">
+                <div key={stat.id} className="glass p-6 rounded-3xl border-white/5 space-y-4 hover:border-white/10 transition-colors">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-10 h-10 ${stat.type === 'clients' ? 'bg-blue-accent/20' : 'bg-orange-accent/20'} rounded-xl flex items-center justify-center`}>
+                    <div className={`w-10 h-10 ${stat.type === 'clients' ? 'bg-blue-accent/20' : 'bg-orange-accent/20'} rounded-xl flex items-center justify-center shadow-inner`}>
                       {stat.type === 'projects' && <Palette className="w-5 h-5 text-orange-accent" />}
                       {stat.type === 'clients' && <Layers className="w-5 h-5 text-blue-accent" />}
                       {stat.type === 'reviews' && <Award className="w-5 h-5 text-orange-accent" />}
                     </div>
-                    <span className="font-bold uppercase text-xs tracking-widest text-gray-400">{stat.type}</span>
+                    <span className="font-bold uppercase text-[10px] tracking-widest text-gray-500">{stat.type}</span>
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Value (e.g. 120+)</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Display Value</label>
                     <input 
                       type="text" 
                       value={stat.value}
@@ -1430,12 +1475,13 @@ const AdminDashboard = ({
                         const newStats = stats.map(s => s.id === stat.id ? { ...s, value: e.target.value } : s);
                         setStats(newStats);
                       }}
-                      className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-orange-accent outline-none"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-orange-accent outline-none transition-all placeholder:text-gray-700"
+                      placeholder="e.g. 120+"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Label (e.g. Projects)</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Title Label</label>
                     <input 
                       type="text" 
                       value={stat.label}
@@ -1443,16 +1489,24 @@ const AdminDashboard = ({
                         const newStats = stats.map(s => s.id === stat.id ? { ...s, label: e.target.value } : s);
                         setStats(newStats);
                       }}
-                      className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-orange-accent outline-none"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-orange-accent outline-none transition-all placeholder:text-gray-700"
+                      placeholder="e.g. Projects Completed"
                     />
                   </div>
                 </div>
               ))}
             </div>
-            <div className="p-4 bg-orange-accent/10 border border-orange-accent/20 rounded-2xl">
-              <p className="text-orange-accent text-sm flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" /> Changes to stats are saved automatically to your local browser storage.
-              </p>
+            
+            <div className="p-5 bg-blue-accent/5 border border-blue-accent/20 rounded-[2rem] flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-accent/10 rounded-2xl flex items-center justify-center text-blue-accent">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-white">Live Data Sync</h4>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  Saving these statistics will update them across all visitors' browsers instantly.
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -3428,12 +3482,13 @@ export default function App() {
         setUser(u);
         setIsAdmin(isUserAdmin);
 
-        // 2. Fetch categories and projects in parallel
-        const [catsRes, projsRes] = await Promise.all([
+        // 2. Fetch categories, projects, and stats in parallel
+        const [catsRes, projsRes, statsRes] = await Promise.all([
           supabase.from('categories').select('*').order('order', { ascending: true }),
           isUserAdmin 
             ? supabase.from('portfolio_projects').select('*').order('created_at', { ascending: false })
-            : supabase.from('portfolio_projects').select('*').eq('status', 'published').order('created_at', { ascending: false })
+            : supabase.from('portfolio_projects').select('*').eq('status', 'published').order('created_at', { ascending: false }),
+          supabase.from('portfolio_stats').select('*').order('id', { ascending: true })
         ]);
 
         if (catsRes.data) {
@@ -3471,6 +3526,22 @@ export default function App() {
                createdAt: p.created_at
              })));
            }
+        }
+
+        // 3. Handle stats with fallback
+        if (statsRes.data && statsRes.data.length > 0) {
+          setStats(statsRes.data);
+        } else {
+          // If Supabase fetch fails or empty, try localStorage
+          const saved = localStorage.getItem('wahab_stats');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setStats(parsed);
+              }
+            } catch(e) {}
+          }
         }
 
         if (isUserAdmin) {
