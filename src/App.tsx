@@ -92,7 +92,6 @@ interface Project {
   description: string;
   status: 'draft' | 'published';
   createdAt: string; // Changed from Timestamp for Supabase
-  order: number; // For manual reordering
   canvasData?: CanvasItem[];
   canvasBackgroundColor?: string;
   canvasHeight?: number;
@@ -837,60 +836,10 @@ const AdminDashboard = ({
 
         if (error) {
           console.error("Error updating category order in DB:", error);
+          // If update fails, the real-time fetch or next refresh will revert it correctly
         }
       } catch (err) {
         console.error("Failed to persist category order:", err);
-      }
-    }
-  };
-
-  const handleDragEndProjects = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const folderProjects = projects.filter(p => p.categoryId === browsingFolderId);
-      const otherProjects = projects.filter(p => p.categoryId !== browsingFolderId);
-      
-      const oldIndex = folderProjects.findIndex((i) => i.id === active.id);
-      const newIndex = folderProjects.findIndex((i) => i.id === over.id);
-      
-      const reorderedFolderProjects = arrayMove(folderProjects, oldIndex, newIndex);
-      
-      // Update order property
-      const updatedFolderProjects = reorderedFolderProjects.map((p, idx) => ({
-        ...p,
-        order: idx
-      }));
-
-      // Merge back
-      const newAllProjects = [...otherProjects, ...updatedFolderProjects];
-      setProjects(newAllProjects);
-
-      // Persist to Supabase
-      try {
-        const updates = updatedFolderProjects.map(p => ({
-          id: p.id,
-          name: p.name,
-          category_id: p.categoryId,
-          cover_image: p.coverImage,
-          images: p.images,
-          description: p.description,
-          status: p.status,
-          order: p.order,
-          canvas_data: p.canvasData,
-          canvas_background_color: p.canvasBackgroundColor,
-          canvas_height: p.canvasHeight,
-          created_at: p.createdAt
-        }));
-
-        const { error } = await supabase
-          .from('portfolio_projects')
-          .upsert(updates, { onConflict: 'id' });
-
-        if (error) {
-          console.error("Error updating project order in DB:", error);
-        }
-      } catch (err) {
-        console.error("Failed to persist project order:", err);
       }
     }
   };
@@ -1302,7 +1251,6 @@ const AdminDashboard = ({
         images: [], // Images are now mainly in canvasData
         description: projDesc,
         status: projStatus,
-        order: editingProject ? editingProject.order : projects.filter(p => p.categoryId === projCatId).length,
         canvas_data: finalCanvasItems,
         canvas_background_color: canvasBgColor,
         canvas_height: canvasHeight,
@@ -1326,8 +1274,7 @@ const AdminDashboard = ({
             createdAt: data[0].created_at,
             canvasData: data[0].canvas_data,
             canvasBackgroundColor: data[0].canvas_background_color,
-            canvasHeight: data[0].canvas_height,
-            order: data[0].order || 0
+            canvasHeight: data[0].canvas_height
           } as Project;
           setProjects(projects.map(p => p.id === editingProject.id ? updatedProj : p));
         }
@@ -1353,8 +1300,7 @@ const AdminDashboard = ({
             createdAt: data[0].created_at,
             canvasData: data[0].canvas_data,
             canvasBackgroundColor: data[0].canvas_background_color,
-            canvasHeight: data[0].canvas_height,
-            order: data[0].order || 0
+            canvasHeight: data[0].canvas_height
           } as Project;
           setProjects([...projects, newProj]);
         }
@@ -1817,38 +1763,53 @@ const AdminDashboard = ({
                   </form>
                 )}
 
-                <DndContext 
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEndProjects}
-                >
-                  <SortableContext 
-                    items={projects.filter(p => p.categoryId === browsingFolderId).map(p => p.id)} 
-                    strategy={rectSortingStrategy}
-                  >
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {projects.filter(p => p.categoryId === browsingFolderId).map(proj => (
-                        <SortableProjectItem 
-                          key={proj.id} 
-                          proj={proj} 
-                          onEdit={(p) => {
-                            setEditingProject(p);
-                            setProjName(p.name);
-                            setProjCatId(p.categoryId || '');
-                            setProjCover(p.coverImage);
-                            setProjDesc(p.description || '');
-                            setProjStatus(p.status);
-                            setCanvasItems(p.canvasData || []);
-                            setCanvasHeight(p.canvasHeight || 450);
-                            setCanvasBgColor(p.canvasBackgroundColor || '#1a1a1a');
-                            setIsAddingProject(true);
-                          }} 
-                          onDelete={handleDeleteProject} 
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {projects.filter(p => p.categoryId === browsingFolderId).map(proj => (
+                    <div key={proj.id} className="glass rounded-3xl overflow-hidden group border border-white/5 relative">
+                      <div className="aspect-video relative overflow-hidden">
+                        <img 
+                          src={proj.coverImage} 
+                          alt={proj.name} 
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                         />
-                      ))}
+                        <div className="absolute top-4 left-4 flex gap-2">
+                          <span className={`px-2 py-1 ${proj.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'} text-black text-[10px] font-bold rounded uppercase`}>
+                            {proj.status}
+                          </span>
+                        </div>
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                          <button 
+                            onClick={() => {
+                              setEditingProject(proj);
+                              setProjName(proj.name);
+                              setProjCatId(proj.categoryId || '');
+                              setProjCover(proj.coverImage);
+                              setProjDesc(proj.description || '');
+                              setProjStatus(proj.status);
+                              setCanvasItems(proj.canvasData || []);
+                              setCanvasHeight(proj.canvasHeight || 450);
+                              setCanvasBgColor(proj.canvasBackgroundColor || '#1a1a1a');
+                              setIsAddingProject(true);
+                            }}
+                            className="w-10 h-10 rounded-full bg-orange-accent text-black flex items-center justify-center hover:scale-110 transition-transform shadow-xl"
+                          >
+                            <Edit2 className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProject(proj.id)}
+                            className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-110 transition-transform shadow-xl"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-4 border-t border-white/5 bg-black/20">
+                        <h4 className="font-bold text-sm truncate">{proj.name}</h4>
+                      </div>
                     </div>
-                  </SortableContext>
-                </DndContext>
+                  ))}
+                </div>
 
                 {projects.filter(p => p.categoryId === browsingFolderId).length === 0 && (
                   <div className="py-20 flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-3xl">
@@ -3298,63 +3259,6 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
   );
 };
 
-function SortableProjectItem({ 
-  proj, 
-  onEdit, 
-  onDelete 
-}: { 
-  proj: Project, 
-  onEdit: (p: Project) => void, 
-  onDelete: (id: string) => void 
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: proj.id });
-  
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : 1,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className={`glass rounded-3xl overflow-hidden group border border-white/5 relative ${isDragging ? 'shadow-2xl ring-2 ring-orange-accent/50 scale-105 opacity-50' : ''}`}>
-      <div className="aspect-video relative overflow-hidden">
-        <img 
-          src={proj.coverImage} 
-          alt={proj.name} 
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-        />
-        <div className="absolute top-4 left-4 flex gap-2 z-20">
-          {/* Drag Handle */}
-          <div {...attributes} {...listeners} className="w-8 h-8 rounded-lg bg-black/50 backdrop-blur-md flex items-center justify-center cursor-grab active:cursor-grabbing text-white/50 hover:text-white transition-colors">
-            <Menu className="w-4 h-4" />
-          </div>
-          <span className={`px-2 py-1 ${proj.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'} text-black text-[10px] font-bold rounded uppercase`}>
-            {proj.status}
-          </span>
-        </div>
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 z-10">
-          <button 
-            onClick={() => onEdit(proj)}
-            className="w-10 h-10 rounded-full bg-orange-accent text-black flex items-center justify-center hover:scale-110 transition-transform shadow-xl"
-          >
-            <Edit2 className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={() => onDelete(proj.id)}
-            className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-110 transition-transform shadow-xl"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-      <div className="p-4 border-t border-white/5 bg-black/20">
-        <h4 className="font-bold text-sm truncate">{proj.name}</h4>
-      </div>
-    </div>
-  );
-}
-
 function SortableCategoryItem({ cat, onEdit, onDelete, onBrowse }: { cat: any, onEdit: (cat: any) => void, onDelete: (id: string) => void, onBrowse: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
   
@@ -3463,8 +3367,8 @@ export default function App() {
         const [catsRes, projsRes] = await Promise.all([
           supabase.from('categories').select('*').order('order', { ascending: true }),
           isUserAdmin 
-            ? supabase.from('portfolio_projects').select('*').order('order', { ascending: true })
-            : supabase.from('portfolio_projects').select('*').eq('status', 'published').order('order', { ascending: true })
+            ? supabase.from('portfolio_projects').select('*').order('created_at', { ascending: false })
+            : supabase.from('portfolio_projects').select('*').eq('status', 'published').order('created_at', { ascending: false })
         ]);
 
         if (catsRes.data) {
@@ -3489,7 +3393,7 @@ export default function App() {
            const { data: allData } = await supabase
              .from('portfolio_projects')
              .select('*')
-             .order('order', { ascending: true });
+             .order('created_at', { ascending: false });
            
            if (allData) {
              setProjects(allData.map(p => ({
@@ -3556,7 +3460,7 @@ export default function App() {
         let query = supabase
           .from('portfolio_projects')
           .select('*')
-          .order('order', { ascending: true });
+          .order('created_at', { ascending: false });
 
         // First attempt with status filter if not admin
         if (!isAdmin) {
@@ -3569,7 +3473,7 @@ export default function App() {
               const { data: allData, error: allErr } = await supabase
                 .from('portfolio_projects')
                 .select('*')
-                .order('order', { ascending: true });
+                .order('created_at', { ascending: false });
               
               if (allErr) throw allErr;
               processProjects(allData);
