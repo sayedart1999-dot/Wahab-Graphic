@@ -81,7 +81,7 @@ export const ProjectEditor = ({ project, onClose, onSave }: { project: any, onCl
       <div className="absolute top-8 right-8 z-[110] flex gap-4">
         <button 
           onClick={() => onSave(images)}
-          className="px-6 py-3 bg-orange-accent text-black font-bold rounded-2xl hover:scale-105 transition-transform"
+          className="px-6 py-3 bg-brand-primary text-white font-bold rounded-2xl hover:scale-105 transition-transform"
         >
           Save Changes
         </button>

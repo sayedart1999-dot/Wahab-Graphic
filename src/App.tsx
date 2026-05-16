@@ -3,7 +3,6 @@ import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useS
 import { arrayMove, SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'motion/react';
-import { GlassScene } from './components/GlassScene';
 import { 
   Palette, 
   Layers, 
@@ -49,10 +48,16 @@ import {
   Check,
   ShieldCheck,
   AlertCircle,
-  FolderOpen,
+  Triangle,
+  Square,
+  Circle,
   ArrowRight,
+  FolderOpen,
   Save,
-  BarChart3
+  BarChart3,
+  Clock,
+  ChevronDown,
+  Settings
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { uploadToCloudinary, uploadMultipleToCloudinary } from './lib/cloudinary';
@@ -109,7 +114,7 @@ interface Stat {
   id: string;
   label: string;
   value: string;
-  type: 'projects' | 'clients' | 'reviews';
+  type: string;
 }
 
 interface Skill {
@@ -128,11 +133,11 @@ interface Service {
 
 // --- Data ---
 const SKILLS: Skill[] = [
-  { name: "Adobe Illustrator", level: 95, icon: <PenTool className="w-5 h-5" />, color: "orange-accent" },
-  { name: "Adobe Photoshop", level: 90, icon: <Palette className="w-5 h-5" />, color: "blue-accent" },
-  { name: "Typography", level: 85, icon: <Layout className="w-5 h-5" />, color: "orange-accent" },
-  { name: "Color Theory", level: 92, icon: <Layers className="w-5 h-5" />, color: "blue-accent" },
-  { name: "Branding", level: 88, icon: <Award className="w-5 h-5" />, color: "orange-accent" },
+  { name: "Adobe Illustrator", level: 95, icon: <PenTool className="w-5 h-5" />, color: "brand-primary" },
+  { name: "Adobe Photoshop", level: 90, icon: <Palette className="w-5 h-5" />, color: "brand-primary" },
+  { name: "Typography", level: 85, icon: <Layout className="w-5 h-5" />, color: "brand-primary" },
+  { name: "Color Theory", level: 92, icon: <Layers className="w-5 h-5" />, color: "brand-primary" },
+  { name: "Branding", level: 88, icon: <Award className="w-5 h-5" />, color: "brand-primary" },
 ];
 
 const SERVICES: Service[] = [
@@ -140,31 +145,31 @@ const SERVICES: Service[] = [
     title: "Logo Design", 
     description: "Unique and modern logos designed to represent your brand identity.",
     icon: <PenTool className="w-10 h-10" />,
-    color: "orange-accent"
+    color: "brand-primary"
   },
   { 
     title: "Brand Identity", 
     description: "Consistent visual systems including colors, typography, and brand style.",
     icon: <Layers className="w-10 h-10" />,
-    color: "blue-accent"
+    color: "brand-primary"
   },
   { 
     title: "Social Media Design", 
     description: "Eye-catching graphics for Instagram, Facebook, and other platforms.",
     icon: <Smartphone className="w-10 h-10" />,
-    color: "orange-accent"
+    color: "brand-primary"
   },
   { 
     title: "Flyer & Poster Design", 
     description: "Creative promotional materials for marketing and advertising.",
     icon: <Monitor className="w-10 h-10" />,
-    color: "blue-accent"
+    color: "brand-primary"
   },
   { 
     title: "YouTube Thumbnail Design", 
     description: "Attention-grabbing thumbnails designed to increase clicks.",
     icon: <Layout className="w-10 h-10" />,
-    color: "orange-accent"
+    color: "brand-primary"
   },
 ];
 
@@ -174,24 +179,24 @@ const Preloader = () => {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
-      className="fixed inset-0 z-[9999] bg-[#0a0502] flex flex-col items-center justify-center p-6"
+      className="fixed inset-0 z-[9999] bg-[#f8fafc] flex flex-col items-center justify-center p-6"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,106,0,0.05)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,60,237,0.05)_0%,transparent_70%)]" />
       
       <div className="relative">
         <motion.div 
           animate={{ rotate: 360 }}
           transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="w-32 h-32 md:w-40 md:h-40 rounded-full border-t-2 border-r-2 border-orange-accent/40 border-l-2 border-blue-accent/40 border-b-2 border-white/5"
+          className="w-32 h-32 md:w-40 md:h-40 rounded-full border-t-2 border-r-2 border-brand-primary/40 border-l-2 border-brand-primary/40 border-b-2 border-slate-200"
         />
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.img 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" 
+            src="https://i.imgur.com/mNctGoH.png" 
             alt="Logo" 
-            className="w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-[0_0_40px_rgba(255,106,0,0.2)] object-cover" 
+            className="w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-[0_10px_40px_rgba(124,60,237,0.1)] object-cover bg-white" 
           />
         </div>
       </div>
@@ -201,28 +206,77 @@ const Preloader = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-white mb-2"
+          className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 mb-2"
         >
-          Abdul <span className="text-orange-accent">Wahab</span>
+          Abdul <span className="text-brand-primary">Wahab</span>
         </motion.h2>
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: 200 }}
           transition={{ duration: 2, ease: "easeInOut" }}
-          className="h-px bg-gradient-to-r from-transparent via-orange-accent/50 to-transparent mx-auto"
+          className="h-px bg-gradient-to-r from-transparent via-brand-primary/30 to-transparent mx-auto"
         />
         <motion.p 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 1 }}
-          className="text-[10px] font-bold uppercase tracking-[0.4em] text-gray-500 mt-4 animate-pulse"
+          className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-400 mt-4 animate-pulse"
         >
           Crafting Visual Stories...
         </motion.p>
       </div>
 
-      <div className="absolute bottom-10 text-gray-700 text-[10px] font-mono tracking-widest uppercase">
+      <div className="absolute bottom-10 text-slate-300 text-[10px] font-mono tracking-widest uppercase">
         © 2026 Wahab Graphic.
+      </div>
+    </motion.div>
+  );
+};
+
+const TiltCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => {
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const box = card.getBoundingClientRect();
+    const x = e.clientX - box.left;
+    const y = e.clientY - box.top;
+    const centerX = box.width / 2;
+    const centerY = box.height / 2;
+    
+    // Sensitivity factor
+    const factor = 25;
+    const rotateX = ((y - centerY) / centerY) * factor;
+    const rotateY = ((centerX - x) / centerX) * factor;
+
+    setRotate({ x: rotateX, y: rotateY });
+    setIsHovered(true);
+  };
+
+  const onMouseLeave = () => {
+    setRotate({ x: 0, y: 0 });
+    setIsHovered(false);
+  };
+
+  return (
+    <motion.div
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      animate={{
+        rotateX: rotate.x,
+        rotateY: rotate.y,
+        scale: isHovered ? 0.95 : 1,
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 25, mass: 0.5 }}
+      style={{ 
+        transformStyle: "preserve-3d", 
+        perspective: 1000 
+      }}
+      className={className}
+    >
+      <div style={{ transform: "translateZ(20px)" }} className="h-full">
+        {children}
       </div>
     </motion.div>
   );
@@ -573,9 +627,9 @@ const CanvasDesignEditor = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap justify-between items-center bg-black/40 p-3 rounded-xl border border-white/10 gap-4">
+      <div className="flex flex-wrap justify-between items-center bg-slate-100/50 p-3 rounded-xl border border-slate-200 gap-4">
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 px-4 py-2 bg-blue-accent text-black font-bold rounded-lg cursor-pointer hover:scale-105 transition-transform">
+          <label className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white font-bold rounded-lg cursor-pointer hover:scale-105 transition-transform">
             <Plus className="w-4 h-4" /> Add Images
             <input 
               type="file" 
@@ -586,20 +640,20 @@ const CanvasDesignEditor = ({
             />
           </label>
           
-          <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-            <label className="text-xs text-gray-400 font-bold uppercase">Height:</label>
+          <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+            <label className="text-xs text-slate-500 font-bold uppercase">Height:</label>
             <input 
               type="number" 
               value={canvasHeight}
               onChange={(e) => setCanvasHeight(Number(e.target.value))}
-              className="w-16 bg-transparent border border-white/20 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-orange-accent"
+              className="w-16 bg-transparent border border-slate-200 rounded px-2 py-1 text-xs text-slate-900 focus:outline-none focus:border-brand-primary"
               min="450"
               step="50"
             />
           </div>
 
-          <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-            <label className="text-xs text-gray-400 font-bold uppercase">Canvas Color:</label>
+          <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+            <label className="text-xs text-slate-500 font-bold uppercase">Canvas Color:</label>
             <div className="flex items-center gap-2">
               <input 
                 type="color" 
@@ -607,7 +661,7 @@ const CanvasDesignEditor = ({
                 onChange={(e) => setBackgroundColor(e.target.value)}
                 className="w-8 h-8 rounded cursor-pointer bg-transparent border-0 p-0"
               />
-              <span className="text-xs font-mono text-gray-400">{backgroundColor}</span>
+              <span className="text-xs font-mono text-slate-500">{backgroundColor}</span>
             </div>
           </div>
         </div>
@@ -617,16 +671,16 @@ const CanvasDesignEditor = ({
             <button
               type="button"
               onClick={() => { setZoom(1); setStagePos({ x: 0, y: 0 }); }}
-              className="px-3 py-2 bg-blue-500/20 text-blue-500 border border-blue-500/50 font-bold rounded-lg hover:bg-blue-500 hover:text-white transition-colors text-xs"
+              className="px-3 py-2 bg-brand-primary/10 text-brand-primary border border-brand-primary/20 font-bold rounded-lg hover:bg-brand-primary hover:text-white transition-colors text-xs shadow-sm"
             >
               Reset Zoom
             </button>
           )}
-          <div className="w-px h-6 bg-white/10 mx-2"></div>
+          <div className="w-px h-6 bg-slate-200 mx-2"></div>
           <button
             type="button"
             onClick={onUndo}
-            className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors text-white"
+            className="p-2 bg-slate-100 border border-slate-200 rounded-lg hover:bg-white hover:border-brand-primary/50 transition-all text-slate-500 hover:text-brand-primary shadow-sm"
             title="Undo (Ctrl+Z)"
           >
             <Undo2 className="w-4 h-4" />
@@ -634,7 +688,7 @@ const CanvasDesignEditor = ({
           <button
             type="button"
             onClick={onRedo}
-            className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors text-white"
+            className="p-2 bg-slate-100 border border-slate-200 rounded-lg hover:bg-white hover:border-brand-primary/50 transition-all text-slate-500 hover:text-brand-primary shadow-sm"
             title="Redo (Ctrl+Y)"
           >
             <Redo2 className="w-4 h-4" />
@@ -643,16 +697,23 @@ const CanvasDesignEditor = ({
             <button 
               type="button"
               onClick={handleDeleteSelected}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2"
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 font-bold rounded-lg hover:bg-red-600 hover:text-white transition-all ml-2 shadow-sm"
             >
               <Trash2 className="w-4 h-4" /> Remove
             </button>
           )}
+          <button 
+            type="button"
+            onClick={handleSetCover}
+            className="px-4 py-2 bg-brand-primary text-white font-bold rounded-lg text-xs hover:scale-105 active:scale-100 transition-all shadow-lg shadow-brand-primary/20 ml-2"
+          >
+            Use as Cover
+          </button>
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 h-[600px]">
-        <div ref={scrollContainerRef} className="flex-1 rounded-xl overflow-y-auto overflow-x-hidden border border-white/10 relative shadow-inner bg-black/20 h-full custom-scrollbar" style={{ direction: 'rtl' }}>
+        <div ref={scrollContainerRef} className="flex-1 rounded-xl overflow-y-auto overflow-x-hidden border border-slate-200 relative shadow-inner bg-slate-50 h-full custom-scrollbar" style={{ direction: 'rtl' }}>
           <div ref={containerRef} style={{ direction: 'ltr' }} className="w-full min-h-full relative">
             <Stage
               width={stageSize.width}
@@ -694,7 +755,7 @@ const CanvasDesignEditor = ({
                     <Line
                       key={`v-${i}`}
                       points={[i * 10, 0, i * 10, canvasHeight]}
-                      stroke="rgba(128, 128, 128, 0.15)"
+                      stroke="rgba(0, 0, 0, 0.05)"
                       strokeWidth={1}
                     />
                   ))}
@@ -702,7 +763,7 @@ const CanvasDesignEditor = ({
                     <Line
                       key={`h-${i}`}
                       points={[0, i * 10, 800, i * 10]}
-                      stroke="rgba(128, 128, 128, 0.15)"
+                      stroke="rgba(0, 0, 0, 0.05)"
                       strokeWidth={1}
                     />
                   ))}
@@ -733,17 +794,17 @@ const CanvasDesignEditor = ({
                 />
               </Layer>
             </Stage>
-            <div className="absolute bottom-2 right-2 text-[10px] text-gray-500 pointer-events-none bg-black/50 px-2 py-1 rounded z-10">
+            <div className="absolute bottom-2 right-2 text-[10px] text-slate-400 pointer-events-none bg-white/80 px-2 py-1 rounded z-10 border border-slate-100 shadow-sm">
               Canvas: 800x{canvasHeight} (Scaled {(stageSize.scale * zoom).toFixed(2)}x)
             </div>
           </div>
         </div>
 
         {/* Layers Panel */}
-        <div className="w-full lg:w-72 bg-black/40 border border-white/10 rounded-xl flex flex-col h-full">
-          <div className="p-3 border-b border-white/10 flex items-center justify-between bg-white/5">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-              <Layers className="w-3 h-3 text-blue-accent" /> Layers ({items.length})
+        <div className="w-full lg:w-72 bg-white border border-slate-200 rounded-xl flex flex-col h-full shadow-sm">
+          <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+              <Layers className="w-3 h-3 text-brand-primary" /> Layers ({items.length})
             </h3>
           </div>
           
@@ -1371,12 +1432,12 @@ const AdminDashboard = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl overflow-y-auto p-6"
+      className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-xl overflow-y-auto p-6 text-slate-900"
     >
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Admin <span className="text-orange-accent">Dashboard</span></h2>
-          <button onClick={onClose} className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-white/10 transition-all">
+          <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Admin <span className="text-brand-primary">Dashboard</span></h2>
+          <button onClick={onClose} className="w-12 h-12 bg-white border border-slate-200 rounded-full flex items-center justify-center hover:bg-slate-50 transition-all text-slate-600 shadow-sm">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -1384,19 +1445,19 @@ const AdminDashboard = ({
         <div className="flex gap-4 mb-8">
           <button 
             onClick={() => { setActiveTab('categories'); setBrowsingFolderId(null); setSaveError(null); }}
-            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'categories' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'categories' ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'bg-slate-100 border border-slate-200 text-slate-500 hover:bg-slate-200'}`}
           >
             Manage Folders
           </button>
           <button 
             onClick={() => { setActiveTab('messages'); setBrowsingFolderId(null); setSaveError(null); }}
-            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'messages' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'messages' ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'bg-slate-100 border border-slate-200 text-slate-500 hover:bg-slate-200'}`}
           >
             Messages ({messages.length})
           </button>
           <button 
             onClick={() => { setActiveTab('notes'); setSaveError(null); }}
-            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'notes' ? 'bg-orange-accent text-black' : 'glass text-gray-400'}`}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'notes' ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'bg-slate-100 border border-slate-200 text-slate-500 hover:bg-slate-200'}`}
           >
             Style Notes
           </button>
@@ -1404,64 +1465,57 @@ const AdminDashboard = ({
 
         {activeTab === 'notes' && (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold">Style Guide & Notes</h3>
+            <h3 className="text-xl font-bold text-slate-900">Style Guide & Notes</h3>
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="glass p-6 rounded-3xl border-orange-accent/20">
-                <h4 className="text-orange-accent font-bold mb-4 flex items-center gap-2">
+              <div className="glass p-6 rounded-3xl border-brand-primary/20 bg-white">
+                <h4 className="text-brand-primary font-bold mb-4 flex items-center gap-2">
                   <Palette className="w-5 h-5" /> Color Palette
                 </h4>
                 <ul className="space-y-3 text-sm">
                   <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-[#ff6a00] border border-white/10"></div>
-                    <span><span className="font-bold">Orange Accent:</span> #ff6a00 (Primary)</span>
+                    <div className="w-6 h-6 rounded bg-[#7c3ced] border border-slate-200"></div>
+                    <span><span className="font-bold">Brand Purple:</span> #7c3ced (Primary)</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-[#00a3ff] border border-white/10"></div>
-                    <span><span className="font-bold">Blue Accent:</span> #00a3ff (Secondary)</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-[#0a0502] border border-white/10"></div>
-                    <span><span className="font-bold">Dark Background:</span> #0a0502</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-[#2a1810] border border-white/10"></div>
-                    <span><span className="font-bold">Deep Brown Glow:</span> #2a1810</span>
+                    <div className="w-6 h-6 rounded bg-[#f1f5f9] border border-slate-200"></div>
+                    <span><span className="font-bold">Light Background:</span> #f8fafc</span>
                   </li>
                 </ul>
               </div>
-              <div className="glass p-6 rounded-3xl border-blue-accent/20">
-                <h4 className="text-blue-accent font-bold mb-4 flex items-center gap-2">
+              <div className="glass p-6 rounded-3xl border-brand-primary/10 bg-white">
+                <h4 className="text-brand-primary font-bold mb-4 flex items-center gap-2">
                   <Layout className="w-5 h-5" /> Typography
                 </h4>
                 <ul className="space-y-3 text-sm">
                   <li><span className="font-bold">Display:</span> Space Grotesk (Headlines)</li>
                   <li><span className="font-bold">Sans:</span> Inter (Body Text)</li>
                   <li><span className="font-bold">Script:</span> Dancing Script (Signature/Name)</li>
-                  <li><span className="font-bold">Mono:</span> JetBrains Mono (Technical/Stats)</li>
                 </ul>
               </div>
             </div>
-            <div className="glass p-6 rounded-3xl border-white/10 italic text-gray-400 text-sm">
-              Note: These colors and fonts have been specifically chosen to maintain a premium and modern graphic designer portfolio aesthetic.
+            <div className="glass p-6 rounded-3xl italic text-slate-400 text-sm bg-slate-50 border-slate-200">
+              Note: These colors and fonts have been specifically chosen to maintain a premium and modern graphic designer portfolio aesthetic in light mode.
             </div>
           </div>
         )}
 
         {activeTab === 'messages' && (
-          <div className="space-y-4">
+          <div className="space-y-4 text-slate-900">
             <h3 className="text-xl font-bold">Messages</h3>
             {messages.map(msg => (
-              <div key={msg.id} className="glass p-6 rounded-3xl flex justify-between items-start">
+              <div key={msg.id} className="glass p-6 rounded-3xl flex justify-between items-start bg-white hover:border-brand-primary/30 transition-colors">
                 <div>
-                  <p className="font-bold">{msg.fullName}</p>
-                  <p className="text-sm text-gray-400">{msg.email}</p>
-                  <p className="font-bold mt-2">{msg.subject}</p>
-                  <p className="text-gray-300 mt-1">{msg.message}</p>
-                  <p className="text-xs text-gray-500 mt-4">{msg.createdAt?.toDate().toLocaleString()}</p>
+                  <p className="font-bold text-slate-900">{msg.fullName}</p>
+                  <p className="text-sm text-slate-500 font-medium">{msg.email}</p>
+                  <p className="font-bold mt-2 text-slate-800">{msg.subject}</p>
+                  <p className="text-slate-600 mt-1 leading-relaxed">{msg.message}</p>
+                  <p className="text-xs text-slate-400 mt-4 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {msg.createdAt?.toDate().toLocaleString()}
+                  </p>
                 </div>
                 <button 
                   onClick={() => setDeleteConfirmation({ type: 'message', id: msg.id, message: 'Are you sure you want to delete this message?' })}
-                  className="p-3 text-gray-400 hover:text-red-500 transition-colors"
+                  className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
@@ -1475,39 +1529,39 @@ const AdminDashboard = ({
             {!browsingFolderId ? (
               <>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
-                    <FolderOpen className="w-6 h-6 text-orange-accent" /> Folders <span className="text-gray-500 font-normal">/ Gallery</span>
+                  <h3 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+                    <FolderOpen className="w-6 h-6 text-brand-primary" /> Folders <span className="text-slate-400 font-normal">/ Gallery</span>
                   </h3>
                   <button 
                     onClick={() => setIsAddingCategory(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-orange-accent text-black font-black rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-orange-accent/20"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white font-black rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-brand-primary/20"
                   >
                     <FolderPlus className="w-5 h-5" /> Add Folder
                   </button>
                 </div>
 
                 {(isAddingCategory || editingCategory) && (
-                  <form onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory} className="glass p-6 rounded-3xl flex flex-col gap-4 border border-white/5 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-orange-accent"></div>
+                  <form onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory} className="bg-white p-6 rounded-3xl flex flex-col gap-4 border border-slate-200 relative overflow-hidden shadow-xl">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-brand-primary"></div>
                     {saveError && (
-                      <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
+                      <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
                         {saveError}
                       </div>
                     )}
                     <div className="flex flex-col md:flex-row gap-4 items-end">
                       <div className="flex-1 w-full space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{editingCategory ? 'Edit Folder Name' : 'Folder Name'}</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{editingCategory ? 'Edit Folder Name' : 'Folder Name'}</label>
                         <input 
                           value={catName}
                           onChange={(e) => setCatName(e.target.value)}
                           placeholder="e.g. Logo Design"
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-accent transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-primary transition-all text-slate-900"
                           required
                         />
                       </div>
                       <div className="flex-1 w-full space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Cover Image</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Cover Image</label>
                         <div className="relative">
                           <input 
                             type="file" 
@@ -1516,21 +1570,21 @@ const AdminDashboard = ({
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                             required={!catCover}
                           />
-                          <div className="w-full bg-black/40 border border-white/10 border-dashed rounded-xl px-4 py-3 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors text-sm text-gray-400">
-                            <Upload className="w-4 h-4" />
+                          <div className="w-full bg-slate-50 border border-slate-200 border-dashed rounded-xl px-4 py-3 flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors text-sm text-slate-500">
+                            <Upload className="w-4 h-4 text-brand-primary" />
                             <span className="truncate">{catCover ? 'Change Image' : 'Upload Cover'}</span>
                           </div>
                         </div>
                       </div>
                       <div className="flex gap-2 w-full md:w-auto">
-                        <button type="submit" disabled={isSaving} className="flex-1 md:flex-none px-8 py-3 bg-blue-accent text-black font-black rounded-xl disabled:opacity-50 hover:brightness-110 active:scale-95 transition-all">
+                        <button type="submit" disabled={isSaving} className="flex-1 md:flex-none px-8 py-3 bg-brand-primary text-white font-black rounded-xl disabled:opacity-50 hover:brightness-110 active:scale-95 transition-all shadow-md shadow-brand-primary/20">
                           {isSaving ? 'Saving...' : 'Save'}
                         </button>
-                        <button type="button" onClick={() => { setIsAddingCategory(false); setEditingCategory(null); setCatCover(''); setCatName(''); }} className="px-6 py-3 glass rounded-xl text-sm font-bold">Cancel</button>
+                        <button type="button" onClick={() => { setIsAddingCategory(false); setEditingCategory(null); setCatCover(''); setCatName(''); }} className="px-6 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Cancel</button>
                       </div>
                     </div>
                     {catCover && (
-                      <div className="w-32 h-20 rounded-xl overflow-hidden border border-white/10">
+                      <div className="w-32 h-20 rounded-xl overflow-hidden border border-slate-200">
                         <img src={catCover} alt="Cover Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       </div>
                     )}
@@ -1573,20 +1627,20 @@ const AdminDashboard = ({
             ) : (
               <div className="space-y-8">
                 {/* Folder Navigation Header */}
-                <div className="flex justify-between items-center bg-zinc-900/50 backdrop-blur-xl p-4 sm:p-5 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-accent/5 to-transparent pointer-events-none"></div>
+                <div className="flex justify-between items-center bg-white p-4 sm:p-5 rounded-[2.5rem] border border-slate-200 shadow-xl relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent pointer-events-none"></div>
                   
                   <button 
                     onClick={() => setBrowsingFolderId(null)}
-                    className="flex items-center gap-3 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all font-black text-xs uppercase tracking-widest text-white border border-white/5 hover:border-orange-accent/50"
+                    className="flex items-center gap-3 px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all font-black text-xs uppercase tracking-widest text-slate-600 border border-slate-200"
                   >
-                    <ArrowLeft className="w-5 h-5 text-orange-accent" /> Back to Folders
+                    <ArrowLeft className="w-5 h-5 text-brand-primary" /> Back to Folders
                   </button>
 
                   <div className="hidden md:flex flex-col items-center">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mb-1">Browsing Directory</span>
-                    <h3 className="text-xl font-black text-white flex items-center gap-2">
-                       <span className="text-orange-accent">#</span> {categories.find(c => c.id === browsingFolderId)?.name}
+                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-1">Browsing Directory</span>
+                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                       <span className="text-brand-primary">#</span> {categories.find(c => c.id === browsingFolderId)?.name}
                     </h3>
                   </div>
 
@@ -1599,10 +1653,10 @@ const AdminDashboard = ({
                       setProjCover('');
                       setProjDesc('');
                       setCanvasItems([]);
-                      setCanvasBgColor('#1a1a1a');
+                      setCanvasBgColor('#ffffff');
                       setCanvasHeight(450);
                     }}
-                    className="flex items-center gap-2 px-6 py-3 bg-orange-accent text-black font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-orange-accent/30 text-xs uppercase tracking-widest"
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-primary/30 text-xs uppercase tracking-widest"
                   >
                     <Plus className="w-5 h-5" /> New Project
                   </button>
@@ -1613,63 +1667,63 @@ const AdminDashboard = ({
 
                 {/* Project List Content */}
                 {(isAddingProject || editingProject) && (
-                  <form onSubmit={handleAddProject} className="glass p-5 md:p-6 rounded-3xl space-y-5 border-orange-accent/30 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-accent to-blue-accent"></div>
+                  <form onSubmit={handleAddProject} className="bg-white p-5 md:p-6 rounded-3xl space-y-5 border border-slate-200 relative overflow-hidden shadow-2xl">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-brand-primary"></div>
                     
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-full bg-orange-accent/20 flex items-center justify-center text-orange-accent">
+                      <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary border border-brand-primary/20">
                         {editingProject ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                       </div>
-                      <h4 className="text-xl font-black tracking-tight text-white">{editingProject ? 'Edit Project' : 'New Project'}</h4>
+                      <h4 className="text-xl font-black tracking-tight text-slate-900">{editingProject ? 'Edit Project' : 'New Project'}</h4>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                          Project Name <span className="text-orange-accent">*</span>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                          Project Name <span className="text-brand-primary">*</span>
                         </label>
                         <input 
                           value={projName}
                           onChange={(e) => setProjName(e.target.value)}
                           placeholder="e.g. Modern Brand Identity"
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent transition-all text-white placeholder:text-gray-600"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all text-slate-900 placeholder:text-slate-400"
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                           Folder Location
                         </label>
-                        <div className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-gray-400 font-bold flex items-center gap-2">
-                          <Folder className="w-4 h-4" /> {categories.find(c => c.id === browsingFolderId)?.name}
+                        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-500 font-bold flex items-center gap-2">
+                          <Folder className="w-4 h-4 text-brand-primary" /> {categories.find(c => c.id === browsingFolderId)?.name}
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                          Visibility <span className="text-orange-accent">*</span>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                          Visibility <span className="text-brand-primary">*</span>
                         </label>
                         <div className="relative">
                           <select 
                             value={projStatus}
                             onChange={(e) => setProjStatus(e.target.value as 'draft' | 'published')}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent text-white appearance-none transition-all"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 text-slate-900 appearance-none transition-all"
                             required
                           >
-                            <option value="published" className="bg-gray-900 text-white">Published</option>
-                            <option value="draft" className="bg-gray-900 text-white">Draft (Hidden)</option>
+                            <option value="published">Published</option>
+                            <option value="draft">Draft (Hidden)</option>
                           </select>
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <ChevronDown className="w-4 h-4" />
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-4">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                          <ImageIcon className="w-3 h-3 text-orange-accent" /> Cover Image <span className="text-orange-accent">*</span>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                          <ImageIcon className="w-3 h-3 text-brand-primary" /> Cover Image <span className="text-brand-primary">*</span>
                         </label>
                         
                         {!projCover ? (
@@ -1681,20 +1735,20 @@ const AdminDashboard = ({
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                               required={!editingProject}
                             />
-                            <div className="w-full border border-dashed border-white/20 rounded-xl px-4 py-6 flex flex-col items-center justify-center gap-2 group-hover:border-orange-accent/50 group-hover:bg-orange-accent/5 transition-all">
-                              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-orange-accent group-hover:scale-110 transition-all">
+                            <div className="w-full border border-dashed border-slate-300 rounded-xl px-4 py-6 flex flex-col items-center justify-center gap-2 group-hover:border-brand-primary/50 group-hover:bg-brand-primary/5 transition-all bg-white">
+                              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-brand-primary group-hover:scale-110 transition-all">
                                 <Upload className="w-4 h-4" />
                               </div>
                               <div className="text-center">
-                                <p className="text-xs font-bold text-white">Click or drag image</p>
+                                <p className="text-xs font-bold text-slate-600">Click or drag image</p>
                               </div>
                             </div>
                           </div>
                         ) : (
-                          <div className="relative inline-block group rounded-xl overflow-hidden border border-white/10">
+                          <div className="relative inline-block group rounded-xl overflow-hidden border border-slate-200">
                             <img src={projCover} alt="Cover Preview" referrerPolicy="no-referrer" className="h-24 w-auto object-cover" />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <button 
+                               <button 
                                 type="button"
                                 onClick={() => setProjCover('')}
                                 className="bg-red-500 text-white rounded-full p-2 hover:scale-110 transition-transform shadow-xl"
@@ -1707,7 +1761,7 @@ const AdminDashboard = ({
                       </div>
 
                       <div className="space-y-4">
-                        <label className="text-xs font-bold tracking-tight text-gray-300">Layout Canvas</label>
+                        <label className="text-xs font-bold tracking-tight text-slate-600">Layout Canvas</label>
                         <CanvasDesignEditor 
                           items={canvasItems} 
                           setItems={updateCanvasItems} 
@@ -1725,21 +1779,21 @@ const AdminDashboard = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                        <FileText className="w-3 h-3 text-gray-400" /> Description
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                        <FileText className="w-3 h-3 text-slate-400" /> Description
                       </label>
                       <textarea 
                         value={projDesc}
                         onChange={(e) => setProjDesc(e.target.value)}
                         placeholder="Describe the project process..."
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-accent h-32 text-white placeholder:text-gray-600 resize-none transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-primary h-32 text-slate-900 placeholder:text-slate-400 resize-none transition-all"
                       />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-white/10">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-slate-200">
                       <div className="flex-1 flex flex-col gap-1">
                         {saveError && (
-                          <div className="mb-2 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-xs font-bold flex items-center gap-2">
+                          <div className="mb-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold flex items-center gap-2">
                             <AlertCircle className="w-4 h-4" />
                             {saveError}
                           </div>
@@ -1747,7 +1801,7 @@ const AdminDashboard = ({
                         <button 
                           type="submit" 
                           disabled={isSaving} 
-                          className="w-full py-3 bg-orange-accent text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-orange-accent/20"
+                          className="w-full py-3 bg-brand-primary text-white font-black text-sm rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-brand-primary/20"
                         >
                           {isSaving ? (
                             <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
@@ -1756,7 +1810,7 @@ const AdminDashboard = ({
                           )}
                         </button>
                       </div>
-                      <button type="button" onClick={resetProjectForm} className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10">
+                      <button type="button" onClick={resetProjectForm} className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold rounded-xl transition-colors border border-slate-200">
                         Cancel
                       </button>
                     </div>
@@ -1765,7 +1819,7 @@ const AdminDashboard = ({
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {projects.filter(p => p.categoryId === browsingFolderId).map(proj => (
-                    <div key={proj.id} className="glass rounded-3xl overflow-hidden group border border-white/5 relative">
+                    <div key={proj.id} className="bg-white rounded-3xl overflow-hidden group border border-slate-200 relative shadow-sm hover:shadow-xl transition-all">
                       <div className="aspect-video relative overflow-hidden">
                         <img 
                           src={proj.coverImage} 
@@ -1774,11 +1828,11 @@ const AdminDashboard = ({
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                         />
                         <div className="absolute top-4 left-4 flex gap-2">
-                          <span className={`px-2 py-1 ${proj.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'} text-black text-[10px] font-bold rounded uppercase`}>
+                          <span className={`px-2 py-1 ${proj.status === 'published' ? 'bg-green-500 shadow-md shadow-green-500/20' : 'bg-yellow-500 shadow-md shadow-yellow-500/20'} text-white text-[10px] font-bold rounded uppercase tracking-widest`}>
                             {proj.status}
                           </span>
                         </div>
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                           <button 
                             onClick={() => {
                               setEditingProject(proj);
@@ -1789,10 +1843,10 @@ const AdminDashboard = ({
                               setProjStatus(proj.status);
                               setCanvasItems(proj.canvasData || []);
                               setCanvasHeight(proj.canvasHeight || 450);
-                              setCanvasBgColor(proj.canvasBackgroundColor || '#1a1a1a');
+                              setCanvasBgColor(proj.canvasBackgroundColor || '#ffffff');
                               setIsAddingProject(true);
                             }}
-                            className="w-10 h-10 rounded-full bg-orange-accent text-black flex items-center justify-center hover:scale-110 transition-transform shadow-xl"
+                            className="w-10 h-10 rounded-full bg-brand-primary text-white flex items-center justify-center hover:scale-110 transition-transform shadow-xl"
                           >
                             <Edit2 className="w-5 h-5" />
                           </button>
@@ -1804,8 +1858,8 @@ const AdminDashboard = ({
                           </button>
                         </div>
                       </div>
-                      <div className="p-4 border-t border-white/5 bg-black/20">
-                        <h4 className="font-bold text-sm truncate">{proj.name}</h4>
+                      <div className="p-4 border-t border-slate-100 bg-slate-50">
+                        <h4 className="font-bold text-sm truncate text-slate-900">{proj.name}</h4>
                       </div>
                     </div>
                   ))}
@@ -1825,20 +1879,20 @@ const AdminDashboard = ({
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmation && (
-        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-white/10 p-6 rounded-2xl max-w-md w-full shadow-2xl">
-            <h3 className="text-xl font-bold mb-4 text-white">Confirm Deletion</h3>
-            <p className="text-gray-300 mb-8">{deleteConfirmation.message}</p>
+        <div className="fixed inset-0 z-[200] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 p-6 rounded-3xl max-w-md w-full shadow-2xl">
+            <h3 className="text-xl font-bold mb-4 text-slate-900">Confirm Deletion</h3>
+            <p className="text-slate-500 mb-8">{deleteConfirmation.message}</p>
             <div className="flex justify-end gap-4">
               <button 
                 onClick={() => setDeleteConfirmation(null)}
-                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white transition-colors"
+                className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold transition-colors border border-slate-200"
               >
                 Cancel
               </button>
               <button 
                 onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition-colors"
+                className="px-6 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-colors shadow-lg shadow-red-500/20"
               >
                 Delete
               </button>
@@ -1946,11 +2000,11 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl"
+      className="fixed inset-0 z-[100] bg-slate-50/98 backdrop-blur-2xl"
     >
       <button 
         onClick={onClose}
-        className="fixed top-8 right-8 w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-white/10 transition-all z-[110]"
+        className="fixed top-8 right-8 w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-slate-100 transition-all z-[110] border border-slate-200 shadow-xl"
       >
         <X className="w-6 h-6" />
       </button>
@@ -1959,8 +2013,8 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
         <div className="max-w-[1400px] mx-auto px-6 py-12">
           <div className="space-y-12">
           <div className="text-center space-y-4 pt-10">
-            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">{project.name}</h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">{project.description}</p>
+            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-slate-900">{project.name}</h2>
+            <p className="text-slate-500 text-lg max-w-2xl mx-auto">{project.description}</p>
           </div>
 
           <div className="space-y-8">
@@ -1998,7 +2052,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       zIndex: 10,
                       imageRendering: 'auto'
                     }}
-                    className="cursor-zoom-in select-none drop-shadow-xl hover:scale-[1.02] transition-transform duration-300"
+                    className="cursor-zoom-in select-none drop-shadow-md hover:scale-[1.02] transition-transform duration-300"
                   />
                 ))}
               </div>
@@ -2009,12 +2063,12 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                 {project.images.map((img, idx) => (
                   <div 
                     key={idx} 
-                    className="rounded-[2rem] overflow-hidden glass border-white/10 shadow-xl break-inside-avoid cursor-pointer group relative"
+                    className="rounded-[2rem] overflow-hidden bg-white border border-slate-200 shadow-xl break-inside-avoid cursor-pointer group relative"
                     onClick={() => setSelectedImageIdx(idx)}
                   >
                     <img src={img || undefined} referrerPolicy="no-referrer" className="w-full h-auto group-hover:scale-105 transition-transform duration-500" alt={`${project.name} - ${idx + 1}`} />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
                       </div>
                     </div>
@@ -2033,7 +2087,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
           <div className="flex justify-center pt-8">
             <button 
               onClick={onClose}
-              className="px-10 py-4 bg-orange-accent text-black font-bold rounded-2xl hover:scale-105 transition-transform flex items-center gap-2"
+              className="px-10 py-4 bg-brand-primary text-white font-bold rounded-2xl hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-brand-primary/20"
             >
               <ChevronLeft className="w-5 h-5" /> Back to Portfolio
             </button>
@@ -2045,12 +2099,12 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
       {/* Lightbox */}
       {selectedImageIdx !== null && project.images && (
         <div 
-          className="fixed inset-0 z-[120] bg-black/95 flex items-center justify-center"
+          className="fixed inset-0 z-[120] bg-white flex items-center justify-center"
           onClick={() => setSelectedImageIdx(null)}
         >
           <button 
             onClick={() => setSelectedImageIdx(null)}
-            className="absolute top-8 right-8 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-[150] text-white backdrop-blur-md border border-white/10"
+            className="absolute top-8 right-8 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-all z-[150] text-slate-900 border border-slate-200 shadow-lg"
           >
             <X className="w-6 h-6" />
           </button>
@@ -2059,13 +2113,13 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
             {selectedImageIdx > 0 && (
               <button 
                 onClick={handlePrev}
-                className="absolute left-0 md:-left-16 w-14 h-14 bg-black/50 hover:bg-orange-accent hover:text-black text-white rounded-full flex items-center justify-center transition-all z-[140] backdrop-blur-md border border-white/10"
+                className="absolute left-0 md:-left-16 w-14 h-14 bg-white/80 hover:bg-brand-primary hover:text-white text-slate-900 rounded-full flex items-center justify-center transition-all z-[140] backdrop-blur-md border border-slate-200 shadow-lg"
               >
                 <ChevronLeft className="w-8 h-8" />
               </button>
             )}
             
-            <div className="w-full h-full rounded-2xl overflow-hidden border border-white/5 bg-black/40 shadow-2xl relative">
+            <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 shadow-lg relative">
               <TransformWrapper
                 initialScale={1}
                 minScale={0.5}
@@ -2074,24 +2128,24 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
               >
                 {({ zoomIn, zoomOut, resetTransform }) => (
                   <>
-                    <div className="absolute top-4 right-4 flex items-center gap-2 z-[160] bg-black/60 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10">
+                    <div className="absolute top-4 right-4 flex items-center gap-2 z-[160] bg-white/80 backdrop-blur-md rounded-full px-3 py-1.5 border border-slate-200 shadow-sm">
                       <button 
                         onClick={(e) => { e.stopPropagation(); zoomIn(); }} 
-                        className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors"
+                        className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors"
                         title="Zoom In"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); zoomOut(); }} 
-                        className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors"
+                        className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors"
                         title="Zoom Out"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); resetTransform(); }} 
-                        className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors"
+                        className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors"
                         title="Reset"
                       >
                         <RotateCcw className="w-4 h-4" />
@@ -2102,12 +2156,12 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                       contentClass="!w-full !h-full flex items-center justify-center"
                     >
                       {imageError ? (
-                        <div className="flex flex-col items-center justify-center p-12 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl max-w-md mx-auto text-center">
-                          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
+                        <div className="flex flex-col items-center justify-center p-12 bg-slate-100 rounded-3xl border border-slate-200 max-w-md mx-auto text-center">
+                          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
                             <AlertCircle className="w-8 h-8 text-red-500" />
                           </div>
-                          <h3 className="text-xl font-bold text-white mb-2">Image Failed to Load</h3>
-                          <p className="text-gray-400 text-sm leading-relaxed">
+                          <h3 className="text-xl font-bold text-slate-900 mb-2">Image Failed to Load</h3>
+                          <p className="text-slate-500 text-sm leading-relaxed">
                             The image resource could not be retrieved. This can happen if the upload was interrupted or the local preview expired.
                           </p>
                         </div>
@@ -2115,7 +2169,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                         <img 
                           key={project.images[selectedImageIdx]}
                           src={project.images[selectedImageIdx] || undefined} 
-                          className="max-w-full max-h-full object-contain select-none shadow-2xl" 
+                          className="max-w-full max-h-full object-contain select-none shadow-lg" 
                           alt={`${project.name} - Enlarge ${selectedImageIdx + 1}`} 
                           referrerPolicy="no-referrer"
                           onError={(e) => {
@@ -2133,14 +2187,14 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
             {selectedImageIdx < project.images.length - 1 && (
               <button 
                 onClick={handleNext}
-                className="absolute right-0 md:-right-16 w-14 h-14 bg-black/50 hover:bg-orange-accent hover:text-black text-white rounded-full flex items-center justify-center transition-all z-[140] backdrop-blur-md border border-white/10"
+                className="absolute right-0 md:-right-16 w-14 h-14 bg-white/80 hover:bg-brand-primary hover:text-white text-slate-900 rounded-full flex items-center justify-center transition-all z-[140] backdrop-blur-md border border-slate-200 shadow-lg"
               >
                 <ChevronRight className="w-8 h-8" />
               </button>
             )}
           </div>
           
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/50 px-6 py-2 rounded-full text-white/90 text-sm font-mono tracking-widest backdrop-blur-md border border-white/10">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/80 px-6 py-2 rounded-full text-slate-600 text-sm font-mono tracking-widest backdrop-blur-md border border-slate-200 shadow-lg">
             {selectedImageIdx + 1} / {project.images.length}
           </div>
         </div>
@@ -2149,12 +2203,12 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
       {/* Canvas Image Lightbox */}
       {selectedCanvasIdx !== null && project.canvasData && (
         <div 
-          className="fixed inset-0 z-[120] bg-black/95 flex items-center justify-center"
+          className="fixed inset-0 z-[120] bg-white flex items-center justify-center"
           onClick={() => setSelectedCanvasIdx(null)}
         >
           <button 
             onClick={() => setSelectedCanvasIdx(null)}
-            className="absolute top-8 right-8 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-[150] text-white backdrop-blur-md border border-white/10"
+            className="absolute top-8 right-8 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-all z-[150] text-slate-900 border border-slate-200 shadow-lg"
           >
             <X className="w-6 h-6" />
           </button>
@@ -2163,13 +2217,13 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
             {selectedCanvasIdx > 0 && (
               <button 
                 onClick={handleCanvasPrev}
-                className="absolute left-0 md:-left-16 w-14 h-14 bg-black/50 hover:bg-orange-accent hover:text-black text-white rounded-full flex items-center justify-center transition-all z-[140] backdrop-blur-md border border-white/10"
+                className="absolute left-0 md:-left-16 w-14 h-14 bg-white/80 hover:bg-brand-primary hover:text-white text-slate-900 rounded-full flex items-center justify-center transition-all z-[140] backdrop-blur-md border border-slate-200 shadow-lg"
               >
                 <ChevronLeft className="w-8 h-8" />
               </button>
             )}
             
-            <div className="w-full h-full rounded-2xl overflow-hidden border border-white/5 bg-black/40 shadow-2xl relative">
+            <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 shadow-lg relative">
               <TransformWrapper
                 initialScale={1}
                 minScale={0.5}
@@ -2178,24 +2232,24 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
               >
                 {({ zoomIn, zoomOut, resetTransform }) => (
                   <>
-                    <div className="absolute top-4 right-4 flex items-center gap-2 z-[160] bg-black/60 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10">
+                    <div className="absolute top-4 right-4 flex items-center gap-2 z-[160] bg-white/80 backdrop-blur-md rounded-full px-3 py-1.5 border border-slate-200 shadow-sm">
                       <button 
                         onClick={(e) => { e.stopPropagation(); zoomIn(); }} 
-                        className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors"
+                        className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors"
                         title="Zoom In"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); zoomOut(); }} 
-                        className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors"
+                        className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors"
                         title="Zoom Out"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); resetTransform(); }} 
-                        className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors"
+                        className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors"
                         title="Reset"
                       >
                         <RotateCcw className="w-4 h-4" />
@@ -2207,12 +2261,12 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                     >
                       <div className="relative w-full h-full flex items-center justify-center p-4">
                         {imageError ? (
-                          <div className="flex flex-col items-center justify-center p-12 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl max-w-md mx-auto text-center">
-                            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
+                          <div className="flex flex-col items-center justify-center p-12 bg-slate-100 rounded-3xl border border-slate-200 max-w-md mx-auto text-center">
+                            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
                               <AlertCircle className="w-8 h-8 text-red-500" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Canvas Image Failed</h3>
-                            <p className="text-gray-400 text-sm leading-relaxed">
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Canvas Image Failed</h3>
+                            <p className="text-slate-500 text-sm leading-relaxed">
                               This canvas element could not be loaded.
                             </p>
                           </div>
@@ -2224,10 +2278,6 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                             style={{ imageRendering: 'auto' }}
                             alt="Enlarged view" 
                             referrerPolicy="no-referrer"
-                            onLoad={(e) => {
-                              const img = e.currentTarget;
-                              console.log(`Image loaded: ${img.naturalWidth}x${img.naturalHeight}`);
-                            }}
                             onError={(e) => {
                               console.error("Image failed to load in modal:", project.canvasData[selectedCanvasIdx].src);
                               setImageError(true);
@@ -2244,19 +2294,100 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
             {selectedCanvasIdx < project.canvasData.length - 1 && (
               <button 
                 onClick={handleCanvasNext}
-                className="absolute right-0 md:-right-16 w-14 h-14 bg-black/50 hover:bg-orange-accent hover:text-black text-white rounded-full flex items-center justify-center transition-all z-[140] backdrop-blur-md border border-white/10"
+                className="absolute right-0 md:-right-16 w-14 h-14 bg-white/80 hover:bg-brand-primary hover:text-white text-slate-900 rounded-full flex items-center justify-center transition-all z-[140] backdrop-blur-md border border-slate-200 shadow-lg"
               >
                 <ChevronRight className="w-8 h-8" />
               </button>
             )}
           </div>
           
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/50 px-6 py-2 rounded-full text-white/90 text-sm font-mono tracking-widest backdrop-blur-md border border-white/10">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/80 px-6 py-2 rounded-full text-slate-600 text-sm font-mono tracking-widest backdrop-blur-md border border-slate-200 shadow-lg">
             {selectedCanvasIdx + 1} / {project.canvasData.length}
           </div>
         </div>
       )}
     </motion.div>
+  );
+};
+
+const GlobalBackground = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const centerX = typeof window !== 'undefined' ? window.innerWidth / 2 : 0;
+  const centerY = typeof window !== 'undefined' ? window.innerHeight / 2 : 0;
+
+  const shapes = [
+    { Icon: Circle, top: '15%', left: '10%', size: 24, factor: 0.04, opacity: 0.15, fill: true },
+    { Icon: Triangle, top: '25%', left: '85%', size: 32, factor: -0.05, opacity: 0.1, fill: true },
+    { Icon: Square, top: '65%', left: '15%', size: 28, factor: 0.03, opacity: 0.12, fill: false },
+    { Icon: Plus, top: '80%', left: '75%', size: 36, factor: -0.04, opacity: 0.08, fill: false },
+    { Icon: Circle, top: '45%', left: '45%', size: 20, factor: 0.06, opacity: 0.1, fill: true },
+    { Icon: Triangle, top: '75%', left: '40%', size: 30, factor: 0.02, opacity: 0.05, fill: true },
+    { Icon: Square, top: '10%', left: '70%', size: 24, factor: -0.03, opacity: 0.07, fill: false },
+    { Icon: Plus, top: '50%', left: '80%', size: 28, factor: 0.05, opacity: 0.1, fill: false },
+    { Icon: Circle, top: '85%', left: '10%', size: 40, factor: -0.02, opacity: 0.04, fill: true },
+    { Icon: Square, top: '30%', left: '30%', size: 16, factor: 0.07, opacity: 0.15, fill: false },
+  ];
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-white">
+      {/* Background Dot Grid - Fixed */}
+      <div className="absolute inset-0 dot-grid opacity-[0.08]" />
+      
+      {/* Background Masks for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-transparent pointer-events-none" />
+      
+      {/* Large subtle glows for atmosphere */}
+      <motion.div 
+        animate={{
+          x: (mousePosition.x - centerX) * 0.02,
+          y: (mousePosition.y - centerY) * 0.02,
+        }}
+        className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-brand-primary/5 rounded-full blur-[100px]"
+      />
+      
+      <motion.div 
+        animate={{
+          x: (mousePosition.x - centerX) * -0.01,
+          y: (mousePosition.y - centerY) * -0.01,
+        }}
+        className="absolute bottom-[-5%] right-[-5%] w-[700px] h-[700px] bg-brand-primary/5 rounded-full blur-[120px]"
+      />
+
+      {/* Movable Individual Elements */}
+      {shapes.map((shape, i) => (
+        <motion.div
+          key={i}
+          initial={false}
+          animate={{
+            x: (mousePosition.x - centerX) * shape.factor,
+            y: (mousePosition.y - centerY) * shape.factor,
+            rotate: (mousePosition.x + mousePosition.y) * 0.01 * (i % 2 === 0 ? 1 : -1)
+          }}
+          transition={{ type: 'spring', damping: 25, stiffness: 100 }}
+          style={{ top: shape.top, left: shape.left }}
+          className="absolute"
+        >
+          <shape.Icon 
+            size={shape.size} 
+            className="text-brand-primary" 
+            style={{ 
+              opacity: shape.opacity,
+              fill: shape.fill ? 'currentColor' : 'none',
+              strokeWidth: shape.fill ? 0 : 2
+            }} 
+          />
+        </motion.div>
+      ))}
+    </div>
   );
 };
 
@@ -2306,7 +2437,7 @@ const CustomCursor = () => {
     <div className="hidden md:block">
       {/* Horizontal Line */}
       <motion.div
-        className="fixed top-0 left-0 h-[1px] bg-orange-accent/40 pointer-events-none z-[9997]"
+        className="fixed top-0 left-0 h-[1px] bg-brand-primary/40 pointer-events-none z-[9997]"
         animate={{
           x: mousePosition.x - 20,
           y: mousePosition.y,
@@ -2320,7 +2451,7 @@ const CustomCursor = () => {
       />
       {/* Vertical Line */}
       <motion.div
-        className="fixed top-0 left-0 w-[1px] bg-orange-accent/40 pointer-events-none z-[9997]"
+        className="fixed top-0 left-0 w-[1px] bg-brand-primary/40 pointer-events-none z-[9997]"
         animate={{
           x: mousePosition.x,
           y: mousePosition.y - 20,
@@ -2334,7 +2465,7 @@ const CustomCursor = () => {
       />
       {/* Main Dot */}
       <motion.div
-        className="fixed top-0 left-0 w-2 h-2 bg-orange-accent rounded-full pointer-events-none z-[9999]"
+        className="fixed top-0 left-0 w-2 h-2 bg-brand-primary rounded-full pointer-events-none z-[9999]"
         animate={{
           x: mousePosition.x - 4,
           y: mousePosition.y - 4,
@@ -2348,8 +2479,7 @@ const CustomCursor = () => {
       />
       {/* Expanding Ring on Hover */}
       <motion.div
-        className="fixed top-0 left-0 w-12 h-12 border-2 border-blue-accent rounded-full pointer-events-none z-[9998]"
-        initial={{ opacity: 0, scale: 0 }}
+        className="fixed top-0 left-0 w-12 h-12 border border-brand-primary rounded-full pointer-events-none z-[9998]"
         animate={{
           x: mousePosition.x - 24,
           y: mousePosition.y - 24,
@@ -2427,18 +2557,18 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
   };
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'py-4 bg-black/80 backdrop-blur-md border-b border-white/10' : 'py-8'}`}>
+    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'py-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50' : 'py-8'}`}>
       <div className="max-w-[1600px] mx-auto px-6 grid grid-cols-2 md:grid-cols-3 items-center">
         {/* Logo (Left) */}
     <a href="#home" onClick={() => handleNavLinkClick('home')} className="flex items-center gap-3 relative z-10 justify-self-start">
       <img 
-        src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" 
+        src="https://i.imgur.com/mNctGoH.png" 
         alt="Wahab Graphic Logo" 
         referrerPolicy="no-referrer" 
-        className="w-10 h-10 rounded-lg shadow-lg object-cover" 
+        className="w-10 h-10 rounded-lg shadow-md object-cover border border-slate-100 bg-white" 
         loading="lazy"
       />
-      <span className="text-2xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
+      <span className="text-2xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
     </a>
 
         {/* Desktop Nav - Pill Style (Center) */}
@@ -2448,12 +2578,12 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
               key={link.name} 
               href={link.href} 
               onClick={() => handleNavLinkClick(link.id)}
-              className={`px-6 py-2 text-sm font-bold rounded-full transition-all tracking-wide relative z-10 ${activeSection === link.id ? 'text-black' : 'text-white hover:text-orange-accent'}`}
+              className={`px-6 py-2 text-sm font-bold rounded-full transition-all tracking-wide relative z-10 ${activeSection === link.id ? 'text-white' : 'text-slate-600 hover:text-brand-primary'}`}
             >
               {activeSection === link.id && (
                 <motion.div 
                   layoutId="activeNav"
-                  className="absolute inset-0 bg-orange-accent rounded-full -z-10 shadow-[0_0_20px_rgba(255,106,0,0.3)]"
+                  className="absolute inset-0 bg-brand-primary rounded-full -z-10 shadow-[0_5px_15px_rgba(124,60,237,0.2)]"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
@@ -2467,13 +2597,13 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
           {isAdmin && (
             <button 
               onClick={onAdminClick}
-              className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-orange-accent hover:text-black transition-all border-white/10 group"
+              className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all bg-white border-slate-200 group"
               title="Admin Dashboard"
             >
-              <UserIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+              <UserIcon className="w-6 h-6 group-hover:scale-110 transition-transform text-slate-600 group-hover:text-white" />
             </button>
           )}
-          <button className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-orange-accent hover:text-black transition-all border-white/10">
+          <button className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all bg-white border-slate-200 text-slate-600">
             <Menu className="w-6 h-6" />
           </button>
         </div>
@@ -2483,13 +2613,13 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
           {isAdmin && (
             <button 
               onClick={onAdminClick}
-              className="text-white hover:text-orange-accent transition-colors"
+              className="text-slate-600 hover:text-brand-primary transition-colors"
             >
               <UserIcon className="w-6 h-6" />
             </button>
           )}
           <button 
-            className="text-white"
+            className="text-slate-900"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X /> : <Menu />}
@@ -2504,14 +2634,14 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 w-full glass md:hidden py-8 flex flex-col items-center gap-6"
+            className="absolute top-full left-0 w-full glass md:hidden py-8 flex flex-col items-center gap-6 bg-white border-b border-slate-200"
           >
             {navLinks.map((link) => (
               <a 
                 key={link.name} 
                 href={link.href} 
                 onClick={() => handleNavLinkClick(link.id)}
-                className={`text-lg font-bold transition-all uppercase tracking-widest ${activeSection === link.id ? 'text-orange-accent' : 'text-white hover:text-orange-accent'}`}
+                className={`text-lg font-bold transition-all uppercase tracking-widest ${activeSection === link.id ? 'text-brand-primary' : 'text-slate-600 hover:text-brand-primary'}`}
               >
                 {link.name}
               </a>
@@ -2547,10 +2677,6 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center pt-16 overflow-hidden">
-      {/* Background Glows */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-accent/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
-      <div className="absolute top-3/4 right-1/4 translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-accent/10 rounded-full blur-[120px] pointer-events-none animate-pulse delay-700" />
-      
       <div className="max-w-[1600px] mx-auto px-6 relative z-10 w-full">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
           <motion.div
@@ -2559,15 +2685,15 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
           transition={{ duration: 0.8 }}
           className="order-2 lg:order-1"
         >
-          <div className="mb-4 text-lg md:text-xl text-gray-400 italic font-light">
+          <div className="mb-4 text-lg md:text-xl text-slate-400 italic font-light">
             Logo Design, Brand Identity & Social Media Graphics
           </div>
           <div className="mb-8 flex items-baseline">
-            <span className="text-2xl font-medium text-white">Hi, I am </span>
-            <span className="text-5xl md:text-6xl font-script font-semibold text-orange-accent ml-3">Abdul Wahab</span>
+            <span className="text-2xl font-medium text-slate-600">Hi, I am </span>
+            <span className="text-5xl md:text-6xl font-script font-semibold text-brand-primary ml-3">Abdul Wahab</span>
           </div>
           
-          <h1 className="text-7xl md:text-9xl font-black leading-[0.9] mb-6 tracking-tighter uppercase">
+          <h1 className="text-7xl md:text-9xl font-black leading-[0.9] mb-6 tracking-tighter uppercase text-slate-900">
             <motion.span
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -2580,43 +2706,43 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
-              className="text-orange-accent inline-block"
+              className="text-brand-primary inline-block"
             >
               Designer
             </motion.span>
           </h1>
           
-          <p className="text-gray-300 text-xl max-w-2xl mb-8 leading-relaxed font-medium">
+          <p className="text-slate-600 text-xl max-w-2xl mb-8 leading-relaxed font-medium">
             I create modern, clean, and impactful designs that help brands stand out and communicate their message clearly.
           </p>
           
           <div className="flex flex-wrap items-center gap-6 mb-8">
             <a 
               href="#portfolio" 
-              className="px-8 py-4 bg-orange-accent text-black font-bold rounded-2xl hover:scale-105 transition-transform flex items-center gap-2 text-lg shadow-[0_0_30px_rgba(255,106,0,0.4)]"
+              className="px-8 py-4 bg-brand-primary text-white font-bold rounded-2xl hover:scale-105 transition-transform flex items-center gap-2 text-lg shadow-[0_10px_30px_rgba(124,60,237,0.3)]"
             >
               View Portfolio <ChevronRight className="w-5 h-5" />
             </a>
             <a 
               href="#contact" 
-              className="px-8 py-4 border-2 border-white/20 text-white font-bold rounded-2xl hover:bg-white/5 transition-all flex items-center gap-2 text-lg"
+              className="px-8 py-4 border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all flex items-center gap-2 text-lg"
             >
               Contact Me <Send className="w-5 h-5" />
             </a>
           </div>
 
           {/* Horizontal Stats Card */}
-          <div className="glass px-6 py-4 rounded-2xl border-white/10 shadow-xl flex flex-wrap items-center gap-6 z-30 w-fit">
+          <div className="glass px-6 py-4 rounded-2xl border-slate-200 shadow-lg flex flex-wrap items-center gap-6 z-30 w-fit">
             {stats.map((stat) => (
               <div key={stat.id} className="flex items-center gap-3">
-                <div className={`w-10 h-10 ${stat.type === 'clients' ? 'bg-blue-accent/20' : 'bg-orange-accent/20'} rounded-xl flex items-center justify-center`}>
-                  {stat.type === 'projects' && <Palette className="w-5 h-5 text-orange-accent" />}
-                  {stat.type === 'clients' && <Layers className="w-5 h-5 text-blue-accent" />}
-                  {stat.type === 'reviews' && <Award className="w-5 h-5 text-orange-accent" />}
+                <div className={`w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center`}>
+                  {stat.type === 'projects' && <Palette className="w-5 h-5 text-brand-primary" />}
+                  {stat.type === 'clients' && <Layers className="w-5 h-5 text-brand-primary" />}
+                  {stat.type === 'reviews' && <Award className="w-5 h-5 text-brand-primary" />}
                 </div>
                 <div>
-                  <p className="text-lg font-bold">{stat.value}</p>
-                  <p className="text-xs text-gray-400 font-medium tracking-wide">{stat.label}</p>
+                  <p className="text-lg font-bold text-slate-900">{stat.value}</p>
+                  <p className="text-xs text-slate-400 font-medium tracking-wide">{stat.label}</p>
                 </div>
               </div>
             ))}
@@ -2630,9 +2756,9 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
           className="order-1 lg:order-2 relative flex justify-center items-center h-[600px] w-full"
         >
           {/* Circular Trails - Now centered with the avatar */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] border border-orange-accent/10 rounded-full pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[550px] md:h-[550px] border border-orange-accent/5 rounded-full pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[400px] md:h-[400px] border border-orange-accent/5 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] border border-brand-primary/10 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[550px] md:h-[550px] border border-brand-primary/5 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[400px] md:h-[400px] border border-brand-primary/5 rounded-full pointer-events-none" />
 
           {/* Floating 3D Icons */}
           <div className="absolute inset-0 pointer-events-none">
@@ -2640,18 +2766,18 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             <motion.div 
               animate={{ y: [0, -20, 0], rotate: [0, 10, 0] }}
               transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-              className="absolute top-[15%] right-[10%] glass w-16 h-16 md:w-20 md:h-20 rounded-3xl flex items-center justify-center z-20 border-orange-accent/30 shadow-[0_0_40px_rgba(255,106,0,0.2)]"
+              className="absolute top-[15%] right-[10%] glass w-16 h-16 md:w-20 md:h-20 rounded-3xl flex items-center justify-center z-20 border-brand-primary/30 shadow-[0_0_40px_rgba(124,60,237,0.2)]"
             >
-              <div className="text-orange-accent font-black text-xl md:text-2xl">Ai</div>
+              <div className="text-brand-primary font-black text-xl md:text-2xl">Ai</div>
             </motion.div>
             
             {/* Ps Icon */}
             <motion.div 
               animate={{ y: [0, 20, 0], rotate: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-              className="absolute bottom-[15%] right-[15%] glass w-16 h-16 md:w-20 md:h-20 rounded-3xl flex items-center justify-center z-20 border-blue-accent/30 shadow-[0_0_40px_rgba(0,163,255,0.2)]"
+              className="absolute bottom-[15%] right-[15%] glass w-16 h-16 md:w-20 md:h-20 rounded-3xl flex items-center justify-center z-20 border-brand-primary/30 shadow-[0_0_40px_rgba(124,60,237,0.2)]"
             >
-              <div className="text-blue-accent font-black text-xl md:text-2xl">Ps</div>
+              <div className="text-brand-primary font-black text-xl md:text-2xl">Ps</div>
             </motion.div>
 
             {/* Pen Tool */}
@@ -2660,7 +2786,7 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
               className="absolute top-[40%] left-[5%] glass w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center z-20 border-white/20"
             >
-              <PenTool className="text-orange-accent w-6 h-6 md:w-8 md:h-8" />
+              <PenTool className="text-brand-primary w-6 h-6 md:w-8 md:h-8" />
             </motion.div>
             
             {/* Palette */}
@@ -2669,7 +2795,7 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
               transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
               className="absolute bottom-[30%] left-[10%] glass w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center z-20 border-white/20"
             >
-              <Palette className="text-orange-accent w-6 h-6 md:w-8 md:h-8" />
+              <Palette className="text-brand-primary w-6 h-6 md:w-8 md:h-8" />
             </motion.div>
           </div>
 
@@ -2736,18 +2862,18 @@ const About = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-              CRAFTING <span className="text-orange-accent italic">VISUAL</span> <span className="text-blue-accent">STORIES</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight text-slate-900">
+              CRAFTING <span className="text-brand-primary italic">VISUAL</span> <span className="text-brand-primary">STORIES</span>
             </h2>
-            <div className="space-y-4 text-gray-400 text-lg leading-relaxed">
+            <div className="space-y-4 text-slate-500 text-lg leading-relaxed">
               <p>
                 Hello, I'm Wahab, a passionate graphic designer who focuses on creating clean, modern, and visually engaging designs. I specialize in logo design, brand identity, and social media graphics that help businesses build a strong visual presence. My goal is to help brands look professional and memorable through thoughtful and effective design.
               </p>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {['Logo Design', 'Social Media Design', 'Branding', 'Poster Design'].map((item) => (
                   <div key={item} className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-accent rounded-full" />
-                    <span className="text-white text-sm font-medium">{item}</span>
+                    <div className="w-2 h-2 bg-brand-primary rounded-full" />
+                    <span className="text-slate-800 text-sm font-medium">{item}</span>
                   </div>
                 ))}
               </div>
@@ -2756,24 +2882,32 @@ const About = () => {
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-6">
-              <div className="glass p-8 rounded-3xl text-center border-orange-accent/20 hover:border-orange-accent/50 transition-colors">
-                <h3 className="text-4xl font-bold text-orange-accent mb-2">5+</h3>
-                <p className="text-xs uppercase tracking-widest text-gray-400">Years Exp.</p>
-              </div>
-              <div className="glass p-8 rounded-3xl text-center border-blue-accent/20 hover:border-blue-accent/50 transition-colors">
-                <h3 className="text-4xl font-bold text-blue-accent mb-2">150+</h3>
-                <p className="text-xs uppercase tracking-widest text-gray-400">Projects</p>
-              </div>
+              <TiltCard className="cursor-default">
+                <div className="glass p-8 rounded-3xl text-center border-brand-primary/10 hover:border-brand-primary/30 transition-all shadow-sm">
+                  <h3 className="text-4xl font-bold text-brand-primary mb-2">5+</h3>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">Years Exp.</p>
+                </div>
+              </TiltCard>
+              <TiltCard className="cursor-default">
+                <div className="glass p-8 rounded-3xl text-center border-brand-primary/10 hover:border-brand-primary/30 transition-all shadow-sm">
+                  <h3 className="text-4xl font-bold text-brand-primary mb-2">150+</h3>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">Projects</p>
+                </div>
+              </TiltCard>
             </div>
             <div className="space-y-6">
-              <div className="glass p-8 rounded-3xl text-center border-orange-accent/20 hover:border-orange-accent/50 transition-colors">
-                <h3 className="text-4xl font-bold text-orange-accent mb-2">99%</h3>
-                <p className="text-xs uppercase tracking-widest text-gray-400">Happy Clients</p>
-              </div>
-              <div className="glass p-8 rounded-3xl text-center border-blue-accent/20 hover:border-blue-accent/50 transition-colors">
-                <h3 className="text-4xl font-bold text-blue-accent mb-2">24/7</h3>
-                <p className="text-xs uppercase tracking-widest text-gray-400">Support</p>
-              </div>
+              <TiltCard className="cursor-default">
+                 <div className="glass p-8 rounded-3xl text-center border-brand-primary/10 hover:border-brand-primary/30 transition-all shadow-sm">
+                  <h3 className="text-4xl font-bold text-brand-primary mb-2">99%</h3>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">Happy Clients</p>
+                </div>
+              </TiltCard>
+              <TiltCard className="cursor-default">
+                <div className="glass p-8 rounded-3xl text-center border-brand-primary/10 hover:border-brand-primary/30 transition-all shadow-sm">
+                  <h3 className="text-4xl font-bold text-brand-primary mb-2">24/7</h3>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">Support</p>
+                </div>
+              </TiltCard>
             </div>
           </div>
         </div>
@@ -2794,92 +2928,81 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
     : [];
 
   return (
-    <section id="portfolio" className="min-h-screen flex items-center py-16 scroll-mt-20 bg-black/30">
+    <section id="portfolio" className="min-h-screen flex items-center py-16 scroll-mt-20 bg-slate-50/50">
       <div className="max-w-[1600px] mx-auto px-6 w-full">
         <div className="text-center mb-10">
-          <h2 className="text-4xl md:text-5xl font-bold mb-3">MY <span className="text-orange-accent italic">PORTFOLIO</span></h2>
-          <p className="text-gray-400 max-w-xl mx-auto">Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs that help brands communicate better with their audience.</p>
-        </div>
-
-        {!selectedCategory ? (
+          <h2 className="text-4xl md:text-5xl font-bold mb-3 text-slate-900">MY <span className="text-brand-primary italic">PORTFOLIO</span></h2>
+          <p className="text-slate-500 max-w-xl mx-auto text-lg">Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs that help brands communicate better with their audience.</p>
+        </div>        {!selectedCategory ? (
           <motion.div 
             layout
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+            className="grid md:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-20 gap-x-10"
           >
-            {categories.map((cat, idx) => {
+            {categories.map((cat) => {
               const catProjects = publishedProjects.filter(p => p.categoryId === cat.id);
               return (
-                <motion.div
-                  key={cat.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.4 }}
-                  className="group relative w-full aspect-[4/3] cursor-pointer"
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  {/* Back of the Folder (Hidden until hover) */}
-                  <div className="absolute inset-0 pt-8 z-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-full h-full bg-white/10 border border-white/10 rounded-3xl rounded-tl-none relative">
-                      {/* Folder Tab */}
-                      <div className="absolute -top-8 left-0 w-1/2 max-w-[160px] h-8 bg-white/10 border-t border-l border-r border-white/10 rounded-t-2xl"></div>
+                <TiltCard key={cat.id}>
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.5 }}
+                    className="group relative w-full aspect-[4/3] cursor-pointer"
+                    onClick={() => setSelectedCategory(cat)}
+                  >
+                    {/* Sliding Papers (Projects) */}
+                    <div className="absolute inset-x-6 top-6 bottom-6 z-10 flex justify-center pointer-events-none">
+                      {catProjects.slice(0, 3).map((p, i) => (
+                        <div
+                          key={p.id}
+                          className={`absolute bottom-0 w-full aspect-video bg-white p-1 rounded-xl shadow-xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] opacity-0 group-hover:opacity-100 border border-slate-200/50
+                            ${i === 0 ? 'group-hover:-translate-y-28 group-hover:-rotate-3 group-hover:scale-[1.08] group-hover:shadow-2xl' : 
+                              i === 1 ? 'group-hover:-translate-y-24 group-hover:rotate-2 group-hover:scale-[1.03] group-hover:shadow-xl' : 
+                              'group-hover:-translate-y-20 group-hover:rotate-6 group-hover:scale-95 group-hover:shadow-lg'}
+                          `}
+                          style={{ zIndex: 10 + i }}
+                        >
+                          <div className="w-full h-full overflow-hidden rounded-lg">
+                            <img
+                              src={p.coverImage || undefined}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              style={{ imageRendering: 'auto' }}
+                              referrerPolicy="no-referrer"
+                              loading="lazy"
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
 
-                  {/* Files (Projects) sliding out from the middle */}
-                  <div className="absolute inset-0 z-10 flex justify-center pointer-events-none">
-                    {catProjects.slice(0, 3).map((p, i) => (
-                      <div
-                        key={p.id}
-                        className={`absolute bottom-6 w-[75%] aspect-video bg-white p-1.5 rounded-xl shadow-2xl transition-all duration-500 ease-out opacity-0 group-hover:opacity-100
-                          translate-y-12
-                          ${i === 0 ? 'group-hover:-translate-y-32 group-hover:-rotate-6' : 
-                            i === 1 ? 'group-hover:-translate-y-28 group-hover:rotate-3' : 
-                            'group-hover:-translate-y-24 group-hover:rotate-8'}
-                        `}
-                        style={{ zIndex: 10 + i }}
-                      >
-                        <img
-                          src={p.coverImage || undefined}
-                          alt=""
-                          className="w-full h-full object-cover rounded-lg shadow-inner"
-                          style={{ imageRendering: 'auto' }}
-                          referrerPolicy="no-referrer"
-                          loading="lazy"
-                        />
+                    {/* Front of the Folder Cover */}
+                    <div className="absolute inset-0 z-20 bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-200 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:top-14 group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] group-hover:translate-y-2 group-hover:scale-115">
+                      {cat.coverImage ? (
+                        <>
+                          <img 
+                            src={cat.coverImage} 
+                            alt={cat.name} 
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            style={{ imageRendering: 'auto' }}
+                            referrerPolicy="no-referrer"
+                            loading="lazy"
+                          />
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-200 flex flex-col items-center justify-center p-8">
+                          <Folder className="w-20 h-20 mb-4 text-brand-primary/30" />
+                        </div>
+                      )}
+                      
+                      <div className="absolute inset-0 p-8 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
+                        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                        <h3 className="text-sm font-medium text-white tracking-widest uppercase text-center pb-0 mb-[-25px] transition-colors z-10">{cat.name}</h3>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Front of the Folder (Category Cover) */}
-                  <div className="absolute inset-0 z-20 bg-white/5 rounded-3xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 group-hover:top-14 group-hover:border-t-white/20 group-hover:translate-y-2">
-                    {cat.coverImage ? (
-                      <>
-                    <img 
-                      src={cat.coverImage} 
-                      alt={cat.name} 
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      style={{ imageRendering: 'auto' }}
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                    />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      </>
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800/80 to-black/90 flex flex-col items-center justify-center p-8">
-                        <Folder className={`w-20 h-20 mb-4 ${
-                          idx % 2 === 0 ? 'text-orange-accent' : 'text-blue-accent'
-                        } group-hover:scale-110 transition-transform duration-500`} />
-                        <h3 className="text-2xl font-bold text-center">{cat.name}</h3>
-                      </div>
-                    )}
-                    
-                    <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <h3 className="text-xl font-bold text-white drop-shadow-md text-center leading-tight">{cat.name}</h3>
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </TiltCard>
               );
             })}
           </motion.div>
@@ -2892,12 +3015,12 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
             <div className="flex items-center justify-between mb-8">
               <button 
                 onClick={() => setSelectedCategory(null)}
-                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-bold uppercase tracking-widest text-xs"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5 text-brand-primary" />
                 <span>Back to Folders</span>
               </button>
-              <h3 className="text-2xl font-bold text-white">{selectedCategory.name}</h3>
+              <h3 className="text-2xl font-bold text-slate-900">Portfolio <span className="text-brand-primary">/</span> {selectedCategory.name}</h3>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -2910,7 +3033,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.4 }}
-                    className="group relative overflow-hidden rounded-3xl aspect-[4/3] glass cursor-pointer"
+                    className="group relative overflow-hidden rounded-3xl aspect-[4/3] glass cursor-pointer border-slate-200"
                     onClick={() => setSelectedProject(project)}
                   >
                     <img 
@@ -2921,7 +3044,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                       referrerPolicy="no-referrer"
                       loading="lazy"
                     />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 pb-4 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end">
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pt-16 pb-4 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end">
                       <h3 className="text-lg font-bold text-white text-center drop-shadow-md">{project.name}</h3>
                     </div>
                   </motion.div>
@@ -2930,16 +3053,16 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
             </div>
 
             {categoryProjects.length === 0 && (
-              <div className="text-center py-20 glass rounded-[3rem] mt-8">
-                <p className="text-gray-500 italic">No projects found in this category.</p>
+              <div className="text-center py-20 bg-white border border-slate-200 rounded-[3rem] mt-8 shadow-sm">
+                <p className="text-slate-400 italic">No projects found in this category.</p>
               </div>
             )}
           </motion.div>
         )}
 
         {categories.length === 0 && !selectedCategory && (
-          <div className="text-center py-20 glass rounded-[3rem]">
-            <p className="text-gray-500 italic">No categories found. Add some in the admin panel!</p>
+          <div className="text-center py-20 bg-white border border-slate-200 rounded-[3rem] shadow-sm">
+            <p className="text-slate-400 italic">No categories found. Add some in the admin panel!</p>
           </div>
         )}
       </div>
@@ -2963,8 +3086,8 @@ const Skills = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">DESIGN <span className="text-orange-accent italic">ARSENAL</span></h2>
-            <p className="text-gray-400 text-lg mb-6 leading-relaxed">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">DESIGN <span className="text-brand-primary italic">ARSENAL</span></h2>
+            <p className="text-slate-500 text-lg mb-6 leading-relaxed">
               My technical proficiency allows me to deliver high-quality designs that are both aesthetically pleasing and strategically sound.
             </p>
             <div className="space-y-6">
@@ -2972,20 +3095,20 @@ const Skills = () => {
                   <div key={skill.name}>
                     <div className="flex justify-between items-center mb-3">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 glass rounded-lg text-${skill.color}`}>
+                        <div className={`p-2 glass rounded-lg text-brand-primary`}>
                           {skill.icon}
                         </div>
                         <span className="font-bold tracking-tight">{skill.name}</span>
                       </div>
-                      <span className={`text-${skill.color} font-mono text-sm`}>{skill.level}%</span>
+                      <span className={`text-brand-primary font-mono text-sm`}>{skill.level}%</span>
                     </div>
-                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         whileInView={{ width: `${skill.level}%` }}
                         transition={{ duration: 1.5, ease: "easeOut" }}
-                        className={`h-full bg-${skill.color}`}
-                        style={{ boxShadow: `0 0 15px var(--color-${skill.color})` }}
+                        className={`h-full bg-brand-primary`}
+                        style={{ boxShadow: `0 0 15px var(--color-brand-primary)` }}
                       />
                     </div>
                   </div>
@@ -2994,25 +3117,25 @@ const Skills = () => {
           </motion.div>
 
           <div className="relative hidden md:block">
-            <div className="absolute inset-0 bg-orange-accent/5 rounded-full blur-[100px]" />
+            <div className="absolute inset-0 bg-brand-primary/5 rounded-full blur-[100px]" />
             <div className="grid grid-cols-2 gap-6 relative z-10">
               <div className="space-y-6">
-                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-orange-accent/50 transition-colors">
-                  <PenTool className="w-12 h-12 text-orange-accent" />
+                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-brand-primary/50 transition-colors">
+                  <PenTool className="w-12 h-12 text-brand-primary" />
                   <span className="font-bold text-center">Vector Art</span>
                 </div>
-                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-orange-accent/50 transition-colors">
-                  <Palette className="w-12 h-12 text-orange-accent" />
+                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-brand-primary/50 transition-colors">
+                  <Palette className="w-12 h-12 text-brand-primary" />
                   <span className="font-bold text-center">Retouching</span>
                 </div>
               </div>
               <div className="space-y-6">
-                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-orange-accent/50 transition-colors">
-                  <Layout className="w-12 h-12 text-orange-accent" />
+                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-brand-primary/50 transition-colors">
+                  <Layout className="w-12 h-12 text-brand-primary" />
                   <span className="font-bold text-center">UI Design</span>
                 </div>
-                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-orange-accent/50 transition-colors">
-                  <Award className="w-12 h-12 text-orange-accent" />
+                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-brand-primary/50 transition-colors">
+                  <Award className="w-12 h-12 text-brand-primary" />
                   <span className="font-bold text-center">Branding</span>
                 </div>
               </div>
@@ -3026,11 +3149,11 @@ const Skills = () => {
 
 const Services = () => {
   return (
-    <section id="services" className="min-h-screen flex items-center py-16 scroll-mt-20 bg-black/30">
+    <section id="services" className="min-h-screen flex items-center py-16 scroll-mt-20 bg-slate-50/50">
       <div className="max-w-[1600px] mx-auto px-6 w-full">
         <div className="text-center mb-8">
-          <h2 className="text-4xl md:text-5xl font-bold mb-3">SERVICES I <span className="text-orange-accent italic">OFFER</span></h2>
-          <p className="text-gray-400 max-w-xl mx-auto">Specialized design services to help your business grow and shine.</p>
+          <h2 className="text-4xl md:text-5xl font-bold mb-3 text-slate-900">SERVICES I <span className="text-brand-primary italic">OFFER</span></h2>
+          <p className="text-slate-500 max-w-xl mx-auto">Specialized design services to help your business grow and shine.</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -3040,13 +3163,13 @@ const Services = () => {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={`glass p-6 rounded-3xl transition-all group hover:border-${service.color}/50`}
+              className={`glass p-6 rounded-3xl transition-all group hover:border-${service.color}/50 hover:shadow-lg bg-white border-slate-100`}
             >
               <div className={`mb-6 group-hover:scale-110 transition-transform duration-500 text-${service.color}`}>
                 {service.icon}
               </div>
-              <h3 className="text-xl font-bold mb-4">{service.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
+              <h3 className="text-xl font-bold mb-4 text-slate-900">{service.title}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">
                 {service.description}
               </p>
             </motion.div>
@@ -3087,54 +3210,54 @@ const Contact = () => {
   return (
     <section id="contact" className="min-h-screen flex items-center py-16 scroll-mt-20">
       <div className="max-w-[1600px] mx-auto px-6 w-full">
-        <div className="glass rounded-[3rem] overflow-hidden">
+        <div className="bg-white rounded-[3rem] overflow-hidden border border-slate-200 shadow-xl">
           <div className="grid lg:grid-cols-2">
-            <div className="p-10 lg:p-16 glass border-r border-white/10">
-              <h2 className="text-5xl font-black mb-4 leading-tight uppercase tracking-tighter">
-                Let's <span className="text-orange-accent">Work</span> <br />Together
+            <div className="p-10 lg:p-16 bg-slate-50 border-r border-slate-200">
+              <h2 className="text-5xl font-black mb-4 leading-tight uppercase tracking-tighter text-slate-900">
+                Let's <span className="text-brand-primary">Work</span> <br />Together
               </h2>
-              <p className="text-gray-400 text-lg mb-10 max-w-md font-medium">
+              <p className="text-slate-500 text-lg mb-10 max-w-md font-medium">
                 If you're looking for creative and professional design work for your brand, feel free to get in touch. I would be happy to collaborate and help bring your ideas to life.
               </p>
               
               <div className="space-y-6">
                 <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 bg-orange-accent/10 rounded-2xl flex items-center justify-center border border-orange-accent/20">
-                    <Send className="w-6 h-6 text-orange-accent" />
+                  <div className="w-14 h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center border border-brand-primary/20">
+                    <Mail className="w-6 h-6 text-brand-primary" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Email Me</p>
-                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=aw6481299@gmail.com" target="_blank" rel="noopener noreferrer" className="text-xl font-bold hover:text-orange-accent transition-colors">aw6481299@gmail.com</a>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Email Me</p>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=aw6481299@gmail.com" target="_blank" rel="noopener noreferrer" className="text-xl font-bold text-slate-800 hover:text-brand-primary transition-colors">aw6481299@gmail.com</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 bg-blue-accent/10 rounded-2xl flex items-center justify-center border border-blue-accent/20">
-                    <MessageCircle className="w-6 h-6 text-blue-accent" />
+                  <div className="w-14 h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center border border-brand-primary/20">
+                    <MessageCircle className="w-6 h-6 text-brand-primary" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Contact Me</p>
-                    <a href="https://wa.me/8801973324750?text=Hello%20I%20want%20to%20discuss%20a%20design%20project%20with%20you" target="_blank" rel="noopener noreferrer" className="text-xl font-bold hover:text-blue-accent transition-colors">
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Contact Me</p>
+                    <a href="https://wa.me/8801973324750?text=Hello%20I%20want%20to%20discuss%20a%20design%20project%20with%20you" target="_blank" rel="noopener noreferrer" className="text-xl font-bold text-slate-800 hover:text-brand-primary transition-colors">
                       +8801973324750
-                      <span className="ml-2 text-[10px] bg-orange-accent/20 text-orange-accent px-1.5 py-0.5 rounded">Recommended</span>
+                      <span className="ml-2 text-[10px] bg-brand-primary/10 text-brand-primary px-1.5 py-0.5 rounded">Recommended</span>
                     </a>
                   </div>
                 </div>
               </div>
 
               <div className="mt-12">
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Follow Me</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Follow Me</p>
                 <div className="flex gap-4">
                   {[
-                    { icon: Facebook, color: 'orange', href: 'https://www.facebook.com/profile.php?id=61584994744719' },
-                    { icon: Instagram, color: 'orange', href: 'https://www.instagram.com/_wahab__graphic_/' },
-                    { icon: Linkedin, color: 'orange', href: 'https://www.linkedin.com/in/abdul-wahab-988726409' }
+                    { icon: Facebook, color: 'magenta', href: 'https://www.facebook.com/profile.php?id=61584994744719' },
+                    { icon: Instagram, color: 'magenta', href: 'https://www.instagram.com/_wahab__graphic_/' },
+                    { icon: Linkedin, color: 'magenta', href: 'https://www.linkedin.com/in/abdul-wahab-988726409' }
                   ].map((item, idx) => (
                     <a 
                       key={idx} 
                       href={item.href} 
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`w-12 h-12 glass rounded-xl flex items-center justify-center hover:scale-110 transition-transform border-white/5 ${item.color === 'orange' ? 'hover:text-orange-accent' : 'hover:text-blue-accent'}`}
+                      className={`w-12 h-12 bg-white rounded-xl flex items-center justify-center hover:scale-110 transition-transform border border-slate-200 text-slate-600 shadow-sm hover:text-brand-primary`}
                     >
                       <item.icon className="w-5 h-5" />
                     </a>
@@ -3143,54 +3266,54 @@ const Contact = () => {
               </div>
             </div>
 
-            <div className="p-10 lg:p-16">
+            <div className="p-10 lg:p-16 bg-white">
               <form onSubmit={handleContactSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Full Name</label>
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Full Name</label>
                     <input 
                       type="text" 
                       placeholder="John Doe" 
                       value={formData.fullName}
                       onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:outline-none focus:border-orange-accent focus:ring-1 focus:ring-orange-accent/50 transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all text-slate-900 placeholder-slate-400"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Email Address</label>
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Email Address</label>
                     <input 
                       type="email" 
                       placeholder="john@example.com" 
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:outline-none focus:border-blue-accent focus:ring-1 focus:ring-blue-accent/50 transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all text-slate-900 placeholder-slate-400"
                       required
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Subject</label>
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Subject</label>
                   <input 
                     type="text" 
                     placeholder="Project Inquiry" 
                     value={formData.subject}
                     onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:outline-none focus:border-orange-accent transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-primary transition-colors text-slate-900 placeholder-slate-400"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Message</label>
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Message</label>
                   <textarea 
                     rows={4} 
                     placeholder="Tell me about your project..." 
                     value={formData.message}
                     onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 focus:outline-none focus:border-orange-accent transition-colors resize-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-primary transition-colors resize-none text-slate-900 placeholder-slate-400"
                     required
                   />
                 </div>
-                <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-orange-accent text-black font-bold rounded-xl hover:bg-white transition-all orange-border-glow flex items-center justify-center gap-2 disabled:opacity-50">
+                <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-brand-primary text-white font-bold rounded-xl hover:bg-slate-900 transition-all shadow-lg shadow-brand-primary/20 flex items-center justify-center gap-2 disabled:opacity-50">
                   {isSubmitting ? 'SENDING...' : 'SEND MESSAGE'} <Send className="w-4 h-4" />
                 </button>
               </form>
@@ -3218,21 +3341,21 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
       onClick={onSelect}
       className={`group flex items-center gap-3 p-2 rounded-lg cursor-pointer border transition-all ${
         isSelected 
-          ? 'bg-blue-accent/10 border-blue-accent/50 shadow-lg shadow-blue-accent/5' 
-          : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
+          ? 'bg-brand-primary/10 border-brand-primary/50 shadow-lg shadow-brand-primary/5' 
+          : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
       }`}
     >
-      <div className="w-10 h-10 bg-black/50 rounded overflow-hidden flex-shrink-0 border border-white/10 relative">
+      <div className="w-10 h-10 bg-slate-200 rounded overflow-hidden flex-shrink-0 border border-slate-200 relative">
         <img src={item.src || undefined} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="layer" />
       </div>
       
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <p className={`text-xs font-medium truncate ${isSelected ? 'text-blue-accent' : 'text-gray-300'}`}>
+          <p className={`text-xs font-medium truncate ${isSelected ? 'text-brand-primary' : 'text-slate-700'}`}>
             Image {originalIndex + 1}
           </p>
         </div>
-        <p className="text-[10px] text-gray-500 truncate font-mono mt-0.5">
+        <p className="text-[10px] text-slate-400 truncate font-mono mt-0.5">
           {Math.round(item.width)}x{Math.round(item.height)} • {Math.round(item.x)},{Math.round(item.y)}
         </p>
       </div>
@@ -3241,7 +3364,7 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
         <button 
           onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
           disabled={originalIndex === itemsLength - 1}
-          className="p-1 hover:bg-white/20 rounded disabled:opacity-0 text-gray-400 hover:text-white transition-all"
+          className="p-1 hover:bg-slate-200 rounded disabled:opacity-0 text-slate-400 hover:text-slate-900 transition-all"
           title="Bring Forward"
         >
           <ArrowUp className="w-3 h-3" />
@@ -3249,7 +3372,7 @@ const SortableLayerItem = ({ item, originalIndex, isSelected, onSelect, onMoveUp
         <button 
           onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
           disabled={originalIndex === 0}
-          className="p-1 hover:bg-white/20 rounded disabled:opacity-0 text-gray-400 hover:text-white transition-all"
+          className="p-1 hover:bg-slate-200 rounded disabled:opacity-0 text-slate-400 hover:text-slate-900 transition-all"
           title="Send Backward"
         >
           <ArrowDown className="w-3 h-3" />
@@ -3274,20 +3397,20 @@ function SortableCategoryItem({ cat, onEdit, onDelete, onBrowse }: { cat: any, o
       style={style} 
       {...attributes} 
       {...listeners}
-      className={`glass p-6 rounded-3xl flex justify-between items-center group relative overflow-hidden cursor-grab active:cursor-grabbing transition-shadow ${isDragging ? 'shadow-2xl ring-2 ring-orange-accent/50 scale-105' : ''}`}
+      className={`bg-white border border-slate-200 p-6 rounded-3xl flex justify-between items-center group relative overflow-hidden cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md ${isDragging ? 'shadow-2xl ring-2 ring-brand-primary/50 scale-105' : ''}`}
     >
       {cat.coverImage && (
-        <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
+        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
           <img src={cat.coverImage} alt={cat.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
         </div>
       )}
       <div className="relative z-10 flex-1">
-        <p className="font-bold text-lg">{cat.name}</p>
-        <p className="text-xs text-gray-400 font-mono">/{cat.slug}</p>
+        <p className="font-bold text-lg text-slate-900">{cat.name}</p>
+        <p className="text-xs text-slate-400 font-mono">/{cat.slug}</p>
         <button 
           onPointerDown={e => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); onBrowse(cat.id); }}
-          className="mt-3 text-xs font-bold uppercase tracking-widest text-orange-accent hover:text-white transition-colors flex items-center gap-1"
+          className="mt-3 text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-slate-900 transition-colors flex items-center gap-1"
         >
           Manage Projects <ArrowRight className="w-3 h-3" />
         </button>
@@ -3295,14 +3418,14 @@ function SortableCategoryItem({ cat, onEdit, onDelete, onBrowse }: { cat: any, o
       <div className="relative z-10 flex items-center gap-2" onPointerDown={e => e.stopPropagation()}>
         <button 
           onClick={(e) => { e.stopPropagation(); onEdit(cat); }}
-          className="p-3 text-gray-400 hover:text-orange-accent transition-colors bg-black/50 rounded-full cursor-pointer"
+          className="p-3 text-slate-400 hover:text-brand-primary transition-colors bg-slate-100 rounded-full cursor-pointer"
           title="Edit Folder"
         >
           <Edit2 className="w-5 h-5" />
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); onDelete(cat.id); }}
-          className="p-3 text-gray-400 hover:text-red-500 transition-colors bg-black/50 rounded-full cursor-pointer"
+          className="p-3 text-slate-400 hover:text-red-500 transition-colors bg-slate-100 rounded-full cursor-pointer"
           title="Delete Folder"
         >
           <Trash2 className="w-5 h-5" />
@@ -3555,8 +3678,8 @@ export default function App() {
         {isInitialLoading && <Preloader key="preloader" />}
       </AnimatePresence>
 
+      <GlobalBackground />
       <CustomCursor />
-      <GlassScene />
       <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} />
       <Hero stats={stats} />
       <About />
@@ -3565,20 +3688,20 @@ export default function App() {
       <Services />
       <Contact />
       
-      <footer className="py-12 border-t border-white/5">
+      <footer className="py-12 border-t border-slate-200 bg-white">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
             <img 
-              src="https://i.ibb.co/F4Z6Pg99/behanch-cover-photo.png" 
+              src="https://i.imgur.com/mNctGoH.png" 
               alt="Wahab Graphic Logo" 
               referrerPolicy="no-referrer" 
-              className="w-8 h-8 rounded-md opacity-80 object-cover" 
+              className="w-8 h-8 rounded-md opacity-80 object-cover border border-slate-100 bg-white" 
               loading="lazy"
             />
-            <span className="text-xl font-display font-bold tracking-tighter">Wahab Graphic<span className="text-orange-accent">.</span></span>
+            <span className="text-xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
           </div>
           
-          <p className="text-gray-500 text-sm">
+          <p className="text-slate-500 text-sm">
             © {new Date().getFullYear()} Abdul Wahab. All rights reserved.
           </p>
 
@@ -3586,20 +3709,20 @@ export default function App() {
             {isAdmin ? (
               <button 
                 onClick={logOut}
-                className="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-xs uppercase tracking-widest"
+                className="text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-bold"
               >
                 <LogOut className="w-4 h-4" /> Logout
               </button>
             ) : (
               <button 
                 onClick={signInWithGoogle}
-                className="text-xs uppercase tracking-widest text-gray-500 hover:text-white transition-colors flex items-center gap-2"
+                className="text-xs uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2 font-bold"
               >
                 <LogIn className="w-4 h-4" /> Admin Login
               </button>
             )}
             {['Privacy', 'Terms', 'Cookies'].map((item) => (
-              <a key={item} href="#" className="text-xs uppercase tracking-widest text-gray-500 hover:text-orange-accent transition-colors">
+              <a key={item} href="#" className="text-xs uppercase tracking-widest text-slate-500 hover:text-brand-primary transition-colors font-bold">
                 {item}
               </a>
             ))}
