@@ -3581,7 +3581,7 @@ const Contact = () => {
     <section 
       id="contact" 
       ref={containerRef}
-      className="min-h-[130vh] pt-32 pb-48 flex flex-col justify-end items-center relative overflow-hidden"
+      className="min-h-[150vh] pt-32 pb-80 flex flex-col justify-end items-center relative overflow-hidden"
     >
       {/* Cinematic Curved Dome Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
