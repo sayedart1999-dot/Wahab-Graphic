@@ -3546,12 +3546,12 @@ const Contact = () => {
     offset: ["0.3 1", "1 1"]
   });
 
-  // Smooth cinematic background dome rising on scroll without flattening or changing softness
+  // Smooth cinematic background dome centered on scroll without flipping or changing softness
   const scaleX = 1.1;
   const stretchY = 1.4;
-  const yOffset1 = useTransform(scrollYProgress, [0, 1], ["50%", "15%"]);
-  const yOffset2 = useTransform(scrollYProgress, [0, 1], ["50%", "15%"]);
-  const yOffset3 = useTransform(scrollYProgress, [0, 1], ["50%", "15%"]);
+  const yOffset1 = useTransform(scrollYProgress, [0, 1], ["-47%", "-53%"]);
+  const yOffset2 = useTransform(scrollYProgress, [0, 1], ["-48%", "-52%"]);
+  const yOffset3 = useTransform(scrollYProgress, [0, 1], ["-49%", "-51%"]);
   const opacity = 0.8;
 
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -3581,7 +3581,8 @@ const Contact = () => {
     <section 
       id="contact" 
       ref={containerRef}
-      className="min-h-[150vh] pt-32 pb-80 flex flex-col justify-end items-center relative overflow-hidden"
+      style={{ height: '2000px' }}
+      className="min-h-[150vh] flex flex-col justify-center items-center relative overflow-hidden"
     >
       {/* Cinematic Curved Dome Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
@@ -3594,7 +3595,7 @@ const Contact = () => {
              scaleY: stretchY,
              opacity: opacity
            }}
-           className="absolute left-1/2 bottom-[-15vh] w-[200vw] md:w-[150vw] h-[90vh] md:h-[125vh] bg-brand-primary rounded-[100%] blur-[40px] md:blur-[60px] origin-bottom" 
+           className="absolute left-1/2 top-1/2 w-[200vw] md:w-[150vw] h-[90vh] md:h-[125vh] bg-brand-primary rounded-[100%] blur-[40px] md:blur-[60px] origin-center" 
          />
          {/* Middle Arc */}
          <motion.div 
@@ -3604,7 +3605,7 @@ const Contact = () => {
              scaleX,
              scaleY: stretchY
            }}
-           className="absolute left-1/2 bottom-[-15vh] w-[170vw] md:w-[125vw] h-[75vh] md:h-[105vh] bg-[#3111ac] rounded-[100%] blur-[30px] md:blur-[40px] opacity-95 origin-bottom" 
+           className="absolute left-1/2 top-1/2 w-[170vw] md:w-[125vw] h-[75vh] md:h-[105vh] bg-[#3111ac] rounded-[100%] blur-[30px] md:blur-[40px] opacity-95 origin-center" 
          />
          {/* Inner Core (The Darkest Void - Navy Blue) */}
          <motion.div 
@@ -3614,11 +3615,11 @@ const Contact = () => {
              scaleX,
              scaleY: stretchY
            }}
-           className="absolute left-1/2 bottom-[-15vh] w-[140vw] md:w-[100vw] h-[62vh] md:h-[85vh] bg-[#080d29] rounded-[100%] blur-[20px] md:blur-[30px] opacity-100 origin-bottom" 
+           className="absolute left-1/2 top-1/2 w-[140vw] md:w-[100vw] h-[62vh] md:h-[85vh] bg-[#080d29] rounded-[100%] blur-[20px] md:blur-[30px] opacity-100 origin-center" 
          />
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 w-full relative z-20 text-center flex flex-col items-center pb-0 mt-32 md:mt-48">
+      <div className="max-w-4xl mx-auto px-6 w-full relative z-20 text-center flex flex-col items-center py-12 mt-0 md:mt-0">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
