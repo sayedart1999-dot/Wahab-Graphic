@@ -8,44 +8,63 @@
   --font-script: "Dancing Script", cursive;
 
   --color-brand-primary: #7c3ced;
-  --color-dark-bg: #f8fafc;
+  --color-dark-bg: #fafafa;
   --color-deep-brown: #e2e8f0;
 }
 
 @layer base {
-  body {
-    @apply bg-dark-bg text-slate-900 font-sans selection:bg-brand-primary selection:text-white;
-    background-image: radial-gradient(#64748b 3px, transparent 3.5px), radial-gradient(circle at 50% 40%, #f1f5f9 0%, var(--color-dark-bg) 100%);
-    background-size: 32px 32px, auto;
-    min-height: 100vh;
-    background-attachment: fixed;
-    cursor: none;
+  html, body, #root {
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
-  a, button, [role="button"], input, textarea, select {
-    cursor: none !important;
+  body {
+    @apply bg-dark-bg text-slate-800 font-sans selection:bg-brand-primary selection:text-white;
+    background-image: radial-gradient(rgba(148, 163, 184, 0.2) 1.5px, transparent 1.5px);
+    background-size: 32px 32px;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Hide default system cursor on fine pointer (desktop with mouse) to prevent double cursors */
+  @media (pointer: fine) {
+    *, *::before, *::after {
+      cursor: none !important;
+    }
+  }
+
+  /* Show default system cursor on coarse pointer (mobile touch screens) */
+  @media (pointer: coarse) {
+    *, *::before, *::after {
+      cursor: auto !important;
+    }
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display text-slate-900;
+    @apply font-display text-slate-900 tracking-tight;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/80 backdrop-blur-md border border-white/50 shadow-xl shadow-slate-200/40;
+    @apply bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
   }
   
+  .glass-dark {
+    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-2xl shadow-slate-900/20 text-white;
+  }
+
   .brand-glow {
     text-shadow: 0 0 30px rgba(124, 60, 237, 0.2);
   }
 
   .brand-border-glow {
-    box-shadow: 0 10px 25px rgba(124, 60, 237, 0.1);
+    box-shadow: 0 10px 40px rgba(124, 60, 237, 0.15);
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-brand-primary;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-primary to-purple-400;
   }
 
   .dot-grid {
@@ -55,7 +74,7 @@
 }
 
 .scroll-mt-20 {
-  scroll-margin-top: 5rem;
+  scroll-margin-top: 6rem;
 }
 
 /* Orbit animation for floating icons */
@@ -66,5 +85,17 @@
 
 .animate-orbit {
   animation: orbit 20s linear infinite;
+}
+
+@keyframes shine {
+  0% { left: -100%; opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 200%; opacity: 0; }
+}
+
+/* Smooth page transitions and selections */
+::selection {
+  background: var(--color-brand-primary);
+  color: white;
 }
 

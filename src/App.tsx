@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Lenis from 'lenis';
 import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useScroll, useTransform, useMotionTemplate } from 'motion/react';
 import { 
   Palette, 
   Layers, 
@@ -176,10 +177,10 @@ const SERVICES: Service[] = [
 const Preloader = () => {
   return (
     <motion.div 
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
-      className="fixed inset-0 z-[9999] bg-[#f8fafc] flex flex-col items-center justify-center p-6"
+      initial={{ y: 0, opacity: 1 }}
+      exit={{ y: "-100%", opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+      className="fixed inset-0 z-[9999] bg-[#fafafa] flex flex-col items-center justify-center p-6 origin-top"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,60,237,0.05)_0%,transparent_70%)]" />
       
@@ -2004,7 +2005,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
     >
       <button 
         onClick={onClose}
-        className="fixed top-8 right-8 w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-slate-100 transition-all z-[110] border border-slate-200 shadow-xl"
+        className="fixed top-4 right-4 md:top-8 md:right-8 w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-slate-100 transition-all z-[110] border border-slate-200 shadow-xl"
       >
         <X className="w-6 h-6" />
       </button>
@@ -2104,7 +2105,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
         >
           <button 
             onClick={() => setSelectedImageIdx(null)}
-            className="absolute top-8 right-8 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-all z-[150] text-slate-900 border border-slate-200 shadow-lg"
+            className="absolute top-4 right-4 md:top-8 md:right-8 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-all z-[150] text-slate-900 border border-slate-200 shadow-lg"
           >
             <X className="w-6 h-6" />
           </button>
@@ -2208,7 +2209,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
         >
           <button 
             onClick={() => setSelectedCanvasIdx(null)}
-            className="absolute top-8 right-8 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-all z-[150] text-slate-900 border border-slate-200 shadow-lg"
+            className="absolute top-4 right-4 md:top-8 md:right-8 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-all z-[150] text-slate-900 border border-slate-200 shadow-lg"
           >
             <X className="w-6 h-6" />
           </button>
@@ -2312,6 +2313,12 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
 
 const GlobalBackground = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const { scrollYProgress } = useScroll();
+
+  // Gentle scroll-based movements for a connected feeling
+  const y1 = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const y2 = useTransform(scrollYProgress, [0, 1], ["0%", "-50%"]);
+  const y3 = useTransform(scrollYProgress, [0, 1], ["20%", "-20%"]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -2338,31 +2345,51 @@ const GlobalBackground = () => {
   ];
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-white">
+    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-slate-50">
       {/* Background Dot Grid - Fixed */}
-      <div className="absolute inset-0 dot-grid opacity-[0.08]" />
+      <div className="absolute inset-0 dot-grid opacity-[0.03]" />
       
-      {/* Background Masks for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-transparent pointer-events-none" />
-      
-      {/* Large subtle glows for atmosphere */}
-      <motion.div 
-        animate={{
-          x: (mousePosition.x - centerX) * 0.02,
-          y: (mousePosition.y - centerY) * 0.02,
-        }}
-        className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-brand-primary/5 rounded-full blur-[100px]"
-      />
-      
-      <motion.div 
-        animate={{
-          x: (mousePosition.x - centerX) * -0.01,
-          y: (mousePosition.y - centerY) * -0.01,
-        }}
-        className="absolute bottom-[-5%] right-[-5%] w-[700px] h-[700px] bg-brand-primary/5 rounded-full blur-[120px]"
-      />
+      {/* Connected Gradient Flow / Ambient Large Blobs */}
+      <div className="absolute inset-0 opacity-15 mix-blend-multiply">
+        <motion.div 
+          style={{ y: y1 }}
+          animate={{
+            x: (mousePosition.x - centerX) * 0.02,
+            scale: [1, 1.05, 1],
+            opacity: [0.3, 0.5, 0.3]
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[-20%] left-[-10%] w-[120vw] h-[100vh] bg-brand-primary rounded-[100%] blur-[200px] md:blur-[250px]"
+        />
+        
+        <motion.div 
+          style={{ y: y2 }}
+          animate={{
+            x: (mousePosition.x - centerX) * -0.015,
+            scale: [1, 1.1, 1],
+            opacity: [0.2, 0.4, 0.2]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute bottom-[-30%] right-[-20%] w-[150vw] h-[120vh] bg-purple-400 rounded-[100%] blur-[250px] md:blur-[300px]"
+        />
+        
+        <motion.div 
+          style={{ y: y3 }}
+          animate={{
+            x: (mousePosition.x - centerX) * 0.01,
+            scale: [1, 1.05, 1],
+            opacity: [0.1, 0.3, 0.1]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute top-[20%] right-[10%] w-[100vw] h-[80vh] bg-blue-300 rounded-[100%] blur-[200px] md:blur-[250px]"
+        />
+      </div>
+
+      {/* Layer to soften the gradient even further */}
+      <div className="absolute inset-0 bg-white/70 pointer-events-none z-[1]" />
 
       {/* Movable Individual Elements */}
+      <div className="absolute inset-0 z-[2]">
       {shapes.map((shape, i) => (
         <motion.div
           key={i}
@@ -2387,6 +2414,7 @@ const GlobalBackground = () => {
           />
         </motion.div>
       ))}
+      </div>
     </div>
   );
 };
@@ -2406,14 +2434,20 @@ const CustomCursor = () => {
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (
+      if (!target) return;
+      
+      const isInteractive = 
         target.tagName === 'A' || 
         target.tagName === 'BUTTON' || 
-        target.closest('a') || 
-        target.closest('button') ||
-        target.getAttribute('role') === 'button' ||
-        target.classList.contains('cursor-pointer')
-      ) {
+        (typeof target.closest === 'function' && (
+          target.closest('a') || 
+          target.closest('button') ||
+          target.closest('.cursor-pointer')
+        )) ||
+        (typeof target.getAttribute === 'function' && target.getAttribute('role') === 'button') ||
+        (target.classList && target.classList.contains('cursor-pointer'));
+
+      if (isInteractive) {
         setIsHovering(true);
       } else {
         setIsHovering(false);
@@ -2557,22 +2591,22 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
   };
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'py-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50' : 'py-8'}`}>
-      <div className="max-w-[1600px] mx-auto px-6 grid grid-cols-2 md:grid-cols-3 items-center">
+    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-out ${isScrolled ? 'pt-4' : 'pt-8'}`}>
+      <div className={`mx-auto transition-all duration-500 ease-out flex items-center justify-between md:grid md:grid-cols-3 ${isScrolled ? 'w-[calc(100%-2rem)] max-w-[1200px] bg-white/70 backdrop-blur-xl border border-white/40 shadow-2xl shadow-black/[0.04] rounded-full px-6 py-3' : 'w-full max-w-[1600px] px-6 py-2'}`}>
         {/* Logo (Left) */}
     <a href="#home" onClick={() => handleNavLinkClick('home')} className="flex items-center gap-3 relative z-10 justify-self-start">
       <img 
         src="https://i.imgur.com/mNctGoH.png" 
         alt="Wahab Graphic Logo" 
         referrerPolicy="no-referrer" 
-        className="w-10 h-10 rounded-lg shadow-md object-cover border border-slate-100 bg-white" 
+        className="w-10 h-10 rounded-full shadow-sm object-cover border border-slate-200/50 bg-white" 
         loading="lazy"
       />
-      <span className="text-2xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
+      <span className="text-xl md:text-2xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
     </a>
 
         {/* Desktop Nav - Pill Style (Center) */}
-        <div className="hidden md:flex items-center justify-center gap-2 glass px-2 py-2 rounded-full relative justify-self-center">
+        <div className={`hidden md:flex items-center justify-center gap-1 ${isScrolled ? '' : 'glass px-2 py-2 rounded-full'} relative justify-self-center`}>
           {navLinks.map((link) => (
             <a 
               key={link.name} 
@@ -2613,13 +2647,13 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
           {isAdmin && (
             <button 
               onClick={onAdminClick}
-              className="text-slate-600 hover:text-brand-primary transition-colors"
+              className="text-slate-600 hover:text-brand-primary transition-colors cursor-pointer"
             >
               <UserIcon className="w-6 h-6" />
             </button>
           )}
           <button 
-            className="text-slate-900"
+            className="text-slate-900 cursor-pointer"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X /> : <Menu />}
@@ -2634,7 +2668,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 w-full glass md:hidden py-8 flex flex-col items-center gap-6 bg-white border-b border-slate-200"
+            className={`absolute top-full left-0 w-full md:hidden py-8 flex flex-col items-center gap-6 bg-white/95 backdrop-blur-xl ${isScrolled ? 'rounded-[2rem] mt-2 shadow-2xl border border-slate-200/50' : 'border-b border-slate-200'}`}
           >
             {navLinks.map((link) => (
               <a 
@@ -2676,58 +2710,67 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
   };
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center pt-16 overflow-hidden">
-      <div className="max-w-[1600px] mx-auto px-6 relative z-10 w-full">
-        <div className="grid lg:grid-cols-2 gap-8 items-center">
+    <section id="home" className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden">
+      <div className="max-w-[1600px] mx-auto px-6 relative z-10 w-full pt-10">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-          className="order-2 lg:order-1"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="order-2 lg:order-1 flex flex-col justify-center"
         >
-          <div className="mb-4 text-lg md:text-xl text-slate-400 italic font-light">
-            Logo Design, Brand Identity & Social Media Graphics
-          </div>
-          <div className="mb-8 flex items-baseline">
-            <span className="text-2xl font-medium text-slate-600">Hi, I am </span>
-            <span className="text-5xl md:text-6xl font-script font-semibold text-brand-primary ml-3">Abdul Wahab</span>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8 inline-block"
+          >
+            <div className="inline-flex py-2 px-4 rounded-full glass border-white/40 shadow-sm text-xs md:text-sm font-semibold tracking-widest text-slate-500 uppercase">
+              ✨ Logo Design, Brand Identity & Social Media
+            </div>
+          </motion.div>
+
+          <div className="mb-6 flex items-baseline flex-wrap">
+            <span className="text-xl md:text-2xl font-light text-slate-500 tracking-tight">Hi, I am </span>
+            <span className="text-4xl sm:text-5xl md:text-6xl font-script font-semibold text-brand-primary ml-3">Abdul Wahab</span>
           </div>
           
-          <h1 className="text-7xl md:text-9xl font-black leading-[0.9] mb-6 tracking-tighter uppercase text-slate-900">
+          <h1 className="text-6xl sm:text-7xl md:text-8xl xl:text-[9rem] font-black leading-[0.85] mb-6 tracking-tighter uppercase text-slate-900 drop-shadow-sm">
             <motion.span
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="inline-block"
+              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="block"
             >
               Graphic
-            </motion.span> <br />
+            </motion.span>
             <motion.span
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="text-brand-primary inline-block"
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="text-transparent bg-clip-text bg-gradient-to-br from-brand-primary via-brand-primary to-purple-400 block pb-2 drop-shadow-none"
             >
-              Designer
+              Designer.
             </motion.span>
           </h1>
           
-          <p className="text-slate-600 text-xl max-w-2xl mb-8 leading-relaxed font-medium">
-            I create modern, clean, and impactful designs that help brands stand out and communicate their message clearly.
+          <p className="text-slate-500 text-lg md:text-xl max-w-xl mb-10 leading-relaxed font-light">
+            I create <span className="font-medium text-slate-800">modern, clean, and impactful</span> designs that help brands stand out and communicate their message clearly.
           </p>
           
-          <div className="flex flex-wrap items-center gap-6 mb-8">
+          <div className="flex flex-wrap items-center gap-4 mb-4">
             <a 
               href="#portfolio" 
-              className="px-8 py-4 bg-brand-primary text-white font-bold rounded-2xl hover:scale-105 transition-transform flex items-center gap-2 text-lg shadow-[0_10px_30px_rgba(124,60,237,0.3)]"
+              className="group relative overflow-hidden px-8 py-4 bg-slate-900 text-white font-semibold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-3 text-sm tracking-wide uppercase shadow-xl hover:shadow-2xl hover:shadow-slate-900/20"
             >
-              View Portfolio <ChevronRight className="w-5 h-5" />
+              <span className="relative z-10 flex items-center gap-2">View Portfolio <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
+              <div className="absolute inset-0 bg-brand-primary transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out z-0"></div>
             </a>
             <a 
               href="#contact" 
-              className="px-8 py-4 border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all flex items-center gap-2 text-lg"
+              className="px-8 py-4 glass border border-slate-200/50 text-slate-700 font-semibold rounded-full hover:bg-white hover:text-brand-primary transition-all duration-300 flex items-center justify-center gap-3 text-sm tracking-wide uppercase hover:shadow-lg"
             >
-              Contact Me <Send className="w-5 h-5" />
+              Contact Me
             </a>
           </div>
 
@@ -2753,12 +2796,12 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
           initial={{ opacity: 0, scale: 0.8 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
-          className="order-1 lg:order-2 relative flex justify-center items-center h-[600px] w-full"
+          className="order-1 lg:order-2 relative flex justify-center items-center h-[380px] sm:h-[450px] lg:h-[600px] w-full"
         >
           {/* Circular Trails - Now centered with the avatar */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] border border-brand-primary/10 rounded-full pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[550px] md:h-[550px] border border-brand-primary/5 rounded-full pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[400px] md:h-[400px] border border-brand-primary/5 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] sm:w-[500px] sm:h-[500px] md:w-[700px] md:h-[700px] border border-brand-primary/10 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[240px] h-[240px] sm:w-[400px] sm:h-[400px] md:w-[550px] md:h-[550px] border border-brand-primary/5 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180px] h-[180px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] border border-brand-primary/5 rounded-full pointer-events-none" />
 
           {/* Floating 3D Icons */}
           <div className="absolute inset-0 pointer-events-none">
@@ -2854,63 +2897,90 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
 
 const About = () => {
   return (
-    <section id="about" className="min-h-screen flex items-center py-16 scroll-mt-20">
-      <div className="max-w-[1600px] mx-auto px-6 w-full">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight text-slate-900">
-              CRAFTING <span className="text-brand-primary italic">VISUAL</span> <span className="text-brand-primary">STORIES</span>
-            </h2>
-            <div className="space-y-4 text-slate-500 text-lg leading-relaxed">
-              <p>
-                Hello, I'm Wahab, a passionate graphic designer who focuses on creating clean, modern, and visually engaging designs. I specialize in logo design, brand identity, and social media graphics that help businesses build a strong visual presence. My goal is to help brands look professional and memorable through thoughtful and effective design.
-              </p>
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                {['Logo Design', 'Social Media Design', 'Branding', 'Poster Design'].map((item) => (
-                  <div key={item} className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-brand-primary rounded-full" />
-                    <span className="text-slate-800 text-sm font-medium">{item}</span>
+    <section id="about" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      <div className="max-w-[1400px] mx-auto w-full relative z-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: true, margin: "-100px" }}
+          className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-2xl shadow-brand-primary/[0.03] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 md:p-16 lg:p-20"
+        >
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6 border border-slate-200/50">
+                  <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">About Me</span>
+                </div>
+                
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight text-slate-900 leading-[1.1]">
+                  CRAFTING <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">VISUAL</span> <br />STORIES
+                </h2>
+                
+                <div className="space-y-6 text-slate-500 text-lg md:text-xl leading-relaxed font-light mb-10">
+                  <p>
+                    Hello, I'm <span className="font-semibold text-slate-800">Wahab</span>, a passionate graphic designer who focuses on creating clean, modern, and visually engaging designs. I specialize in logo design, brand identity, and social media graphics that help businesses build a strong visual presence.
+                  </p>
+                  <p>
+                    My goal is to help brands look professional and memorable through thoughtful and effective design.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-4 pt-2">
+                  {['Logo Design', 'Social Media Design', 'Branding', 'Poster Design'].map((item, i) => (
+                    <motion.div 
+                      key={item} 
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 + (i * 0.1) }}
+                      className="flex items-center gap-3 bg-white/60 backdrop-blur-sm px-5 py-3 rounded-full border border-slate-200 shadow-sm"
+                    >
+                      <Check className="w-4 h-4 text-brand-primary" />
+                      <span className="text-slate-700 text-sm font-semibold">{item}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 relative">
+              <div className="space-y-6 mt-12">
+                <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
+                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
+                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">5<span className="text-brand-primary">+</span></h3>
+                    <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Years Exp.</p>
                   </div>
-                ))}
+                </TiltCard>
+                <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
+                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
+                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">150<span className="text-brand-primary">+</span></h3>
+                    <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Projects</p>
+                  </div>
+                </TiltCard>
+              </div>
+              <div className="space-y-6">
+                <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
+                   <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
+                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">99<span className="text-brand-primary">%</span></h3>
+                    <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Happy Clients</p>
+                  </div>
+                </TiltCard>
+                <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
+                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
+                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">24<span className="text-brand-primary">/</span>7</h3>
+                    <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Support</p>
+                  </div>
+                </TiltCard>
               </div>
             </div>
-          </motion.div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <TiltCard className="cursor-default">
-                <div className="glass p-8 rounded-3xl text-center border-brand-primary/10 hover:border-brand-primary/30 transition-all shadow-sm">
-                  <h3 className="text-4xl font-bold text-brand-primary mb-2">5+</h3>
-                  <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">Years Exp.</p>
-                </div>
-              </TiltCard>
-              <TiltCard className="cursor-default">
-                <div className="glass p-8 rounded-3xl text-center border-brand-primary/10 hover:border-brand-primary/30 transition-all shadow-sm">
-                  <h3 className="text-4xl font-bold text-brand-primary mb-2">150+</h3>
-                  <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">Projects</p>
-                </div>
-              </TiltCard>
-            </div>
-            <div className="space-y-6">
-              <TiltCard className="cursor-default">
-                 <div className="glass p-8 rounded-3xl text-center border-brand-primary/10 hover:border-brand-primary/30 transition-all shadow-sm">
-                  <h3 className="text-4xl font-bold text-brand-primary mb-2">99%</h3>
-                  <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">Happy Clients</p>
-                </div>
-              </TiltCard>
-              <TiltCard className="cursor-default">
-                <div className="glass p-8 rounded-3xl text-center border-brand-primary/10 hover:border-brand-primary/30 transition-all shadow-sm">
-                  <h3 className="text-4xl font-bold text-brand-primary mb-2">24/7</h3>
-                  <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">Support</p>
-                </div>
-              </TiltCard>
-            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -2928,15 +2998,42 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
     : [];
 
   return (
-    <section id="portfolio" className="min-h-screen flex items-center py-16 scroll-mt-20 bg-slate-50/50">
-      <div className="max-w-[1600px] mx-auto px-6 w-full">
-        <div className="text-center mb-10">
-          <h2 className="text-4xl md:text-5xl font-bold mb-3 text-slate-900">MY <span className="text-brand-primary italic">PORTFOLIO</span></h2>
-          <p className="text-slate-500 max-w-xl mx-auto text-lg">Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs that help brands communicate better with their audience.</p>
-        </div>        {!selectedCategory ? (
+    <section id="portfolio" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      <div className="max-w-[1600px] mx-auto w-full relative z-10 px-6">
+        <div className="text-center mb-20">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6"
+          >
+            <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Selected Work</span>
+          </motion.div>
+          
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="text-5xl md:text-6xl font-black mb-6 text-slate-900 tracking-tight"
+          >
+            MY <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">PORTFOLIO</span>
+          </motion.h2>
+          
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-slate-500 max-w-2xl mx-auto text-lg md:text-xl font-light leading-relaxed"
+          >
+            Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs that help brands communicate better with their audience.
+          </motion.p>
+        </div>        
+        {!selectedCategory ? (
           <motion.div 
             layout
-            className="grid md:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-20 gap-x-10"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-20 gap-x-10"
           >
             {categories.map((cat) => {
               const catProjects = publishedProjects.filter(p => p.categoryId === cat.id);
@@ -3012,7 +3109,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <button 
                 onClick={() => setSelectedCategory(null)}
                 className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-bold uppercase tracking-widest text-xs"
@@ -3078,66 +3175,94 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
 
 const Skills = () => {
   return (
-    <section id="skills" className="min-h-screen flex items-center py-16 scroll-mt-20">
-      <div className="max-w-[1600px] mx-auto px-6 w-full">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+    <section id="skills" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+      <div className="max-w-[1400px] mx-auto w-full relative z-10 px-6">
+          <div className="grid md:grid-cols-2 gap-16 lg:gap-24 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">DESIGN <span className="text-brand-primary italic">ARSENAL</span></h2>
-            <p className="text-slate-500 text-lg mb-6 leading-relaxed">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6">
+              <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Expertise</span>
+            </div>
+            
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight">DESIGN <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">ARSENAL</span></h2>
+            
+            <p className="text-slate-500 text-lg md:text-xl mb-12 leading-relaxed font-light">
               My technical proficiency allows me to deliver high-quality designs that are both aesthetically pleasing and strategically sound.
             </p>
-            <div className="space-y-6">
-                {SKILLS.map((skill) => (
-                  <div key={skill.name}>
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 glass rounded-lg text-brand-primary`}>
+            
+            <div className="space-y-8">
+                {SKILLS.map((skill, i) => (
+                  <motion.div 
+                    key={skill.name}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                  >
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 bg-white/50 border border-slate-100 rounded-xl text-brand-primary shadow-sm`}>
                           {skill.icon}
                         </div>
-                        <span className="font-bold tracking-tight">{skill.name}</span>
+                        <span className="font-semibold text-slate-800 tracking-tight text-lg">{skill.name}</span>
                       </div>
-                      <span className={`text-brand-primary font-mono text-sm`}>{skill.level}%</span>
+                      <span className={`text-brand-primary font-mono font-bold tracking-widest text-sm`}>{skill.level}%</span>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         whileInView={{ width: `${skill.level}%` }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                        className={`h-full bg-brand-primary`}
-                        style={{ boxShadow: `0 0 15px var(--color-brand-primary)` }}
+                        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+                        className={`h-full bg-gradient-to-r from-brand-primary to-purple-400`}
                       />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
             </div>
           </motion.div>
 
-          <div className="relative hidden md:block">
-            <div className="absolute inset-0 bg-brand-primary/5 rounded-full blur-[100px]" />
-            <div className="grid grid-cols-2 gap-6 relative z-10">
-              <div className="space-y-6">
-                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-brand-primary/50 transition-colors">
-                  <PenTool className="w-12 h-12 text-brand-primary" />
-                  <span className="font-bold text-center">Vector Art</span>
-                </div>
-                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-brand-primary/50 transition-colors">
-                  <Palette className="w-12 h-12 text-brand-primary" />
-                  <span className="font-bold text-center">Retouching</span>
-                </div>
+          <div className="relative hidden md:block mt-12 md:mt-0">
+            <div className="absolute inset-0 bg-brand-primary/5 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="grid grid-cols-2 gap-8 relative z-10 w-full max-w-[500px] ml-auto">
+              <div className="space-y-8 pt-12">
+                <TiltCard className="cursor-default hover:-translate-y-2 transition-transform duration-500">
+                  <div className="glass p-10 rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
+                    <div className="p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
+                      <PenTool className="w-10 h-10 text-brand-primary" />
+                    </div>
+                    <span className="font-bold text-center text-slate-700 tracking-tight">Vector Art</span>
+                  </div>
+                </TiltCard>
+                <TiltCard className="cursor-default hover:-translate-y-2 transition-transform duration-500">
+                  <div className="glass p-10 rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
+                    <div className="p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
+                      <Palette className="w-10 h-10 text-brand-primary" />
+                    </div>
+                    <span className="font-bold text-center text-slate-700 tracking-tight">Retouching</span>
+                  </div>
+                </TiltCard>
               </div>
-              <div className="space-y-6">
-                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-brand-primary/50 transition-colors">
-                  <Layout className="w-12 h-12 text-brand-primary" />
-                  <span className="font-bold text-center">UI Design</span>
-                </div>
-                <div className="glass p-8 rounded-3xl aspect-square flex flex-col items-center justify-center gap-4 hover:border-brand-primary/50 transition-colors">
-                  <Award className="w-12 h-12 text-brand-primary" />
-                  <span className="font-bold text-center">Branding</span>
-                </div>
+              <div className="space-y-8">
+                <TiltCard className="cursor-default hover:-translate-y-2 transition-transform duration-500">
+                  <div className="glass p-10 rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
+                    <div className="p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
+                      <Layout className="w-10 h-10 text-brand-primary" />
+                    </div>
+                    <span className="font-bold text-center text-slate-700 tracking-tight">UI Design</span>
+                  </div>
+                </TiltCard>
+                <TiltCard className="cursor-default hover:-translate-y-2 transition-transform duration-500">
+                  <div className="glass p-10 rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
+                    <div className="p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
+                      <Award className="w-10 h-10 text-brand-primary" />
+                    </div>
+                    <span className="font-bold text-center text-slate-700 tracking-tight">Branding</span>
+                  </div>
+                </TiltCard>
               </div>
             </div>
           </div>
@@ -3149,29 +3274,58 @@ const Skills = () => {
 
 const Services = () => {
   return (
-    <section id="services" className="min-h-screen flex items-center py-16 scroll-mt-20 bg-slate-50/50">
-      <div className="max-w-[1600px] mx-auto px-6 w-full">
-        <div className="text-center mb-8">
-          <h2 className="text-4xl md:text-5xl font-bold mb-3 text-slate-900">SERVICES I <span className="text-brand-primary italic">OFFER</span></h2>
-          <p className="text-slate-500 max-w-xl mx-auto">Specialized design services to help your business grow and shine.</p>
+    <section id="services" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      <div className="max-w-[1400px] mx-auto w-full relative z-10 px-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+          <div>
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6"
+            >
+              <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-500">What I Do</span>
+            </motion.div>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight"
+            >
+              SERVICES I <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">OFFER</span>
+            </motion.h2>
+          </div>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-slate-500 max-w-md text-lg leading-relaxed font-light"
+          >
+            Specialized design services tailored to help your brand grow, engage audiences, and stand out in a competitive market.
+          </motion.p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {SERVICES.map((service, idx) => (
             <motion.div
               key={service.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={`glass p-6 rounded-3xl transition-all group hover:border-${service.color}/50 hover:shadow-lg bg-white border-slate-100`}
+              className={`glass p-5 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 group border-white/60 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] relative overflow-hidden`}
             >
-              <div className={`mb-6 group-hover:scale-110 transition-transform duration-500 text-${service.color}`}>
+              <div className={`mb-8 p-4 rounded-2xl bg-slate-50 shadow-sm inline-block group-hover:scale-110 transition-transform duration-500 text-${service.color} relative z-10`}>
                 {service.icon}
               </div>
-              <h3 className="text-xl font-bold mb-4 text-slate-900">{service.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">
+              <h3 className="text-2xl font-bold mb-4 text-slate-800 tracking-tight relative z-10 group-hover:text-brand-primary transition-colors">{service.title}</h3>
+              <p className="text-slate-500 leading-relaxed font-light relative z-10">
                 {service.description}
               </p>
+              
+              {/* Subtle background glow effect on hover */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             </motion.div>
           ))}
         </div>
@@ -3183,6 +3337,20 @@ const Services = () => {
 const Contact = () => {
   const [formData, setFormData] = useState({ fullName: '', email: '', subject: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const containerRef = useRef<HTMLElement>(null);
+  
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["0.3 1", "1 1"]
+  });
+
+  // Smooth cinematic background dome rising on scroll without flattening or changing softness
+  const scaleX = 1.1;
+  const stretchY = 1.4;
+  const yOffset1 = useTransform(scrollYProgress, [0, 1], ["50%", "15%"]);
+  const yOffset2 = useTransform(scrollYProgress, [0, 1], ["50%", "15%"]);
+  const yOffset3 = useTransform(scrollYProgress, [0, 1], ["50%", "15%"]);
+  const opacity = 0.8;
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -3208,118 +3376,102 @@ const Contact = () => {
   };
 
   return (
-    <section id="contact" className="min-h-screen flex items-center py-16 scroll-mt-20">
-      <div className="max-w-[1600px] mx-auto px-6 w-full">
-        <div className="bg-white rounded-[3rem] overflow-hidden border border-slate-200 shadow-xl">
-          <div className="grid lg:grid-cols-2">
-            <div className="p-10 lg:p-16 bg-slate-50 border-r border-slate-200">
-              <h2 className="text-5xl font-black mb-4 leading-tight uppercase tracking-tighter text-slate-900">
-                Let's <span className="text-brand-primary">Work</span> <br />Together
-              </h2>
-              <p className="text-slate-500 text-lg mb-10 max-w-md font-medium">
-                If you're looking for creative and professional design work for your brand, feel free to get in touch. I would be happy to collaborate and help bring your ideas to life.
-              </p>
-              
-              <div className="space-y-6">
-                <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center border border-brand-primary/20">
-                    <Mail className="w-6 h-6 text-brand-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Email Me</p>
-                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=aw6481299@gmail.com" target="_blank" rel="noopener noreferrer" className="text-xl font-bold text-slate-800 hover:text-brand-primary transition-colors">aw6481299@gmail.com</a>
-                  </div>
-                </div>
-                <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center border border-brand-primary/20">
-                    <MessageCircle className="w-6 h-6 text-brand-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Contact Me</p>
-                    <a href="https://wa.me/8801973324750?text=Hello%20I%20want%20to%20discuss%20a%20design%20project%20with%20you" target="_blank" rel="noopener noreferrer" className="text-xl font-bold text-slate-800 hover:text-brand-primary transition-colors">
-                      +8801973324750
-                      <span className="ml-2 text-[10px] bg-brand-primary/10 text-brand-primary px-1.5 py-0.5 rounded">Recommended</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
+    <section 
+      id="contact" 
+      ref={containerRef}
+      className="min-h-[130vh] pt-32 pb-48 flex flex-col justify-end items-center relative overflow-hidden"
+    >
+      {/* Cinematic Curved Dome Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+         {/* Outer Arc (Brand Color) blending into white */}
+         <motion.div 
+           style={{
+             x: "-50%",
+             y: yOffset1,
+             scaleX,
+             scaleY: stretchY,
+             opacity: opacity
+           }}
+           className="absolute left-1/2 bottom-[-15vh] w-[200vw] md:w-[150vw] h-[80vh] md:h-[110vh] bg-brand-primary rounded-[100%] blur-[40px] md:blur-[60px] origin-bottom" 
+         />
+         {/* Middle Arc */}
+         <motion.div 
+           style={{
+             x: "-50%",
+             y: yOffset2,
+             scaleX,
+             scaleY: stretchY
+           }}
+           className="absolute left-1/2 bottom-[-15vh] w-[170vw] md:w-[125vw] h-[66vh] md:h-[90vh] bg-[#3111ac] rounded-[100%] blur-[30px] md:blur-[40px] opacity-95 origin-bottom" 
+         />
+         {/* Inner Core (The Darkest Void - Navy Blue) */}
+         <motion.div 
+           style={{
+             x: "-50%",
+             y: yOffset3,
+             scaleX,
+             scaleY: stretchY
+           }}
+           className="absolute left-1/2 bottom-[-15vh] w-[140vw] md:w-[100vw] h-[53vh] md:h-[71vh] bg-[#080d29] rounded-[100%] blur-[20px] md:blur-[30px] opacity-100 origin-bottom" 
+         />
+      </div>
 
-              <div className="mt-12">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Follow Me</p>
-                <div className="flex gap-4">
-                  {[
-                    { icon: Facebook, color: 'magenta', href: 'https://www.facebook.com/profile.php?id=61584994744719' },
-                    { icon: Instagram, color: 'magenta', href: 'https://www.instagram.com/_wahab__graphic_/' },
-                    { icon: Linkedin, color: 'magenta', href: 'https://www.linkedin.com/in/abdul-wahab-988726409' }
-                  ].map((item, idx) => (
-                    <a 
-                      key={idx} 
-                      href={item.href} 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`w-12 h-12 bg-white rounded-xl flex items-center justify-center hover:scale-110 transition-transform border border-slate-200 text-slate-600 shadow-sm hover:text-brand-primary`}
-                    >
-                      <item.icon className="w-5 h-5" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
+      <div className="max-w-4xl mx-auto px-6 w-full relative z-20 text-center flex flex-col items-center pb-0 mt-32 md:mt-48">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-md mb-6 border border-white/15"
+        >
+          <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-widest text-white/90">Get In Touch</span>
+        </motion.div>
+        
+        <motion.h2 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-8 text-white tracking-tight leading-[1.1] drop-shadow-xl"
+        >
+          Let's Talk About <br />
+          Your Project
+        </motion.h2>
 
-            <div className="p-10 lg:p-16 bg-white">
-              <form onSubmit={handleContactSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Full Name</label>
-                    <input 
-                      type="text" 
-                      placeholder="John Doe" 
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all text-slate-900 placeholder-slate-400"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Email Address</label>
-                    <input 
-                      type="email" 
-                      placeholder="john@example.com" 
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-all text-slate-900 placeholder-slate-400"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Subject</label>
-                  <input 
-                    type="text" 
-                    placeholder="Project Inquiry" 
-                    value={formData.subject}
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-primary transition-colors text-slate-900 placeholder-slate-400"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Message</label>
-                  <textarea 
-                    rows={4} 
-                    placeholder="Tell me about your project..." 
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-primary transition-colors resize-none text-slate-900 placeholder-slate-400"
-                    required
-                  />
-                </div>
-                <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-brand-primary text-white font-bold rounded-xl hover:bg-slate-900 transition-all shadow-lg shadow-brand-primary/20 flex items-center justify-center gap-2 disabled:opacity-50">
-                  {isSubmitting ? 'SENDING...' : 'SEND MESSAGE'} <Send className="w-4 h-4" />
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="text-white/90 text-lg md:text-xl lg:text-2xl mb-12 max-w-4xl mx-auto font-light leading-relaxed drop-shadow-md flex flex-col gap-2"
+        >
+          <span>Feel free to reach out for collaborations or just a friendly hello.</span>
+          <span>I'm always open to discussing new projects and creative ideas.</span>
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="flex flex-wrap justify-center items-center gap-4 md:gap-6 mt-4"
+        >
+          {[
+            { name: 'WhatsApp', icon: MessageCircle, href: 'https://wa.me/8801973324750?text=Hello%20I%20want%20to%20discuss%20a%20design%20project' },
+            { name: 'Email', icon: Mail, href: 'https://mail.google.com/mail/?view=cm&fs=1&to=aw6481299@gmail.com' },
+            { name: 'Facebook', icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61584994744719' },
+            { name: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/_wahab__graphic_/' },
+            { name: 'LinkedIn', icon: Linkedin, href: 'https://www.linkedin.com/in/abdul-wahab-988726409' }
+          ].map((item, idx) => (
+            <a 
+              key={idx} 
+              href={item.href} 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-white/10 backdrop-blur-md rounded-2xl hover:-translate-y-2 transition-all duration-300 border border-white/20 shadow-xl hover:shadow-[0_20px_40px_rgba(255,255,255,0.15)] group relative z-10 overflow-hidden text-white hover:bg-white/20"
+              title={item.name}
+            >
+              <item.icon className="w-6 h-6 md:w-7 md:h-7 group-hover:scale-110 transition-transform duration-300 relative z-10" />
+            </a>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
@@ -3451,6 +3603,26 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [stats, setStats] = useState<Stat[]>(STATIC_STATS);
+
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.0,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1,
+    });
+
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     // Stats are now static
@@ -3678,6 +3850,9 @@ export default function App() {
         {isInitialLoading && <Preloader key="preloader" />}
       </AnimatePresence>
 
+      {/* Dynamic bottom viewport blur fade (inspired by Racdox) */}
+      <div className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-50 bg-transparent backdrop-blur-[12px] [mask-image:linear-gradient(to_top,rgba(0,0,0,1)_10%,rgba(0,0,0,0)_100%)]" />
+
       <GlobalBackground />
       <CustomCursor />
       <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} />
@@ -3688,20 +3863,20 @@ export default function App() {
       <Services />
       <Contact />
       
-      <footer className="py-12 border-t border-slate-200 bg-white">
+      <footer className="py-12 border-t border-white/5 bg-[#080d29] relative z-20">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
             <img 
               src="https://i.imgur.com/mNctGoH.png" 
               alt="Wahab Graphic Logo" 
               referrerPolicy="no-referrer" 
-              className="w-8 h-8 rounded-md opacity-80 object-cover border border-slate-100 bg-white" 
+              className="w-8 h-8 rounded-md opacity-90 object-cover border border-white/10 bg-white" 
               loading="lazy"
             />
-            <span className="text-xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
+            <span className="text-xl font-display font-bold tracking-tighter text-white">Wahab Graphic<span className="text-brand-primary">.</span></span>
           </div>
           
-          <p className="text-slate-500 text-sm">
+          <p className="text-white/50 text-sm">
             © {new Date().getFullYear()} Abdul Wahab. All rights reserved.
           </p>
 
@@ -3709,20 +3884,20 @@ export default function App() {
             {isAdmin ? (
               <button 
                 onClick={logOut}
-                className="text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-bold"
+                className="text-white/50 hover:text-white transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-bold"
               >
                 <LogOut className="w-4 h-4" /> Logout
               </button>
             ) : (
               <button 
                 onClick={signInWithGoogle}
-                className="text-xs uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2 font-bold"
+                className="text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors flex items-center gap-2 font-bold"
               >
                 <LogIn className="w-4 h-4" /> Admin Login
               </button>
             )}
             {['Privacy', 'Terms', 'Cookies'].map((item) => (
-              <a key={item} href="#" className="text-xs uppercase tracking-widest text-slate-500 hover:text-brand-primary transition-colors font-bold">
+              <a key={item} href="#" className="text-xs uppercase tracking-widest text-white/50 hover:text-brand-primary transition-colors font-bold">
                 {item}
               </a>
             ))}
