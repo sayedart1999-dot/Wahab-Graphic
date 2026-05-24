@@ -856,7 +856,9 @@ const AdminDashboard = ({
   onClose,
   setCategories,
   setProjects,
-  setStats
+  setStats,
+  themeStyles,
+  setThemeStyles
 }: { 
   categories: Category[], 
   projects: Project[], 
@@ -865,7 +867,9 @@ const AdminDashboard = ({
   onClose: () => void,
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>,
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>,
-  setStats: (stats: Stat[]) => void
+  setStats: (stats: Stat[]) => void,
+  themeStyles: any,
+  setThemeStyles: React.Dispatch<React.SetStateAction<any>>
 }) => {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -913,6 +917,26 @@ const AdminDashboard = ({
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'project' | 'category' | 'message', id: string, message: string } | null>(null);
+
+  // Style Notes Live Edit States
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [editBrandPrimary, setEditBrandPrimary] = useState(themeStyles.brandPrimary);
+  const [editLightBg, setEditLightBg] = useState(themeStyles.lightBackground);
+  const [editDisplayFont, setEditDisplayFont] = useState(themeStyles.displayFont);
+  const [editSansFont, setEditSansFont] = useState(themeStyles.sansFont);
+  const [editScriptFont, setEditScriptFont] = useState(themeStyles.scriptFont);
+  const [editFooterNote, setEditFooterNote] = useState(themeStyles.footerNote);
+
+  useEffect(() => {
+    if (activeTab === 'notes') {
+      setEditBrandPrimary(themeStyles.brandPrimary);
+      setEditLightBg(themeStyles.lightBackground);
+      setEditDisplayFont(themeStyles.displayFont);
+      setEditSansFont(themeStyles.sansFont);
+      setEditScriptFont(themeStyles.scriptFont);
+      setEditFooterNote(themeStyles.footerNote);
+    }
+  }, [themeStyles, activeTab]);
 
   // Form States
   const [catName, setCatName] = useState('');
@@ -1433,6 +1457,7 @@ const AdminDashboard = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      data-lenis-prevent
       className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-xl overflow-y-auto p-6 text-slate-900"
     >
       <div className="max-w-5xl mx-auto">
@@ -1464,9 +1489,18 @@ const AdminDashboard = ({
           </button>
         </div>
 
-        {activeTab === 'notes' && (
+        {activeTab === 'notes' && !isEditingNotes && (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-slate-900">Style Guide & Notes</h3>
+            <div className="flex justify-between items-center bg-slate-50 p-4 rounded-3xl border border-slate-200/50">
+              <h3 className="text-xl font-bold text-slate-900">Style Guide & Notes</h3>
+              <button 
+                onClick={() => setIsEditingNotes(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white font-bold rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-md shadow-brand-primary/10 cursor-pointer"
+              >
+                <Edit2 className="w-4 h-4" /> Edit Style Details
+              </button>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="glass p-6 rounded-3xl border-brand-primary/20 bg-white">
                 <h4 className="text-brand-primary font-bold mb-4 flex items-center gap-2">
@@ -1474,12 +1508,18 @@ const AdminDashboard = ({
                 </h4>
                 <ul className="space-y-3 text-sm">
                   <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-[#7c3ced] border border-slate-200"></div>
-                    <span><span className="font-bold">Brand Purple:</span> #7c3ced (Primary)</span>
+                    <div className="w-8 h-8 rounded-full border border-slate-200 shadow-sm" style={{ backgroundColor: themeStyles.brandPrimary }}></div>
+                    <div>
+                      <p className="font-bold text-slate-800">Brand Primary (Purple)</p>
+                      <p className="font-mono text-xs text-slate-400">{themeStyles.brandPrimary}</p>
+                    </div>
                   </li>
                   <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-[#f1f5f9] border border-slate-200"></div>
-                    <span><span className="font-bold">Light Background:</span> #f8fafc</span>
+                    <div className="w-8 h-8 rounded-full border border-slate-200 shadow-sm" style={{ backgroundColor: themeStyles.lightBackground }}></div>
+                    <div>
+                      <p className="font-bold text-slate-800">Light Background Color</p>
+                      <p className="font-mono text-xs text-slate-400">{themeStyles.lightBackground}</p>
+                    </div>
                   </li>
                 </ul>
               </div>
@@ -1488,16 +1528,164 @@ const AdminDashboard = ({
                   <Layout className="w-5 h-5" /> Typography
                 </h4>
                 <ul className="space-y-3 text-sm">
-                  <li><span className="font-bold">Display:</span> Space Grotesk (Headlines)</li>
-                  <li><span className="font-bold">Sans:</span> Inter (Body Text)</li>
-                  <li><span className="font-bold">Script:</span> Dancing Script (Signature/Name)</li>
+                  <li>
+                    <p className="font-bold text-slate-800">Display Font (Headings)</p>
+                    <p className="text-slate-500 font-display text-lg">{themeStyles.displayFont}</p>
+                  </li>
+                  <li>
+                    <p className="font-bold text-slate-800">Sans Font (Body Text)</p>
+                    <p className="text-slate-500 font-sans">{themeStyles.sansFont}</p>
+                  </li>
+                  <li>
+                    <p className="font-bold text-slate-800">Script Font (Signature & Custom Name)</p>
+                    <p className="text-slate-500 font-script text-xl">{themeStyles.scriptFont}</p>
+                  </li>
                 </ul>
               </div>
             </div>
             <div className="glass p-6 rounded-3xl italic text-slate-400 text-sm bg-slate-50 border-slate-200">
-              Note: These colors and fonts have been specifically chosen to maintain a premium and modern graphic designer portfolio aesthetic in light mode.
+              {themeStyles.footerNote}
             </div>
           </div>
+        )}
+
+        {activeTab === 'notes' && isEditingNotes && (
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              setThemeStyles({
+                brandPrimary: editBrandPrimary,
+                lightBackground: editLightBg,
+                displayFont: editDisplayFont,
+                sansFont: editSansFont,
+                scriptFont: editScriptFont,
+                footerNote: editFooterNote
+              });
+              setIsEditingNotes(false);
+            }}
+            className="space-y-6 text-slate-900"
+          >
+            <div className="flex justify-between items-center bg-slate-50 p-4 rounded-3xl border border-slate-200/50">
+              <h3 className="text-xl font-bold text-slate-900 font-display">Edit Style Guide & Theme</h3>
+              <div className="flex gap-2">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditingNotes(false)}
+                  className="px-4 py-2 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-200 active:scale-95 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white font-bold rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-md shadow-brand-primary/10 cursor-pointer"
+                >
+                  <Save className="w-4 h-4" /> Save Style
+                </button>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Color Palette Panel */}
+              <div className="glass p-6 rounded-3xl border-brand-primary/20 bg-white space-y-4">
+                <h4 className="text-brand-primary font-bold mb-2 flex items-center gap-2">
+                  <Palette className="w-5 h-5" /> Color Palette
+                </h4>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-450 block mb-1">Brand Primary (Purple)</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="color" 
+                        value={editBrandPrimary} 
+                        onChange={(e) => setEditBrandPrimary(e.target.value)}
+                        className="w-12 h-12 rounded-xl border border-slate-200 cursor-pointer bg-transparent p-1"
+                      />
+                      <input 
+                        type="text" 
+                        value={editBrandPrimary} 
+                        onChange={(e) => setEditBrandPrimary(e.target.value)}
+                        placeholder="#7c3ced"
+                        className="flex-1 px-4 py-2 rounded-xl border border-slate-205 font-mono text-sm focus:outline-none focus:border-brand-primary bg-slate-50 text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-450 block mb-1">Light Background Color</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="color" 
+                        value={editLightBg} 
+                        onChange={(e) => setEditLightBg(e.target.value)}
+                        className="w-12 h-12 rounded-xl border border-slate-200 cursor-pointer bg-transparent p-1"
+                      />
+                      <input 
+                        type="text" 
+                        value={editLightBg} 
+                        onChange={(e) => setEditLightBg(e.target.value)}
+                        placeholder="#fafafa"
+                        className="flex-1 px-4 py-2 rounded-xl border border-slate-205 font-mono text-sm focus:outline-none focus:border-brand-primary bg-slate-50 text-slate-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Typography Fonts Panel */}
+              <div className="glass p-6 rounded-3xl border-brand-primary/10 bg-white space-y-4">
+                <h4 className="text-brand-primary font-bold mb-2 flex items-center gap-2">
+                  <Layout className="w-5 h-5" /> Typography Settings
+                </h4>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-455 block mb-1">Display Font (Headings)</label>
+                    <input 
+                      type="text" 
+                      value={editDisplayFont} 
+                      onChange={(e) => setEditDisplayFont(e.target.value)}
+                      placeholder="Space Grotesk"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-primary bg-slate-50 text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-455 block mb-1">Sans Font (Body Text)</label>
+                    <input 
+                      type="text" 
+                      value={editSansFont} 
+                      onChange={(e) => setEditSansFont(e.target.value)}
+                      placeholder="Inter"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-primary bg-slate-50 text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-455 block mb-1">Script Font (Signature)</label>
+                    <input 
+                      type="text" 
+                      value={editScriptFont} 
+                      onChange={(e) => setEditScriptFont(e.target.value)}
+                      placeholder="Dancing Script"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-primary bg-slate-50 text-slate-900"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass p-6 rounded-3xl bg-slate-50 border-slate-200 space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-450 block">Footer Guideline & Notes</label>
+              <textarea 
+                value={editFooterNote} 
+                onChange={(e) => setEditFooterNote(e.target.value)}
+                rows={3}
+                placeholder="Style guide note summary..."
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-primary bg-white text-slate-900"
+              />
+            </div>
+          </form>
         )}
 
         {activeTab === 'messages' && (
@@ -2010,7 +2198,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
         <X className="w-6 h-6" />
       </button>
 
-      <div className="h-full overflow-y-auto custom-scrollbar">
+      <div className="h-full overflow-y-auto custom-scrollbar" data-lenis-prevent>
         <div className="max-w-[1400px] mx-auto px-6 py-12">
           <div className="space-y-12">
           <div className="text-center space-y-4 pt-10">
@@ -2990,6 +3178,20 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
+  useEffect(() => {
+    if (selectedProject) {
+      document.body.style.overflow = 'hidden';
+      (window as any).lenis?.stop();
+    } else {
+      document.body.style.overflow = '';
+      (window as any).lenis?.start();
+    }
+    return () => {
+      document.body.style.overflow = '';
+      (window as any).lenis?.start();
+    };
+  }, [selectedProject]);
+
   // Filter for published projects only (or projects without status field for backward compatibility)
   const publishedProjects = projects.filter(p => !p.status || p.status === 'published');
 
@@ -3604,6 +3806,30 @@ export default function App() {
   const [messages, setMessages] = useState<any[]>([]);
   const [stats, setStats] = useState<Stat[]>(STATIC_STATS);
 
+  const [themeStyles, setThemeStyles] = useState({
+    brandPrimary: localStorage.getItem('style_brand_primary') || '#7c3ced',
+    lightBackground: localStorage.getItem('style_light_bg') || '#fafafa',
+    displayFont: localStorage.getItem('style_font_display') || 'Space Grotesk',
+    sansFont: localStorage.getItem('style_font_sans') || 'Inter',
+    scriptFont: localStorage.getItem('style_font_script') || 'Dancing Script',
+    footerNote: localStorage.getItem('style_footer_note') || 'Note: These colors and fonts have been specifically chosen to maintain a premium and modern graphic designer portfolio aesthetic in light mode.'
+  });
+
+  useEffect(() => {
+    localStorage.setItem('style_brand_primary', themeStyles.brandPrimary);
+    localStorage.setItem('style_light_bg', themeStyles.lightBackground);
+    localStorage.setItem('style_font_display', themeStyles.displayFont);
+    localStorage.setItem('style_font_sans', themeStyles.sansFont);
+    localStorage.setItem('style_font_script', themeStyles.scriptFont);
+    localStorage.setItem('style_footer_note', themeStyles.footerNote);
+
+    document.documentElement.style.setProperty('--color-brand-primary', themeStyles.brandPrimary);
+    document.documentElement.style.setProperty('--color-dark-bg', themeStyles.lightBackground);
+    document.documentElement.style.setProperty('--font-display', `"${themeStyles.displayFont}", sans-serif`);
+    document.documentElement.style.setProperty('--font-sans', `"${themeStyles.sansFont}", sans-serif`);
+    document.documentElement.style.setProperty('--font-script', `"${themeStyles.scriptFont}", cursive`);
+  }, [themeStyles]);
+
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.0,
@@ -3611,6 +3837,7 @@ export default function App() {
       smoothWheel: true,
       wheelMultiplier: 1,
     });
+    (window as any).lenis = lenis;
 
     function raf(time: number) {
       lenis.raf(time);
@@ -3621,12 +3848,27 @@ export default function App() {
 
     return () => {
       lenis.destroy();
+      (window as any).lenis = null;
     };
   }, []);
 
   useEffect(() => {
     // Stats are now static
   }, [stats]);
+
+  useEffect(() => {
+    if (showAdmin) {
+      document.body.style.overflow = 'hidden';
+      (window as any).lenis?.stop();
+    } else {
+      document.body.style.overflow = '';
+      (window as any).lenis?.start();
+    }
+    return () => {
+      document.body.style.overflow = '';
+      (window as any).lenis?.start();
+    };
+  }, [showAdmin]);
 
   const adminEmail = "sayedart1999@gmail.com";
 
@@ -3916,6 +4158,8 @@ export default function App() {
             setCategories={setCategories}
             setProjects={setProjects}
             setStats={setStats}
+            themeStyles={themeStyles}
+            setThemeStyles={setThemeStyles}
           />
         )}
       </AnimatePresence>
