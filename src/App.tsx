@@ -3594,7 +3594,7 @@ const Contact = () => {
              scaleY: stretchY,
              opacity: opacity
            }}
-           className="absolute left-1/2 bottom-[-15vh] w-[200vw] md:w-[150vw] h-[80vh] md:h-[110vh] bg-brand-primary rounded-[100%] blur-[40px] md:blur-[60px] origin-bottom" 
+           className="absolute left-1/2 bottom-[-15vh] w-[200vw] md:w-[150vw] h-[90vh] md:h-[125vh] bg-brand-primary rounded-[100%] blur-[40px] md:blur-[60px] origin-bottom" 
          />
          {/* Middle Arc */}
          <motion.div 
@@ -3604,7 +3604,7 @@ const Contact = () => {
              scaleX,
              scaleY: stretchY
            }}
-           className="absolute left-1/2 bottom-[-15vh] w-[170vw] md:w-[125vw] h-[66vh] md:h-[90vh] bg-[#3111ac] rounded-[100%] blur-[30px] md:blur-[40px] opacity-95 origin-bottom" 
+           className="absolute left-1/2 bottom-[-15vh] w-[170vw] md:w-[125vw] h-[75vh] md:h-[105vh] bg-[#3111ac] rounded-[100%] blur-[30px] md:blur-[40px] opacity-95 origin-bottom" 
          />
          {/* Inner Core (The Darkest Void - Navy Blue) */}
          <motion.div 
@@ -3614,7 +3614,7 @@ const Contact = () => {
              scaleX,
              scaleY: stretchY
            }}
-           className="absolute left-1/2 bottom-[-15vh] w-[140vw] md:w-[100vw] h-[53vh] md:h-[71vh] bg-[#080d29] rounded-[100%] blur-[20px] md:blur-[30px] opacity-100 origin-bottom" 
+           className="absolute left-1/2 bottom-[-15vh] w-[140vw] md:w-[100vw] h-[62vh] md:h-[85vh] bg-[#080d29] rounded-[100%] blur-[20px] md:blur-[30px] opacity-100 origin-bottom" 
          />
       </div>
 
@@ -3674,6 +3674,255 @@ const Contact = () => {
             </a>
           ))}
         </motion.div>
+      </div>
+    </section>
+  );
+};
+
+const WhatClientsSaid = () => {
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const reviews = [
+    {
+      quote: "Working with Wahab was smooth from start to finish. The designs looked modern, clean, and exactly matched our brand direction.",
+      client: "Rahim Ahmed",
+      role: "Founder, Creative Agency"
+    },
+    {
+      quote: "The thumbnail and branding work improved the visual quality of our online content. Communication and delivery were professional.",
+      client: "Nusrat Jahan",
+      role: "Content Creator"
+    },
+    {
+      quote: "We wanted a premium but simple visual style, and the final result exceeded our expectations.",
+      client: "Tanvir Hasan",
+      role: "Small Business Owner"
+    }
+  ];
+
+  const StarIcon = ({ className = "w-5 h-5 fill-amber-400 text-amber-400" }) => (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    </svg>
+  );
+
+  return (
+    <section id="testimonials" className="py-24 scroll-mt-20 relative px-4 md:px-0 bg-slate-50/10 overflow-hidden">
+      {/* Subtle top divider to match services and skills dividers */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-90" />
+      
+      {/* Soft dynamic brand color glow behind illustration */}
+      <div className="absolute left-1/4 bottom-0 w-96 h-96 bg-brand-primary/[0.02] rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-[1400px] mx-auto w-full relative z-10 px-6">
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+          
+          {/* Vector Illustration / Artwork Side */}
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="lg:col-span-5 relative"
+          >
+            <div className="absolute inset-0 bg-brand-primary/5 rounded-full blur-3xl pointer-events-none" />
+            
+            <motion.div
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 6, ease: "easeInOut", repeat: Infinity }}
+              className="relative z-10 w-full max-w-[440px] mx-auto aspect-square rounded-[2rem] glass p-6 sm:p-8 border-white/80 bg-white/40 shadow-[0_24px_50px_rgba(0,0,0,0.02)] flex flex-col justify-center items-center overflow-hidden"
+            >
+              {/* Decorative design blueprint dot grid */}
+              <div className="absolute inset-0 opacity-[0.03] select-none pointer-events-none dot-grid" />
+              
+              <svg viewBox="0 0 400 400" className="w-full h-full max-w-[340px]" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Visual anchor glow */}
+                <circle cx="200" cy="200" r="110" fill="url(#pGlow)" opacity="0.3" filter="blur(16px)" />
+                
+                {/* Abstract graphic layout circles */}
+                <circle cx="200" cy="200" r="95" stroke="url(#pBorder)" strokeWidth="1.25" strokeDasharray="6 6" opacity="0.4" />
+                <circle cx="200" cy="200" r="135" stroke="url(#pBorder2)" strokeWidth="1" strokeDasharray="30 10" opacity="0.25" />
+                
+                {/* Beautiful custom vector curve representing designer skill */}
+                <path d="M 60,290 C 130,90 230,310 340,110" stroke="url(#pathGradient)" strokeWidth="4.5" strokeLinecap="round" opacity="0.9" />
+                
+                {/* Guide lines & handle anchors mimicking Vector Software bezier curves */}
+                <line x1="120" y1="174" x2="160" y2="70" stroke="#7c3ced" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.75" />
+                <line x1="240" y1="202" x2="200" y2="300" stroke="#7c3ced" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.75" />
+                
+                <circle cx="160" cy="70" r="5.5" fill="#7c3ced" stroke="#fff" strokeWidth="1.5" />
+                <circle cx="200" cy="300" r="5.5" fill="#7c3ced" stroke="#fff" strokeWidth="1.5" />
+                
+                {/* Anchor box/bezier nodes */}
+                <rect x="115" y="169" width="10" height="10" fill="#7c3ced" stroke="#fff" strokeWidth="2" rx="1.5" />
+                <rect x="235" y="197" width="10" height="10" fill="#7c3ced" stroke="#fff" strokeWidth="2" rx="1.5" />
+                <circle cx="60" cy="290" r="6" fill="#fff" stroke="#7c3ced" strokeWidth="3" />
+                <circle cx="340" cy="110" r="6" fill="#fff" stroke="#7c3ced" strokeWidth="3" />
+                
+                {/* Pen tool custom vector cursor icon (no photos/bitmaps) */}
+                <g transform="translate(325, 95)">
+                  <path d="M0,25 L5,15 L15,5 L25,0 L20,10 L10,20 Z" fill="#7c3ced" stroke="#fff" strokeWidth="1.5" />
+                  <circle cx="5" cy="20" r="1.5" fill="#fff" />
+                </g>
+
+                {/* Overlapping Glass Client feedback ticket inside graphic artwork */}
+                <g transform="translate(185, 215)">
+                  <rect x="0" y="0" width="160" height="90" rx="18" fill="#ffffff" fillOpacity="0.85" stroke="url(#ticketBorder)" strokeWidth="1.5" style={{ filter: 'drop-shadow(0 15px 30px rgba(124, 60, 237, 0.08))' }} />
+                  {/* Miniature Stars */}
+                  <g transform="translate(15, 15)">
+                    {[0, 1, 2, 3, 4].map(i => (
+                      <path key={i} d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" transform={`translate(${i * 14}, 0) scale(0.55)`} fill="#fbbf24" />
+                    ))}
+                  </g>
+                  {/* Custom vector ticket elements */}
+                  <text x="15" y="48" fill="#1e293b" fontSize="10" fontWeight="bold" fontFamily="system-ui, sans-serif">Review: Approved ✔</text>
+                  <text x="15" y="66" fill="#64748b" fontSize="8" fontWeight="medium" fontFamily="system-ui, sans-serif">Modern Direction Achieved</text>
+                  <circle cx="135" cy="30" r="12" fill="#7c3ced" fillOpacity="0.1" />
+                  <text x="129" y="33" fill="#7c3ced" fontSize="8" fontWeight="bold" fontFamily="system-ui, sans-serif">WG</text>
+                </g>
+
+                {/* Styled Portfolio Card Vector Thumbnail representing thumbnail work */}
+                <g transform="translate(45, 65)">
+                  <rect x="0" y="0" width="130" height="75" rx="16" fill="#080d29" fillOpacity="0.95" stroke="rgba(255,255,255,0.12)" strokeWidth="1" style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.16))' }} />
+                  {/* Micro typographic placeholder shapes representing beautiful content */}
+                  <circle cx="22" cy="22" r="7" fill="#fff" fillOpacity="0.25" />
+                  <rect x="34" y="18" width="45" height="4" rx="2" fill="#fff" fillOpacity="0.4" />
+                  <rect x="34" y="25" width="28" height="3" rx="1.5" fill="#fff" fillOpacity="0.2" />
+                  
+                  {/* Vector wave represent thumbnail shape */}
+                  <path d="M15,55 Q35,42 55,55 T95,55 T115,48" fill="none" stroke="url(#thumbWaveGradient)" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="115" cy="48" r="3" fill="#fbbf24" />
+                </g>
+
+                {/* Defs containing precise vector artwork gradients */}
+                <defs>
+                  <radialGradient id="pGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#7c3ced" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#7c3ced" stopOpacity="0" />
+                  </radialGradient>
+                  <linearGradient id="pBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#7c3ced" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#c084fc" stopOpacity="0.05" />
+                  </linearGradient>
+                  <linearGradient id="pBorder2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.02" />
+                  </linearGradient>
+                  <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#7c3ced" />
+                    <stop offset="100%" stopColor="#ec4899" />
+                  </linearGradient>
+                  <linearGradient id="ticketBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.85)" />
+                    <stop offset="100%" stopColor="rgba(124, 60, 237, 0.2)" />
+                  </linearGradient>
+                  <linearGradient id="thumbWaveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#7c3ced" />
+                    <stop offset="50%" stopColor="#ec4899" />
+                    <stop offset="100%" stopColor="#fbbf24" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </motion.div>
+          </motion.div>
+
+          {/* Client Review / Story Text Side */}
+          <div className="lg:col-span-7 space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6">
+                <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-500 font-mono">Feedback</span>
+              </div>
+              
+              <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tight uppercase text-slate-900">
+                WHAT CLIENTS <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">SAID</span>
+              </h2>
+              
+              <p className="text-slate-500 font-light leading-relaxed text-lg max-w-xl">
+                Honest feedback and appreciation from creative founders, content creators, and small business partners.
+              </p>
+            </motion.div>
+
+            {/* Testimonials Review Display Box */}
+            <div className="relative">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeIdx}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="glass p-8 sm:p-10 rounded-[2rem] border-white bg-white/75 relative shadow-[0_24px_50px_rgba(0,0,0,0.02)]"
+                >
+                  {/* Subtle quote visual icon in background of the card */}
+                  <div className="absolute top-6 right-8 text-brand-primary/10 select-none pointer-events-none">
+                    <Quote className="w-16 h-16 fill-brand-primary/5 stroke-[1.25]" />
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Glowing Stars */}
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <StarIcon key={s} className="w-4 h-4 fill-amber-400 text-amber-400 drop-shadow-sm" />
+                      ))}
+                    </div>
+
+                    {/* Testimonial Quote */}
+                    <p className="text-slate-800 text-lg sm:text-xl font-medium tracking-tight leading-relaxed italic pr-4">
+                      "{reviews[activeIdx].quote}"
+                    </p>
+
+                    <div className="h-px w-12 bg-slate-200" />
+
+                    {/* Review User Info */}
+                    <div className="flex items-center gap-4">
+                      {/* Typographic avatar background (no real human photos) */}
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-primary/10 to-brand-primary/30 border border-brand-primary/25 flex items-center justify-center text-brand-primary font-bold shadow-inner">
+                        {reviews[activeIdx].client.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 font-display text-base tracking-tight">{reviews[activeIdx].client}</h4>
+                        <p className="text-slate-500 text-xs font-medium">{reviews[activeIdx].role}</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Swapping indicators below review detail card */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              {reviews.map((rev, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveIdx(idx)}
+                  className={`flex items-center gap-3 px-4.5 py-3 rounded-2xl transition-all font-bold tracking-tight text-xs uppercase text-left border cursor-pointer ${
+                    activeIdx === idx
+                      ? 'bg-[#080d29] border-[#080d29] text-white shadow-lg shadow-indigo-500/10'
+                      : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-950 shadow-sm'
+                  }`}
+                >
+                  {/* Little custom avatar initial */}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                    activeIdx === idx ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}>
+                    {rev.client.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <p className="font-bold tracking-tight leading-none mb-0.5 text-xs">{rev.client}</p>
+                    <p className={`text-[9px] leading-none font-medium ${activeIdx === idx ? 'text-white/60' : 'text-slate-400'}`}>{rev.role}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -4104,21 +4353,22 @@ export default function App() {
       <Skills />
       <Services />
       <Contact />
+      <WhatClientsSaid />
       
-      <footer className="py-12 border-t border-white/5 bg-[#080d29] relative z-20">
+      <footer className="py-12 border-t border-slate-200/60 bg-white/80 backdrop-blur-md relative z-20">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
             <img 
               src="https://i.imgur.com/mNctGoH.png" 
               alt="Wahab Graphic Logo" 
               referrerPolicy="no-referrer" 
-              className="w-8 h-8 rounded-md opacity-90 object-cover border border-white/10 bg-white" 
+              className="w-8 h-8 rounded-md opacity-95 object-cover border border-slate-200 bg-white" 
               loading="lazy"
             />
-            <span className="text-xl font-display font-bold tracking-tighter text-white">Wahab Graphic<span className="text-brand-primary">.</span></span>
+            <span className="text-xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
           </div>
           
-          <p className="text-white/50 text-sm">
+          <p className="text-slate-500 text-sm">
             © {new Date().getFullYear()} Abdul Wahab. All rights reserved.
           </p>
 
@@ -4126,20 +4376,20 @@ export default function App() {
             {isAdmin ? (
               <button 
                 onClick={logOut}
-                className="text-white/50 hover:text-white transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-bold"
+                className="text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-bold cursor-pointer"
               >
                 <LogOut className="w-4 h-4" /> Logout
               </button>
             ) : (
               <button 
                 onClick={signInWithGoogle}
-                className="text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors flex items-center gap-2 font-bold"
+                className="text-xs uppercase tracking-widest text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2 font-bold cursor-pointer"
               >
                 <LogIn className="w-4 h-4" /> Admin Login
               </button>
             )}
             {['Privacy', 'Terms', 'Cookies'].map((item) => (
-              <a key={item} href="#" className="text-xs uppercase tracking-widest text-white/50 hover:text-brand-primary transition-colors font-bold">
+              <a key={item} href="#" className="text-xs uppercase tracking-widest text-slate-500 hover:text-brand-primary transition-colors font-bold">
                 {item}
               </a>
             ))}
