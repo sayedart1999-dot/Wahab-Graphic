@@ -58,7 +58,8 @@ import {
   BarChart3,
   Clock,
   ChevronDown,
-  Settings
+  Settings,
+  Phone
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { uploadToCloudinary, uploadMultipleToCloudinary } from './lib/cloudinary';
@@ -4464,6 +4465,20 @@ export default function App() {
               loading="lazy"
             />
             <span className="text-xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
+          </div>
+
+          {/* Emergency Contact Number */}
+          <div className="flex flex-col items-center md:items-end gap-1">
+            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold font-sans">
+              For Emergency Contact
+            </span>
+            <a 
+              href="tel:+8801973324750" 
+              className="flex items-center gap-2 text-base font-semibold text-slate-700 hover:text-brand-primary transition-colors cursor-pointer group font-mono"
+            >
+              <Phone className="w-4 h-4 text-brand-primary group-hover:scale-110 transition-transform animate-pulse" />
+              <span>+880 1973 324750</span>
+            </a>
           </div>
         </div>
 
