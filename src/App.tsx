@@ -2231,7 +2231,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
       <div className="h-full overflow-y-auto custom-scrollbar" data-lenis-prevent>
         <div className="max-w-[1400px] mx-auto px-6 py-12">
           <div className="space-y-12">
-          <div className="text-center space-y-4 pt-10">
+          <div className="text-center space-y-4 pt-14 sm:pt-10">
             <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-slate-900">{project.name}</h2>
             <p className="text-slate-500 text-lg max-w-2xl mx-auto">{project.description}</p>
           </div>
@@ -2981,19 +2981,19 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="mb-8 inline-block"
+            className="mb-6 md:mb-8 inline-block"
           >
-            <div className="inline-flex py-2 px-4 rounded-full glass border-white/40 shadow-sm text-xs md:text-sm font-semibold tracking-widest text-slate-500 uppercase">
+            <div className="inline-flex py-2 px-4 rounded-full glass border-white/40 shadow-sm text-[10px] sm:text-xs md:text-sm font-semibold tracking-widest text-slate-500 uppercase text-center max-w-full">
               ✨ Logo Design, Brand Identity & Social Media
             </div>
           </motion.div>
 
-          <div className="mb-6 flex items-baseline flex-wrap">
-            <span className="text-xl md:text-2xl font-light text-slate-500 tracking-tight">Hi, I am </span>
-            <span className="text-4xl sm:text-5xl md:text-6xl font-script font-semibold text-brand-primary ml-3">Abdul Wahab</span>
+          <div className="mb-4 md:mb-6 flex flex-col xs:flex-row xs:items-baseline flex-wrap gap-1 xs:gap-3">
+            <span className="text-lg md:text-2xl font-light text-slate-500 tracking-tight">Hi, I am</span>
+            <span className="text-3xl sm:text-5xl md:text-6xl font-script font-semibold text-brand-primary">Abdul Wahab</span>
           </div>
           
-          <h1 className="text-6xl sm:text-7xl md:text-8xl xl:text-[9rem] font-black leading-[0.85] mb-6 tracking-tighter uppercase text-slate-900 drop-shadow-sm">
+          <h1 className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl xl:text-[9rem] font-black leading-[0.9] sm:leading-[0.85] mb-6 tracking-tighter uppercase text-slate-900 drop-shadow-sm">
             <motion.span
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -3012,11 +3012,11 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             </motion.span>
           </h1>
           
-          <p className="text-slate-500 text-lg md:text-xl max-w-xl mb-10 leading-relaxed font-light">
+          <p className="text-slate-500 text-base md:text-xl max-w-xl mb-8 md:mb-10 leading-relaxed font-light">
             I create <span className="font-medium text-slate-800">modern, clean, and impactful</span> designs that help brands stand out and communicate their message clearly.
           </p>
           
-          <div className="flex flex-wrap items-center gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 mb-8 md:mb-10 w-full max-w-md sm:max-w-none">
             <a 
               href="#portfolio" 
               onClick={(e) => scrollToSectionHelper('portfolio', e)}
@@ -3028,23 +3028,23 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             <a 
               href="#contact" 
               onClick={(e) => scrollToSectionHelper('contact', e)}
-              className="px-8 py-4 glass border border-slate-200/50 text-slate-700 font-semibold rounded-full hover:bg-white hover:text-brand-primary transition-all duration-300 flex items-center justify-center gap-3 text-sm tracking-wide uppercase hover:shadow-lg"
+              className="px-8 py-4 glass border border-slate-200/50 text-slate-700 font-semibold rounded-full hover:bg-white hover:text-brand-primary transition-all duration-300 flex items-center justify-center gap-3 text-sm tracking-wide uppercase hover:shadow-lg text-center"
             >
               Contact Me
             </a>
           </div>
 
-          {/* Horizontal Stats Card */}
-          <div className="glass px-6 py-4 rounded-2xl border-slate-200 shadow-lg flex flex-wrap items-center gap-6 z-30 w-fit">
+          {/* Horizontal / Grid Responsive Stats Card */}
+          <div className="glass px-6 py-4.5 rounded-2xl border-slate-200 shadow-lg grid grid-cols-1 xs:grid-cols-3 gap-5 xs:gap-8 items-center z-30 w-full sm:w-fit select-none">
             {stats.map((stat) => (
-              <div key={stat.id} className="flex items-center gap-3">
-                <div className={`w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center`}>
+              <div key={stat.id} className="flex items-center gap-3.5 justify-start sm:justify-center">
+                <div className="w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center shrink-0">
                   {stat.type === 'projects' && <Palette className="w-5 h-5 text-brand-primary" />}
                   {stat.type === 'clients' && <Layers className="w-5 h-5 text-brand-primary" />}
                   {stat.type === 'reviews' && <Award className="w-5 h-5 text-brand-primary" />}
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-slate-900">{stat.value}</p>
+                  <p className="text-lg md:text-xl font-bold text-slate-900 leading-tight">{stat.value}</p>
                   <p className="text-xs text-slate-400 font-medium tracking-wide">{stat.label}</p>
                 </div>
               </div>
@@ -3157,17 +3157,17 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
 
 const About = () => {
   return (
-    <section id="about" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+    <section id="about" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-0">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-      <div className="max-w-[1400px] mx-auto w-full relative z-10">
+      <div className="max-w-[1400px] mx-auto w-full relative z-10 px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true, margin: "-100px" }}
-          className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-2xl shadow-brand-primary/[0.03] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 md:p-16 lg:p-20"
+          className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-2xl shadow-brand-primary/[0.03] rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 md:p-16 lg:p-20"
         >
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div>
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
@@ -3183,7 +3183,7 @@ const About = () => {
                   CRAFTING <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">VISUAL</span> <br />STORIES
                 </h2>
                 
-                <div className="space-y-6 text-slate-500 text-lg md:text-xl leading-relaxed font-light mb-10">
+                <div className="space-y-6 text-slate-500 text-base md:text-xl leading-relaxed font-light mb-10">
                   <p>
                     Hello, I'm <span className="font-semibold text-slate-800">Wahab</span>, a passionate graphic designer who focuses on creating clean, modern, and visually engaging designs. I specialize in logo design, brand identity, and social media graphics that help businesses build a strong visual presence.
                   </p>
@@ -3192,17 +3192,17 @@ const About = () => {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-4 pt-2">
+                <div className="flex flex-wrap gap-2.5 pt-2">
                   {['Logo Design', 'Social Media Design', 'Branding', 'Poster Design'].map((item, i) => (
                     <motion.div 
                       key={item} 
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 + (i * 0.1) }}
-                      className="flex items-center gap-3 bg-white/60 backdrop-blur-sm px-5 py-3 rounded-full border border-slate-200 shadow-sm"
+                      className="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-4 py-2.5 rounded-full border border-slate-200 shadow-sm"
                     >
-                      <Check className="w-4 h-4 text-brand-primary" />
-                      <span className="text-slate-700 text-sm font-semibold">{item}</span>
+                      <Check className="w-3.5 h-3.5 text-brand-primary shrink-0" />
+                      <span className="text-slate-700 text-xs sm:text-sm font-semibold">{item}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -3210,31 +3210,31 @@ const About = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4 sm:gap-6 relative">
-              <div className="space-y-6 mt-12">
+              <div className="space-y-5 sm:space-y-6 mt-6 sm:mt-12">
                 <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
-                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">5<span className="text-brand-primary">+</span></h3>
-                    <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Years Exp.</p>
+                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.25rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
+                    <h3 className="text-3xl xs:text-5xl md:text-6xl font-black text-slate-800 mb-2 sm:mb-3 group-hover:text-brand-primary transition-colors">5<span className="text-brand-primary">+</span></h3>
+                    <p className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-400 font-bold">Years Exp.</p>
                   </div>
                 </TiltCard>
                 <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
-                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">150<span className="text-brand-primary">+</span></h3>
-                    <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Projects</p>
+                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.25rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
+                    <h3 className="text-3xl xs:text-5xl md:text-6xl font-black text-slate-800 mb-2 sm:mb-3 group-hover:text-brand-primary transition-colors">150<span className="text-brand-primary">+</span></h3>
+                    <p className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-400 font-bold">Projects</p>
                   </div>
                 </TiltCard>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                 <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                   <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
-                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">99<span className="text-brand-primary">%</span></h3>
-                    <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Happy Clients</p>
+                   <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.25rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
+                    <h3 className="text-3xl xs:text-5xl md:text-6xl font-black text-slate-800 mb-2 sm:mb-3 group-hover:text-brand-primary transition-colors">99<span className="text-brand-primary">%</span></h3>
+                    <p className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-400 font-bold">Happy Clients</p>
                   </div>
                 </TiltCard>
                 <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
-                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">24<span className="text-brand-primary">/</span>7</h3>
-                    <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Support</p>
+                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.25rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
+                    <h3 className="text-3xl xs:text-5xl md:text-6xl font-black text-slate-800 mb-2 sm:mb-3 group-hover:text-brand-primary transition-colors">24<span className="text-brand-primary">/</span>7</h3>
+                    <p className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-400 font-bold">Support</p>
                   </div>
                 </TiltCard>
               </div>
@@ -3394,7 +3394,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
               <h3 className="text-2xl font-bold text-slate-900">Portfolio <span className="text-brand-primary">/</span> {selectedCategory.name}</h3>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               <AnimatePresence mode="popLayout">
                 {categoryProjects.map((project, idx) => (
                   <motion.div
@@ -3498,43 +3498,43 @@ const Skills = () => {
             </div>
           </motion.div>
 
-          <div className="relative hidden md:block mt-12 md:mt-0">
+          <div className="relative mt-16 md:mt-0">
             <div className="absolute inset-0 bg-brand-primary/5 rounded-full blur-3xl pointer-events-none" />
             
-            <div className="grid grid-cols-2 gap-8 relative z-10 w-full max-w-[500px] ml-auto">
-              <div className="space-y-8 pt-12">
+            <div className="grid grid-cols-2 gap-4 sm:gap-8 relative z-10 w-full max-w-[500px] ml-auto">
+              <div className="space-y-4 sm:space-y-8 pt-6 sm:pt-12">
                 <TiltCard className="cursor-default hover:-translate-y-2 transition-transform duration-500">
-                  <div className="glass p-10 rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
-                    <div className="p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
-                      <PenTool className="w-10 h-10 text-brand-primary" />
+                  <div className="glass p-5 sm:p-10 rounded-[1.5rem] sm:rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-4 sm:gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
+                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
+                      <PenTool className="w-8 h-8 sm:w-10 sm:h-10 text-brand-primary" />
                     </div>
-                    <span className="font-bold text-center text-slate-700 tracking-tight">Vector Art</span>
+                    <span className="font-bold text-center text-slate-700 tracking-tight text-xs sm:text-base">Vector Art</span>
                   </div>
                 </TiltCard>
                 <TiltCard className="cursor-default hover:-translate-y-2 transition-transform duration-500">
-                  <div className="glass p-10 rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
-                    <div className="p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
-                      <Palette className="w-10 h-10 text-brand-primary" />
+                  <div className="glass p-5 sm:p-10 rounded-[1.5rem] sm:rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-4 sm:gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
+                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
+                      <Palette className="w-8 h-8 sm:w-10 sm:h-10 text-brand-primary" />
                     </div>
-                    <span className="font-bold text-center text-slate-700 tracking-tight">Retouching</span>
+                    <span className="font-bold text-center text-slate-700 tracking-tight text-xs sm:text-base">Retouching</span>
                   </div>
                 </TiltCard>
               </div>
-              <div className="space-y-8">
+              <div className="space-y-4 sm:space-y-8">
                 <TiltCard className="cursor-default hover:-translate-y-2 transition-transform duration-500">
-                  <div className="glass p-10 rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
-                    <div className="p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
-                      <Layout className="w-10 h-10 text-brand-primary" />
+                  <div className="glass p-5 sm:p-10 rounded-[1.5rem] sm:rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-4 sm:gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
+                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
+                      <Layout className="w-8 h-8 sm:w-10 sm:h-10 text-brand-primary" />
                     </div>
-                    <span className="font-bold text-center text-slate-700 tracking-tight">UI Design</span>
+                    <span className="font-bold text-center text-slate-700 tracking-tight text-xs sm:text-base">UI Design</span>
                   </div>
                 </TiltCard>
                 <TiltCard className="cursor-default hover:-translate-y-2 transition-transform duration-500">
-                  <div className="glass p-10 rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
-                    <div className="p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
-                      <Award className="w-10 h-10 text-brand-primary" />
+                  <div className="glass p-5 sm:p-10 rounded-[1.5rem] sm:rounded-[2rem] aspect-square flex flex-col items-center justify-center gap-4 sm:gap-6 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group border-white/60">
+                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50 group-hover:bg-brand-primary/5 transition-colors">
+                      <Award className="w-8 h-8 sm:w-10 sm:h-10 text-brand-primary" />
                     </div>
-                    <span className="font-bold text-center text-slate-700 tracking-tight">Branding</span>
+                    <span className="font-bold text-center text-slate-700 tracking-tight text-xs sm:text-base">Branding</span>
                   </div>
                 </TiltCard>
               </div>
@@ -3581,14 +3581,14 @@ const Services = () => {
           </motion.p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {SERVICES.map((service, idx) => (
             <motion.div
               key={service.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={`glass p-5 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 group border-white/60 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] relative overflow-hidden`}
+              className="glass p-6 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 group border-white/60 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] relative overflow-hidden"
             >
               <div className={`mb-8 p-4 rounded-2xl bg-slate-50 shadow-sm inline-block group-hover:scale-110 transition-transform duration-500 text-${service.color} relative z-10`}>
                 {service.icon}
@@ -3612,6 +3612,16 @@ const Contact = () => {
   const [formData, setFormData] = useState({ fullName: '', email: '', subject: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const containerRef = useRef<HTMLElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -3619,8 +3629,8 @@ const Contact = () => {
   });
 
   // Smooth cinematic background dome centered on scroll without flipping or changing softness
-  const scaleX = 1.1;
-  const stretchY = 1.4;
+  const scaleX = isMobile ? 1.4 : 1.1;
+  const stretchY = isMobile ? 1.6 : 1.4;
   const yOffset1 = useTransform(scrollYProgress, [0, 1], ["-47%", "-53%"]);
   const yOffset2 = useTransform(scrollYProgress, [0, 1], ["-48%", "-52%"]);
   const yOffset3 = useTransform(scrollYProgress, [0, 1], ["-49%", "-51%"]);
@@ -3653,8 +3663,8 @@ const Contact = () => {
     <section 
       id="contact" 
       ref={containerRef}
-      style={{ height: '2000px' }}
-      className="min-h-[150vh] flex flex-col justify-center items-center relative overflow-hidden"
+      style={{ height: isMobile ? '800px' : '1800px' }}
+      className={`relative flex flex-col justify-center items-center overflow-hidden ${isMobile ? 'min-h-[90vh]' : 'min-h-[150vh]'}`}
     >
       {/* Cinematic Curved Dome Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
