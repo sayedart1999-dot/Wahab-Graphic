@@ -82,7 +82,7 @@ export const scrollToSectionHelper = (id: string, e?: React.MouseEvent | React.S
   }
   const element = document.getElementById(id);
   if (element) {
-    if (id === 'contact') {
+    if (id === 'contact' || id === 'testimonials') {
       const rect = element.getBoundingClientRect();
       const elementTop = rect.top + window.scrollY;
       const elementHeight = element.offsetHeight;
@@ -2752,10 +2752,15 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
+
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
 
     // Intersection Observer for active section
     const observerOptions = {
@@ -2769,7 +2774,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
         if (entry.isIntersecting) {
           // Only set active if it's one of our nav links
           const id = entry.target.id;
-          if (['home', 'about', 'portfolio', 'services', 'contact'].includes(id)) {
+          if (['home', 'about', 'portfolio', 'services', 'testimonials', 'contact'].includes(id)) {
             setActiveSection(id);
           } else if (id === 'skills') {
             // If in skills, maybe keep portfolio active or clear it? 
@@ -2782,7 +2787,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
     };
 
     const observer = new IntersectionObserver(observerCallback, observerOptions);
-    const sections = ['home', 'about', 'portfolio', 'skills', 'services', 'contact'];
+    const sections = ['home', 'about', 'portfolio', 'skills', 'services', 'testimonials', 'contact'];
     sections.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
@@ -2790,6 +2795,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', checkMobile);
       observer.disconnect();
     };
   }, []);
@@ -2799,6 +2805,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
     { name: 'About', id: 'about', href: '#about' },
     { name: 'Portfolio', id: 'portfolio', href: '#portfolio' },
     { name: 'Services', id: 'services', href: '#services' },
+    { name: 'Feedback', id: 'testimonials', href: '#testimonials' },
     { name: 'Contact', id: 'contact', href: '#contact' },
   ];
 
@@ -2823,9 +2830,9 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
       <span className="text-xl md:text-2xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
     </a>
 
-        {/* Desktop Nav - Pill Style (Center) */}
+        {/* Desktop Nav - Pill Style (Center) - Feedback excluded from outside horizontal nav */}
         <div className={`hidden md:flex items-center justify-center gap-1 ${isScrolled ? '' : 'glass px-2 py-2 rounded-full'} relative justify-self-center`}>
-          {navLinks.map((link) => (
+          {navLinks.filter(link => link.id !== 'testimonials').map((link) => (
             <a 
               key={link.name} 
               href={link.href} 
@@ -2849,14 +2856,18 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
           {isAdmin && (
             <button 
               onClick={onAdminClick}
-              className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all bg-white border-slate-200 group"
+              className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all bg-white border-slate-200 group cursor-pointer"
               title="Admin Dashboard"
             >
               <UserIcon className="w-6 h-6 group-hover:scale-110 transition-transform text-slate-600 group-hover:text-white" />
             </button>
           )}
-          <button className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all bg-white border-slate-200 text-slate-600">
-            <Menu className="w-6 h-6" />
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="w-12 h-12 glass rounded-full flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all bg-white border-slate-200 text-slate-600 cursor-pointer"
+            title="Menu"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-6 h-6 animate-pulse" />}
           </button>
         </div>
 
@@ -2879,22 +2890,32 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Menu Dropdown Container */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`absolute top-full left-0 w-full md:hidden py-8 flex flex-col items-center gap-6 bg-white/95 backdrop-blur-xl ${isScrolled ? 'rounded-[2rem] mt-2 shadow-2xl border border-slate-200/50' : 'border-b border-slate-200'}`}
+            initial={{ opacity: 0, scale: 0.95, y: -15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -15 }}
+            transition={{ type: "spring", duration: 0.5, bounce: 0.2 }}
+            className={`absolute top-full flex flex-col bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-2xl z-50 mt-3
+              w-[calc(100%-2rem)] left-4 items-center py-8 gap-6 rounded-[2rem]
+              md:w-[280px] md:left-auto md:right-4 md:items-stretch md:py-6 md:px-3 md:gap-1`}
           >
-            {navLinks.map((link) => (
+            {/* Soft subtle header on desktop */}
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-4 pb-2 mb-1 border-b border-slate-100 hidden md:block">
+              {isMobile ? "Navigation Menu" : "More Options"}
+            </div>
+            {(isMobile ? navLinks : navLinks.filter(link => link.id === 'testimonials')).map((link) => (
               <a 
                 key={link.name} 
                 href={link.href} 
                 onClick={(e) => handleNavLinkClick(link.id, e)}
-                className={`text-lg font-bold transition-all uppercase tracking-widest ${activeSection === link.id ? 'text-brand-primary' : 'text-slate-600 hover:text-brand-primary'}`}
+                className={`w-[85%] md:w-full text-center md:text-left py-3 md:py-2.5 px-4 rounded-xl text-lg md:text-sm font-bold transition-all uppercase tracking-widest md:normal-case md:tracking-normal flex items-center justify-center md:justify-start gap-3 hover:bg-slate-50/80 cursor-pointer
+                  ${activeSection === link.id ? 'text-brand-primary bg-slate-50' : 'text-slate-600 hover:text-brand-primary'}`}
               >
+                {/* Visual active indicator dot */}
+                <span className={`w-1.5 h-1.5 rounded-full bg-brand-primary transition-all duration-300 ${activeSection === link.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`} />
                 {link.name}
               </a>
             ))}
@@ -4388,8 +4409,8 @@ export default function App() {
       <Contact />
       <WhatClientsSaid />
       
-      <footer className="py-12 border-t border-slate-200/60 bg-white/80 backdrop-blur-md relative z-20">
-        <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+      <footer className="pt-12 pb-0 border-t border-slate-200/60 bg-white/80 backdrop-blur-md relative z-20 overflow-hidden">
+        <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
           <div className="flex items-center gap-3">
             <img 
               src="https://i.imgur.com/mNctGoH.png" 
@@ -4400,32 +4421,32 @@ export default function App() {
             />
             <span className="text-xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
           </div>
-          
-          <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} Abdul Wahab. All rights reserved.
-          </p>
+        </div>
 
-          <div className="flex items-center gap-6">
-            {isAdmin ? (
-              <button 
-                onClick={logOut}
-                className="text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-bold cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" /> Logout
-              </button>
-            ) : (
-              <button 
-                onClick={signInWithGoogle}
-                className="text-xs uppercase tracking-widest text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2 font-bold cursor-pointer"
-              >
-                <LogIn className="w-4 h-4" /> Admin Login
-              </button>
-            )}
-            {['Privacy', 'Terms', 'Cookies'].map((item) => (
-              <a key={item} href="#" className="text-xs uppercase tracking-widest text-slate-500 hover:text-brand-primary transition-colors font-bold">
-                {item}
-              </a>
-            ))}
+        {/* Elegant Infinite Horizontal Ticker / Marquee (inspired by Racdox style watermark) */}
+        <div className="w-full overflow-hidden bg-slate-50/30 border-t border-slate-100/60 py-10 relative select-none">
+          <div className="flex w-full overflow-hidden">
+            <motion.div 
+              className="flex whitespace-nowrap gap-16 pr-16"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{
+                ease: "linear",
+                duration: 75,
+                repeat: Infinity,
+              }}
+            >
+              {Array.from({ length: 12 }).map((_, i) => (
+                <span 
+                  key={i} 
+                  className="text-7xl md:text-9xl font-black uppercase tracking-tighter font-display flex items-center gap-16 select-none animate-pulse-slow"
+                  style={{
+                    color: `${themeStyles.brandPrimary}0b`, // Soft premium filled color (approx 4.5% opacity of brand primary)
+                  }}
+                >
+                  Wahab Graphic <span className="text-brand-primary/10 select-none">•</span>
+                </span>
+              ))}
+            </motion.div>
           </div>
         </div>
       </footer>
