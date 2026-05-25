@@ -75,6 +75,35 @@ import Konva from 'konva';
 import useImage from 'use-image';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
+// --- Helper for Centered Section Scrolling ---
+export const scrollToSectionHelper = (id: string, e?: React.MouseEvent | React.SyntheticEvent) => {
+  if (e) {
+    e.preventDefault();
+  }
+  const element = document.getElementById(id);
+  if (element) {
+    if (id === 'contact') {
+      const rect = element.getBoundingClientRect();
+      const elementTop = rect.top + window.scrollY;
+      const elementHeight = element.offsetHeight;
+      const viewportHeight = window.innerHeight;
+      const targetScrollY = elementTop + (elementHeight / 2) - (viewportHeight / 2);
+      
+      if ((window as any).lenis) {
+        (window as any).lenis.scrollTo(targetScrollY, { duration: 2.0 });
+      } else {
+        window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+      }
+    } else {
+      if ((window as any).lenis) {
+        (window as any).lenis.scrollTo(`#${id}`, { duration: 2.0 });
+      } else {
+        window.scrollTo({ top: element.offsetTop, behavior: 'smooth' });
+      }
+    }
+  }
+};
+
 // --- Types ---
 interface CanvasItem {
   id: string;
@@ -2773,7 +2802,8 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
     { name: 'Contact', id: 'contact', href: '#contact' },
   ];
 
-  const handleNavLinkClick = (id: string) => {
+  const handleNavLinkClick = (id: string, e?: React.MouseEvent) => {
+    scrollToSectionHelper(id, e);
     setActiveSection(id);
     setIsMobileMenuOpen(false);
   };
@@ -2782,7 +2812,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-out ${isScrolled ? 'pt-4' : 'pt-8'}`}>
       <div className={`mx-auto transition-all duration-500 ease-out flex items-center justify-between md:grid md:grid-cols-3 ${isScrolled ? 'w-[calc(100%-2rem)] max-w-[1200px] bg-white/70 backdrop-blur-xl border border-white/40 shadow-2xl shadow-black/[0.04] rounded-full px-6 py-3' : 'w-full max-w-[1600px] px-6 py-2'}`}>
         {/* Logo (Left) */}
-    <a href="#home" onClick={() => handleNavLinkClick('home')} className="flex items-center gap-3 relative z-10 justify-self-start">
+    <a href="#home" onClick={(e) => handleNavLinkClick('home', e)} className="flex items-center gap-3 relative z-10 justify-self-start">
       <img 
         src="https://i.imgur.com/mNctGoH.png" 
         alt="Wahab Graphic Logo" 
@@ -2799,7 +2829,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
             <a 
               key={link.name} 
               href={link.href} 
-              onClick={() => handleNavLinkClick(link.id)}
+              onClick={(e) => handleNavLinkClick(link.id, e)}
               className={`px-6 py-2 text-sm font-bold rounded-full transition-all tracking-wide relative z-10 ${activeSection === link.id ? 'text-white' : 'text-slate-600 hover:text-brand-primary'}`}
             >
               {activeSection === link.id && (
@@ -2862,7 +2892,7 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
               <a 
                 key={link.name} 
                 href={link.href} 
-                onClick={() => handleNavLinkClick(link.id)}
+                onClick={(e) => handleNavLinkClick(link.id, e)}
                 className={`text-lg font-bold transition-all uppercase tracking-widest ${activeSection === link.id ? 'text-brand-primary' : 'text-slate-600 hover:text-brand-primary'}`}
               >
                 {link.name}
@@ -2949,6 +2979,7 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <a 
               href="#portfolio" 
+              onClick={(e) => scrollToSectionHelper('portfolio', e)}
               className="group relative overflow-hidden px-8 py-4 bg-slate-900 text-white font-semibold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-3 text-sm tracking-wide uppercase shadow-xl hover:shadow-2xl hover:shadow-slate-900/20"
             >
               <span className="relative z-10 flex items-center gap-2">View Portfolio <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
@@ -2956,6 +2987,7 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             </a>
             <a 
               href="#contact" 
+              onClick={(e) => scrollToSectionHelper('contact', e)}
               className="px-8 py-4 glass border border-slate-200/50 text-slate-700 font-semibold rounded-full hover:bg-white hover:text-brand-primary transition-all duration-300 flex items-center justify-center gap-3 text-sm tracking-wide uppercase hover:shadow-lg"
             >
               Contact Me
@@ -4082,7 +4114,7 @@ export default function App() {
 
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.0,
+      duration: 2.0,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       wheelMultiplier: 1,
