@@ -2748,11 +2748,13 @@ const CustomCursor = () => {
   );
 };
 
-const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () => void }) => {
+const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean, onAdminClick: () => void, onLogoSecretClick: () => void }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [isMobile, setIsMobile] = useState(false);
+  const [logoClicks, setLogoClicks] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -2815,11 +2817,27 @@ const Navbar = ({ isAdmin, onAdminClick }: { isAdmin: boolean, onAdminClick: () 
     setIsMobileMenuOpen(false);
   };
 
+  const handleLogoClickCombined = (e: React.MouseEvent) => {
+    handleNavLinkClick('home', e);
+    const now = Date.now();
+    if (now - lastClickTime < 800) {
+      const nextClicks = logoClicks + 1;
+      setLogoClicks(nextClicks);
+      if (nextClicks >= 5) {
+        onLogoSecretClick();
+        setLogoClicks(0);
+      }
+    } else {
+      setLogoClicks(1);
+    }
+    setLastClickTime(now);
+  };
+
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-out ${isScrolled ? 'pt-4' : 'pt-8'}`}>
       <div className={`mx-auto transition-all duration-500 ease-out flex items-center justify-between md:grid md:grid-cols-3 ${isScrolled ? 'w-[calc(100%-2rem)] max-w-[1200px] bg-white/70 backdrop-blur-xl border border-white/40 shadow-2xl shadow-black/[0.04] rounded-full px-6 py-3' : 'w-full max-w-[1600px] px-6 py-2'}`}>
         {/* Logo (Left) */}
-    <a href="#home" onClick={(e) => handleNavLinkClick('home', e)} className="flex items-center gap-3 relative z-10 justify-self-start">
+    <a href="#home" onClick={handleLogoClickCombined} className="flex items-center gap-3 relative z-10 justify-self-start select-none">
       <img 
         src="https://i.imgur.com/mNctGoH.png" 
         alt="Wahab Graphic Logo" 
@@ -4189,6 +4207,32 @@ export default function App() {
     if (error) console.error("Error signing in:", error);
   };
 
+  const [footerClicks, setFooterClicks] = useState(0);
+  const [footerLastClick, setFooterLastClick] = useState(0);
+
+  const handleLogoSecretClick = () => {
+    if (isAdmin) {
+      setShowAdmin(true);
+    } else {
+      signInWithGoogle();
+    }
+  };
+
+  const handleFooterLogoClick = () => {
+    const now = Date.now();
+    if (now - footerLastClick < 800) {
+      const nextClicks = footerClicks + 1;
+      setFooterClicks(nextClicks);
+      if (nextClicks >= 5) {
+        handleLogoSecretClick();
+        setFooterClicks(0);
+      }
+    } else {
+      setFooterClicks(1);
+    }
+    setFooterLastClick(now);
+  };
+
   useEffect(() => {
     // Initial load handling
     const initializeApp = async () => {
@@ -4400,7 +4444,7 @@ export default function App() {
 
       <GlobalBackground />
       <CustomCursor />
-      <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} />
+      <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} onLogoSecretClick={handleLogoSecretClick} />
       <Hero stats={stats} />
       <About />
       <Portfolio categories={categories} projects={projects} />
@@ -4411,7 +4455,7 @@ export default function App() {
       
       <footer className="pt-12 pb-0 border-t border-slate-200/60 bg-white/80 backdrop-blur-md relative z-20 overflow-hidden">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
-          <div className="flex items-center gap-3">
+          <div onClick={handleFooterLogoClick} className="flex items-center gap-3 cursor-pointer select-none">
             <img 
               src="https://i.imgur.com/mNctGoH.png" 
               alt="Wahab Graphic Logo" 
