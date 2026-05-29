@@ -2129,11 +2129,36 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
   const [selectedCanvasIdx, setSelectedCanvasIdx] = useState<number | null>(null);
   const [imageError, setImageError] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
     setImageError(false);
   }, [selectedImageIdx, selectedCanvasIdx]);
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const modalLenis = new Lenis({
+      wrapper: scrollRef.current,
+      content: scrollRef.current.firstElementChild as HTMLElement,
+      duration: 2.0,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1,
+    });
+    
+    let rafId: number;
+    function raf(time: number) {
+      modalLenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      modalLenis.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -2228,7 +2253,10 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
         <X className="w-6 h-6" />
       </button>
 
-      <div className="h-full overflow-y-auto custom-scrollbar" data-lenis-prevent>
+      {/* Dynamic bottom blur element similar to the parent page */}
+      <div className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-[105] bg-transparent backdrop-blur-[12px] [mask-image:linear-gradient(to_top,rgba(0,0,0,1)_10%,rgba(0,0,0,0)_100%)]" />
+
+      <div ref={scrollRef} className="h-full overflow-y-auto custom-scrollbar" data-lenis-prevent>
         <div className="max-w-[1400px] mx-auto px-6 py-12">
           <div className="space-y-12">
           <div className="text-center space-y-4 pt-10">
