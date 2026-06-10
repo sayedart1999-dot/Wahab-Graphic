@@ -2812,13 +2812,15 @@ const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean
             // Usually skills is part of the "Portfolio" or "About" context in some designs.
             // Let's map skills to portfolio for better continuity if they are adjacent.
             setActiveSection('portfolio');
+          } else if (id === 'faq') {
+            setActiveSection('contact');
           }
         }
       });
     };
 
     const observer = new IntersectionObserver(observerCallback, observerOptions);
-    const sections = ['home', 'about', 'portfolio', 'skills', 'services', 'testimonials', 'contact'];
+    const sections = ['home', 'about', 'portfolio', 'skills', 'services', 'contact', 'faq', 'testimonials'];
     sections.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
@@ -3630,6 +3632,141 @@ const Services = () => {
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             </motion.div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const FAQS = [
+  {
+    question: "How long does a design project take?",
+    answer: "Most projects are completed within 1–5 business days depending on complexity and revision requirements."
+  },
+  {
+    question: "Do you provide source files?",
+    answer: "Yes, source files can be provided upon request depending on the project package."
+  },
+  {
+    question: "How many revisions are included?",
+    answer: "I provide revisions to ensure the final design meets your expectations and project goals."
+  },
+  {
+    question: "What design services do you offer?",
+    answer: "I specialize in logo design, brand identity, social media graphics, marketing materials, and custom graphic design solutions."
+  },
+  {
+    question: "Can you redesign my existing logo or brand?",
+    answer: "Yes, I can modernize and improve existing logos and brand assets while maintaining brand recognition."
+  },
+  {
+    question: "What information do you need before starting?",
+    answer: "Project goals, brand details, design preferences, target audience, and any reference materials help achieve the best results."
+  },
+  {
+    question: "Do you work with international clients?",
+    answer: "Yes, I work remotely with clients worldwide and communicate throughout the project process."
+  },
+  {
+    question: "How will I receive the final files?",
+    answer: "Final files are delivered in high-quality formats suitable for both digital and print use."
+  }
+];
+
+const FAQ = () => {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggleFAQ = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
+
+  return (
+    <section id="faq" className="py-24 scroll-mt-20 relative px-4 md:px-0">
+      {/* Subtle top divider to match services and skills dividers */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-90" />
+      
+      {/* Soft dynamic brand color glow behind FAQ */}
+      <div className="absolute left-1/4 bottom-0 w-96 h-96 bg-brand-primary/[0.02] rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-[1000px] mx-auto w-full relative z-10 px-6">
+        <div className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6"
+          >
+            <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">FAQ</span>
+          </motion.div>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-4"
+          >
+            Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">Questions</span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-slate-500 max-w-xl mx-auto text-lg font-light leading-relaxed font-sans"
+          >
+            Common questions clients ask before starting a design project.
+          </motion.p>
+        </div>
+
+        <div className="space-y-4">
+          {FAQS.map((faq, index) => {
+            const isOpen = openIndex === index;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                className="glass rounded-[1.5rem] border border-white/60 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] bg-white/40 backdrop-blur-md"
+              >
+                <button
+                  onClick={() => toggleFAQ(index)}
+                  className="w-full flex items-center justify-between p-6 text-left cursor-pointer transition-colors duration-300 select-none group focus:outline-none"
+                >
+                  <span className="font-semibold text-lg text-slate-800 tracking-tight pr-4 group-hover:text-brand-primary transition-colors">
+                    {faq.question}
+                  </span>
+                  <motion.div 
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className={`p-2 transition-colors duration-300 flex items-center justify-center bg-transparent ${isOpen ? 'text-brand-primary' : 'text-slate-400 group-hover:text-brand-primary'}`}
+                  >
+                    {isOpen ? (
+                      <Minus className="w-5 h-5" />
+                    ) : (
+                      <Plus className="w-5 h-5" />
+                    )}
+                  </motion.div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <div className="px-6 pb-6 pt-1 text-slate-600 leading-relaxed font-light border-t border-slate-100/50 text-base md:text-[1.05rem]">
+                        {faq.answer}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -4480,6 +4617,7 @@ export default function App() {
       <Skills />
       <Services />
       <Contact />
+      <FAQ />
       <WhatClientsSaid />
       
       <footer className="pt-12 pb-0 border-t border-slate-200/60 bg-white/80 backdrop-blur-md relative z-20 overflow-hidden">
