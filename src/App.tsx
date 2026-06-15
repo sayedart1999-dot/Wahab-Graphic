@@ -2838,6 +2838,7 @@ const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean
     { name: 'About', id: 'about', href: '#about' },
     { name: 'Portfolio', id: 'portfolio', href: '#portfolio' },
     { name: 'Services', id: 'services', href: '#services' },
+    { name: 'FAQ', id: 'faq', href: '#faq' },
     { name: 'Feedback', id: 'testimonials', href: '#testimonials' },
     { name: 'Contact', id: 'contact', href: '#contact' },
   ];
@@ -2879,9 +2880,9 @@ const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean
       <span className="text-xl md:text-2xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
     </a>
 
-        {/* Desktop Nav - Pill Style (Center) - Feedback excluded from outside horizontal nav */}
+        {/* Desktop Nav - Pill Style (Center) - Feedback and FAQ excluded from outside horizontal nav */}
         <div className={`hidden md:flex items-center justify-center gap-1 ${isScrolled ? '' : 'glass px-2 py-2 rounded-full'} relative justify-self-center`}>
-          {navLinks.filter(link => link.id !== 'testimonials').map((link) => (
+          {navLinks.filter(link => link.id !== 'testimonials' && link.id !== 'faq').map((link) => (
             <a 
               key={link.name} 
               href={link.href} 
@@ -2955,7 +2956,7 @@ const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean
             <div className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-4 pb-2 mb-1 border-b border-slate-100 hidden md:block">
               {isMobile ? "Navigation Menu" : "More Options"}
             </div>
-            {(isMobile ? navLinks : navLinks.filter(link => link.id === 'testimonials')).map((link) => (
+            {(isMobile ? navLinks : navLinks.filter(link => ['faq', 'testimonials'].includes(link.id))).map((link) => (
               <a 
                 key={link.name} 
                 href={link.href} 
@@ -3919,6 +3920,19 @@ const Contact = () => {
 
 const WhatClientsSaid = () => {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [rotation, setRotation] = useState(0);
+  const circleRef = useRef<HTMLDivElement | null>(null);
+  const lastScrollTime = useRef<number>(0);
+
+  const activeIdxRef = useRef(activeIdx);
+  activeIdxRef.current = activeIdx;
+
+  const prevRotationRef = useRef(rotation);
+  const rotationDiff = rotation - prevRotationRef.current;
+
+  useEffect(() => {
+    prevRotationRef.current = rotation;
+  }, [rotation]);
 
   const reviews = [
     {
@@ -3935,232 +3949,538 @@ const WhatClientsSaid = () => {
       quote: "We wanted a premium but simple visual style, and the final result exceeded our expectations.",
       client: "Tanvir Hasan",
       role: "Small Business Owner"
+    },
+    {
+      quote: "His logo design completely renovated our brand. We saw a noticeable increase in client trust immediately.",
+      client: "Anika Rahman",
+      role: "E-commerce Founder"
+    },
+    {
+      quote: "Excellent vector illustration work and attention to details. Fast turnaround time and great response.",
+      client: "Sayedul Karim",
+      role: "Tech Product Lead"
+    },
+    {
+      quote: "Wahab's banner and social media designs are outstanding. He easily turns complex concepts into gorgeous artwork.",
+      client: "Taskin Ahmed",
+      role: "Marketing Manager"
+    },
+    {
+      quote: "Exceptional design standard! The YouTube templates and covers increased our engagement immensely.",
+      client: "Fabiha Tasnim",
+      role: "Digital Content Producer"
+    },
+    {
+      quote: "Highly standard and quality designs delivered on time. The visual identity package is incredibly premium.",
+      client: "Mahedi Hasan",
+      role: "Startup Co-founder"
     }
   ];
 
-  const StarIcon = ({ className = "w-5 h-5 fill-amber-400 text-amber-400" }) => (
+  useEffect(() => {
+    const circle = circleRef.current;
+    if (!circle) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const rect = circle.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const dist = Math.sqrt((mouseX - centerX) ** 2 + (mouseY - centerY) ** 2);
+      
+      // Adjust check bound to the physical avatar orbit circle (42% plus slight padding = ~46% of width)
+      const maxRadius = rect.width * 0.46;
+      
+      if (dist > maxRadius) {
+        // If mouse is outside the testimonial circle, let the page scroll normally, and do not rotate the reviews
+        (window as any).lenis?.start();
+        return;
+      }
+
+      // If mouse is inside the circle, allow smooth infinite loop of review transitions and prevent standard page scroll
+      (window as any).lenis?.stop();
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (Math.abs(e.deltaY) < 12) return;
+
+      const now = Date.now();
+      const N = reviews.length;
+
+      if (now - lastScrollTime.current > 400) { // slightly faster transitions for optimal feel (400ms)
+        lastScrollTime.current = now;
+        const currentActive = activeIdxRef.current;
+        if (e.deltaY > 0) {
+          // Scroll Down: Rotate to NEXT item (Infinite loop modulo)
+          const nextIdx = (currentActive + 1) % N;
+          setRotation(prev => prev + (360 / N));
+          setActiveIdx(nextIdx);
+        } else {
+          // Scroll Up: Rotate to PREVIOUS item (Infinite loop modulo)
+          const prevIdx = (currentActive - 1 + N) % N;
+          setRotation(prev => prev - (360 / N));
+          setActiveIdx(prevIdx);
+        }
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = circle.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const dist = Math.sqrt((mouseX - centerX) ** 2 + (mouseY - centerY) ** 2);
+      const maxRadius = rect.width * 0.46;
+
+      if (dist <= maxRadius) {
+        (window as any).lenis?.stop();
+      } else {
+        (window as any).lenis?.start();
+      }
+    };
+
+    const handleMouseLeave = () => {
+      (window as any).lenis?.start();
+    };
+
+    circle.addEventListener('wheel', handleWheel, { passive: false });
+    circle.addEventListener('mousemove', handleMouseMove);
+    circle.addEventListener('mouseleave', handleMouseLeave);
+    return () => {
+      circle.removeEventListener('wheel', handleWheel);
+      circle.removeEventListener('mousemove', handleMouseMove);
+      circle.removeEventListener('mouseleave', handleMouseLeave);
+      (window as any).lenis?.start();
+    };
+  }, []);
+
+  const handleSelect = (idx: number) => {
+    const N = reviews.length;
+    let steps = idx - activeIdx;
+    
+    // Calculate shortest angular offset on circle click to rotate seamlessly
+    if (steps > N / 2) {
+      steps -= N;
+    } else if (steps < -N / 2) {
+      steps += N;
+    }
+    
+    setRotation(prev => prev + steps * (360 / N));
+    setActiveIdx(idx);
+  };
+
+  const StarIcon = ({ className = "w-4 h-4 fill-amber-400 text-amber-400" }) => (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor">
       <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
     </svg>
   );
 
+  const clientColors = [
+    { 
+      from: "from-violet-500", 
+      to: "to-fuchsia-600", 
+      border: "hover:border-violet-500/50 hover:bg-violet-50/40", 
+      text: "group-hover:text-violet-600", 
+      ring: "ring-violet-500/20",
+      accent: "#8b5cf6",
+      colors: {
+        glowLine: "from-violet-500 to-fuchsia-400",
+        rightBar: "bg-violet-500",
+        bottomRight: "from-fuchsia-400 to-purple-600 shadow-fuchsia-500/25",
+        ribbonMain: "from-violet-500 to-fuchsia-500 shadow-violet-500/25",
+        ribbonFold: "bg-violet-800",
+        ribbonTail: "from-fuchsia-600 to-violet-700 shadow-fuchsia-500/20"
+      }
+    },
+    { 
+      from: "from-rose-500", 
+      to: "to-orange-500", 
+      border: "hover:border-rose-500/50 hover:bg-rose-50/40", 
+      text: "group-hover:text-rose-600", 
+      ring: "ring-rose-500/20",
+      accent: "#f43f5e",
+      colors: {
+        glowLine: "from-rose-500 to-orange-400",
+        rightBar: "bg-rose-500",
+        bottomRight: "from-orange-400 to-red-600 shadow-orange-500/25",
+        ribbonMain: "from-rose-500 to-orange-500 shadow-rose-500/25",
+        ribbonFold: "bg-rose-800",
+        ribbonTail: "from-orange-500 to-rose-700 shadow-orange-500/25"
+      }
+    },
+    { 
+      from: "from-emerald-400", 
+      to: "to-teal-600", 
+      border: "hover:border-emerald-500/50 hover:bg-emerald-50/40", 
+      text: "group-hover:text-emerald-600", 
+      ring: "ring-emerald-500/20",
+      accent: "#34d399",
+      colors: {
+        glowLine: "from-emerald-400 to-teal-400",
+        rightBar: "bg-emerald-500",
+        bottomRight: "from-teal-400 to-cyan-600 shadow-teal-500/25",
+        ribbonMain: "from-emerald-400 to-teal-500 shadow-emerald-500/25",
+        ribbonFold: "bg-emerald-800",
+        ribbonTail: "from-teal-500 to-emerald-700 shadow-teal-500/20"
+      }
+    },
+    { 
+      from: "from-cyan-400", 
+      to: "to-blue-600", 
+      border: "hover:border-cyan-500/50 hover:bg-cyan-50/40", 
+      text: "group-hover:text-cyan-600", 
+      ring: "ring-cyan-500/20",
+      accent: "#22d3ee",
+      colors: {
+        glowLine: "from-cyan-400 to-blue-400",
+        rightBar: "bg-cyan-500",
+        bottomRight: "from-blue-400 to-indigo-600 shadow-blue-500/25",
+        ribbonMain: "from-cyan-400 to-blue-550 shadow-cyan-500/25",
+        ribbonFold: "bg-cyan-800",
+        ribbonTail: "from-blue-500 to-cyan-700 shadow-blue-500/20"
+      }
+    },
+    { 
+      from: "from-amber-400", 
+      to: "to-orange-500", 
+      border: "hover:border-amber-400/50 hover:bg-amber-50/40", 
+      text: "group-hover:text-amber-600", 
+      ring: "ring-amber-400/20",
+      accent: "#fbbf24",
+      colors: {
+        glowLine: "from-amber-400 to-orange-400",
+        rightBar: "bg-amber-400",
+        bottomRight: "from-orange-400 to-amber-600 shadow-orange-500/25",
+        ribbonMain: "from-amber-400 to-orange-400 shadow-amber-500/25",
+        ribbonFold: "bg-amber-800",
+        ribbonTail: "from-orange-500 to-amber-700 shadow-orange-500/20"
+      }
+    },
+    { 
+      from: "from-fuchsia-500", 
+      to: "to-pink-600", 
+      border: "hover:border-fuchsia-500/50 hover:bg-fuchsia-50/40", 
+      text: "group-hover:text-fuchsia-600", 
+      ring: "ring-fuchsia-500/20",
+      accent: "#d946ef",
+      colors: {
+        glowLine: "from-fuchsia-500 to-pink-400",
+        rightBar: "bg-fuchsia-500",
+        bottomRight: "from-pink-400 to-rose-600 shadow-pink-500/25",
+        ribbonMain: "from-fuchsia-500 to-pink-500 shadow-fuchsia-500/25",
+        ribbonFold: "bg-fuchsia-800",
+        ribbonTail: "from-pink-500 to-fuchsia-700 shadow-pink-500/20"
+      }
+    },
+    { 
+      from: "from-teal-400", 
+      to: "to-emerald-500", 
+      border: "hover:border-teal-400/50 hover:bg-teal-50/40", 
+      text: "group-hover:text-teal-600", 
+      ring: "ring-teal-500/20",
+      accent: "#2dd4bf",
+      colors: {
+        glowLine: "from-teal-400 to-emerald-400",
+        rightBar: "bg-teal-500",
+        bottomRight: "from-emerald-400 to-green-600 shadow-emerald-500/25",
+        ribbonMain: "from-teal-400 to-emerald-500 shadow-teal-500/25",
+        ribbonFold: "bg-teal-800",
+        ribbonTail: "from-emerald-500 to-teal-700 shadow-emerald-500/20"
+      }
+    },
+    { 
+      from: "from-purple-500", 
+      to: "to-violet-700", 
+      border: "hover:border-purple-500/50 hover:bg-purple-50/40", 
+      text: "group-hover:text-purple-600", 
+      ring: "ring-purple-500/20",
+      accent: "#a855f7",
+      colors: {
+        glowLine: "from-purple-500 to-violet-500",
+        rightBar: "bg-purple-500",
+        bottomRight: "from-violet-500 to-fuchsia-700 shadow-violet-500/25",
+        ribbonMain: "from-purple-500 to-violet-600 shadow-purple-500/25",
+        ribbonFold: "bg-purple-800",
+        ribbonTail: "from-violet-600 to-purple-800 shadow-violet-500/20"
+      }
+    }
+  ];
+
+  // Position angles symmetrically around the entire 360-degree circle
+  const getPositionStyles = (index: number) => {
+    const angleInDegrees = -90 + (index * 360) / reviews.length;
+    const angleInRadians = (angleInDegrees * Math.PI) / 180;
+    
+    // Orbit radius (42% of container width)
+    const radius = 42; 
+    const x = 50 + radius * Math.cos(angleInRadians);
+    const y = 50 + radius * Math.sin(angleInRadians);
+    
+    return {
+      left: `${x}%`,
+      top: `${y}%`
+    };
+  };
+
   return (
-    <section id="testimonials" className="py-24 scroll-mt-20 relative px-4 md:px-0 bg-slate-50/10 overflow-hidden">
+    <section 
+      id="testimonials" 
+      className="py-24 scroll-mt-20 relative px-4 md:px-0 bg-transparent overflow-hidden"
+    >
       {/* Subtle top divider to match services and skills dividers */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-90" />
       
-      {/* Soft dynamic brand color glow behind illustration */}
-      <div className="absolute left-1/4 bottom-0 w-96 h-96 bg-brand-primary/[0.02] rounded-full blur-3xl pointer-events-none" />
+      {/* Soft gorgeous ambient brand glows */}
+      <div className="absolute left-[30%] top-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-primary/[0.025] rounded-full blur-[100px] pointer-events-none animate-pulse" />
+      <div className="absolute right-[30%] top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-purple-400/[0.02] rounded-full blur-[80px] pointer-events-none" />
 
       <div className="max-w-[1400px] mx-auto w-full relative z-10 px-6">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          
-          {/* Vector Illustration / Artwork Side */}
+        
+        {/* Centered header content with matching gradients and typography styles */}
+        <div className="text-center max-w-2xl mx-auto mb-20">
           <motion.div 
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="lg:col-span-5 relative"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6"
           >
-            <div className="absolute inset-0 bg-brand-primary/5 rounded-full blur-3xl pointer-events-none" />
-            
-            <motion.div
-              animate={{ y: [0, -12, 0] }}
-              transition={{ duration: 6, ease: "easeInOut", repeat: Infinity }}
-              className="relative z-10 w-full max-w-[440px] mx-auto aspect-square rounded-[2rem] glass p-6 sm:p-8 border-white/80 bg-white/40 shadow-[0_24px_50px_rgba(0,0,0,0.02)] flex flex-col justify-center items-center overflow-hidden"
-            >
-              {/* Decorative design blueprint dot grid */}
-              <div className="absolute inset-0 opacity-[0.03] select-none pointer-events-none dot-grid" />
-              
-              <svg viewBox="0 0 400 400" className="w-full h-full max-w-[340px]" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Visual anchor glow */}
-                <circle cx="200" cy="200" r="110" fill="url(#pGlow)" opacity="0.3" filter="blur(16px)" />
-                
-                {/* Abstract graphic layout circles */}
-                <circle cx="200" cy="200" r="95" stroke="url(#pBorder)" strokeWidth="1.25" strokeDasharray="6 6" opacity="0.4" />
-                <circle cx="200" cy="200" r="135" stroke="url(#pBorder2)" strokeWidth="1" strokeDasharray="30 10" opacity="0.25" />
-                
-                {/* Beautiful custom vector curve representing designer skill */}
-                <path d="M 60,290 C 130,90 230,310 340,110" stroke="url(#pathGradient)" strokeWidth="4.5" strokeLinecap="round" opacity="0.9" />
-                
-                {/* Guide lines & handle anchors mimicking Vector Software bezier curves */}
-                <line x1="120" y1="174" x2="160" y2="70" stroke="#7c3ced" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.75" />
-                <line x1="240" y1="202" x2="200" y2="300" stroke="#7c3ced" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.75" />
-                
-                <circle cx="160" cy="70" r="5.5" fill="#7c3ced" stroke="#fff" strokeWidth="1.5" />
-                <circle cx="200" cy="300" r="5.5" fill="#7c3ced" stroke="#fff" strokeWidth="1.5" />
-                
-                {/* Anchor box/bezier nodes */}
-                <rect x="115" y="169" width="10" height="10" fill="#7c3ced" stroke="#fff" strokeWidth="2" rx="1.5" />
-                <rect x="235" y="197" width="10" height="10" fill="#7c3ced" stroke="#fff" strokeWidth="2" rx="1.5" />
-                <circle cx="60" cy="290" r="6" fill="#fff" stroke="#7c3ced" strokeWidth="3" />
-                <circle cx="340" cy="110" r="6" fill="#fff" stroke="#7c3ced" strokeWidth="3" />
-                
-                {/* Pen tool custom vector cursor icon (no photos/bitmaps) */}
-                <g transform="translate(325, 95)">
-                  <path d="M0,25 L5,15 L15,5 L25,0 L20,10 L10,20 Z" fill="#7c3ced" stroke="#fff" strokeWidth="1.5" />
-                  <circle cx="5" cy="20" r="1.5" fill="#fff" />
-                </g>
-
-                {/* Overlapping Glass Client feedback ticket inside graphic artwork */}
-                <g transform="translate(185, 215)">
-                  <rect x="0" y="0" width="160" height="90" rx="18" fill="#ffffff" fillOpacity="0.85" stroke="url(#ticketBorder)" strokeWidth="1.5" style={{ filter: 'drop-shadow(0 15px 30px rgba(124, 60, 237, 0.08))' }} />
-                  {/* Miniature Stars */}
-                  <g transform="translate(15, 15)">
-                    {[0, 1, 2, 3, 4].map(i => (
-                      <path key={i} d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" transform={`translate(${i * 14}, 0) scale(0.55)`} fill="#fbbf24" />
-                    ))}
-                  </g>
-                  {/* Custom vector ticket elements */}
-                  <text x="15" y="48" fill="#1e293b" fontSize="10" fontWeight="bold" fontFamily="system-ui, sans-serif">Review: Approved ✔</text>
-                  <text x="15" y="66" fill="#64748b" fontSize="8" fontWeight="medium" fontFamily="system-ui, sans-serif">Modern Direction Achieved</text>
-                  <circle cx="135" cy="30" r="12" fill="#7c3ced" fillOpacity="0.1" />
-                  <text x="129" y="33" fill="#7c3ced" fontSize="8" fontWeight="bold" fontFamily="system-ui, sans-serif">WG</text>
-                </g>
-
-                {/* Styled Portfolio Card Vector Thumbnail representing thumbnail work */}
-                <g transform="translate(45, 65)">
-                  <rect x="0" y="0" width="130" height="75" rx="16" fill="#080d29" fillOpacity="0.95" stroke="rgba(255,255,255,0.12)" strokeWidth="1" style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.16))' }} />
-                  {/* Micro typographic placeholder shapes representing beautiful content */}
-                  <circle cx="22" cy="22" r="7" fill="#fff" fillOpacity="0.25" />
-                  <rect x="34" y="18" width="45" height="4" rx="2" fill="#fff" fillOpacity="0.4" />
-                  <rect x="34" y="25" width="28" height="3" rx="1.5" fill="#fff" fillOpacity="0.2" />
-                  
-                  {/* Vector wave represent thumbnail shape */}
-                  <path d="M15,55 Q35,42 55,55 T95,55 T115,48" fill="none" stroke="url(#thumbWaveGradient)" strokeWidth="3" strokeLinecap="round" />
-                  <circle cx="115" cy="48" r="3" fill="#fbbf24" />
-                </g>
-
-                {/* Defs containing precise vector artwork gradients */}
-                <defs>
-                  <radialGradient id="pGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#7c3ced" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#7c3ced" stopOpacity="0" />
-                  </radialGradient>
-                  <linearGradient id="pBorder" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#7c3ced" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#c084fc" stopOpacity="0.05" />
-                  </linearGradient>
-                  <linearGradient id="pBorder2" x1="100%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.02" />
-                  </linearGradient>
-                  <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#7c3ced" />
-                    <stop offset="100%" stopColor="#ec4899" />
-                  </linearGradient>
-                  <linearGradient id="ticketBorder" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="rgba(255,255,255,0.85)" />
-                    <stop offset="100%" stopColor="rgba(124, 60, 237, 0.2)" />
-                  </linearGradient>
-                  <linearGradient id="thumbWaveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#7c3ced" />
-                    <stop offset="50%" stopColor="#ec4899" />
-                    <stop offset="100%" stopColor="#fbbf24" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </motion.div>
+            <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Feedback</span>
           </motion.div>
+          
+          <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tight uppercase text-slate-900 leading-tight">
+            WHAT CLIENTS <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">SAID</span>
+          </h2>
+          
+          <p className="text-slate-500 max-w-xl mx-auto text-lg font-light leading-relaxed font-sans">
+            Honest feedback and appreciation from creative founders, content creators, and small business partners.
+          </p>
+        </div>
 
-          {/* Client Review / Story Text Side */}
-          <div className="lg:col-span-7 space-y-8">
+        {/* Circular Testimonials Diagram Presentation Container */}
+        <div className="w-full relative py-4 flex flex-col items-center justify-center overflow-visible">
+          
+          {/* Main 100% fluid custom circle tracker layout with responsive scaling for mobile viewports */}
+          <div 
+            ref={circleRef}
+            className="w-full max-w-[620px] aspect-square relative scale-[0.80] xs:scale-[0.88] sm:scale-100 transition-transform duration-300 origin-center"
+          >
+            
+            
+             {/* Rotating Orbit Container (Wrapper for Track and Avatars) */}
             <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
+              className="absolute inset-0 w-full h-full z-0"
+              animate={{ rotate: -rotation }}
+              transition={{ type: "spring", stiffness: 140, damping: 18, mass: 0.8 }}
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6">
-                <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-500 font-mono">Feedback</span>
-              </div>
-              
-              <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tight uppercase text-slate-900">
-                WHAT CLIENTS <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">SAID</span>
-              </h2>
-              
-              <p className="text-slate-500 font-light leading-relaxed text-lg max-w-xl">
-                Honest feedback and appreciation from creative founders, content creators, and small business partners.
-              </p>
+              {/* Double-layered glowing circular track lines */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Outer concentric subtle dot ring */}
+                <circle cx="50" cy="50" r="46" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 3" className="opacity-40" />
+                {/* Main solid orbit track ring */}
+                <circle cx="50" cy="50" r="42" stroke="#f1f5f9" strokeWidth="1.25" />
+                {/* Inner concentric technical track line */}
+                <circle cx="50" cy="50" r="38" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="3 4" className="opacity-40" />
+              </svg>
+  
+               {/* Individual Client Circles placed symmetrically around the circular track */}
+              {reviews.map((rev, idx) => {
+                const isActive = activeIdx === idx;
+                const posStyles = getPositionStyles(idx);
+                const colorTheme = clientColors[idx % clientColors.length];
+                
+                return (
+                  <motion.button
+                    key={idx}
+                    onClick={() => handleSelect(idx)}
+                    style={posStyles}
+                    animate={{ 
+                      rotate: rotation,
+                      scale: isActive ? 1.3 : 1
+                    }}
+                    transition={{ type: "spring", stiffness: 140, damping: 18, mass: 0.8 }}
+                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 focus:outline-none cursor-pointer group ${isActive ? 'z-30' : 'z-20'}`}
+                  >
+                    <div className="relative">
+                      {isActive && (
+                        <>
+                          <motion.span 
+                            className={`absolute -inset-2.5 rounded-full bg-gradient-to-tr ${colorTheme.from}/10 ${colorTheme.to}/10 border border-brand-primary/20`}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.7, 0.3] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          />
+                          <span className="absolute -inset-1 rounded-full border border-white bg-transparent z-[1]" />
+                        </>
+                      )}
+                      
+                      <div className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex flex-col items-center justify-center font-bold text-xs tracking-tight transition-all duration-500 relative ${
+                        isActive 
+                          ? `bg-gradient-to-tr ${colorTheme.from} ${colorTheme.to} text-white shadow-[0_10px_25px_rgba(124,60,237,0.3)] border-2 border-white ring-4 ${colorTheme.ring}`
+                          : `bg-white/95 border border-slate-200 text-slate-500 select-none backdrop-blur-sm ${colorTheme.border} ${colorTheme.text}`
+                      }`}>
+                        <span className={`transition-all duration-300 ${isActive ? 'text-[13px] font-black tracking-tight drop-shadow-sm font-display' : 'text-xs font-semibold font-sans'}`}>
+                          {rev.client.split(' ').map(n => n[0]).join('')}
+                        </span>
+                        
+                        {isActive && (
+                          <span className="text-[5px] font-extrabold text-[rgba(255,255,255,0.75)] tracking-widest uppercase font-mono mt-0.5 leading-none">
+                            ACT
+                          </span>
+                        )}
+                      </div>
+  
+                       {/* Tiny tooltip indicator showing client first name on hover if NOT active */}
+                      {!isActive && (
+                        <div className="absolute top-[125%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] font-semibold py-1 px-2.5 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 whitespace-nowrap z-50 shadow-md">
+                          {rev.client}
+                        </div>
+                      )}
+                    </div>
+                  </motion.button>
+                );
+              })}
             </motion.div>
-
-            {/* Testimonials Review Display Box */}
-            <div className="relative">
-              <AnimatePresence mode="wait">
+  
+            {/* Dynamic Connecting Vertical Line synced with active bubble accent color & inertial pendulum swing physics */}
+            {(() => {
+              const colorTheme = clientColors[activeIdx % clientColors.length];
+              const initialTilt = rotationDiff > 0 ? 18 : (rotationDiff < 0 ? -18 : 0);
+              return (
                 <motion.div
-                  key={activeIdx}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="glass p-8 sm:p-10 rounded-[2rem] border-white bg-white/75 relative shadow-[0_24px_50px_rgba(0,0,0,0.02)]"
+                  key={`line-connector-${activeIdx}-${rotation}`}
+                  initial={{ 
+                    height: 0, 
+                    opacity: 0, 
+                    rotate: initialTilt,
+                    scaleY: 0.4
+                  }}
+                  animate={{ 
+                    height: "18.5%", 
+                    opacity: 0.95, 
+                    rotate: 0,
+                    scaleY: 1
+                  }}
+                  transition={{ 
+                    rotate: {
+                      type: "spring",
+                      stiffness: 85,
+                      damping: 8,
+                      mass: 0.85
+                    },
+                    height: { duration: 0.45, ease: "easeOut" },
+                    scaleY: { duration: 0.45, ease: "easeOut" },
+                    opacity: { duration: 0.3 }
+                  }}
+                  className="absolute left-1/2 -translate-x-1/2 top-[12.5%] w-[1.5px] z-[5] origin-top"
+                  style={{
+                    background: `linear-gradient(to bottom, ${colorTheme.accent} 0%, rgba(226, 232, 240, 0.2) 100%)`
+                  }}
                 >
-                  {/* Subtle quote visual icon in background of the card */}
-                  <div className="absolute top-6 right-8 text-brand-primary/10 select-none pointer-events-none">
-                    <Quote className="w-16 h-16 fill-brand-primary/5 stroke-[1.25]" />
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Glowing Stars */}
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <StarIcon key={s} className="w-4 h-4 fill-amber-400 text-amber-400 drop-shadow-sm" />
-                      ))}
-                    </div>
-
-                    {/* Testimonial Quote */}
-                    <p className="text-slate-800 text-lg sm:text-xl font-medium tracking-tight leading-relaxed italic pr-4">
-                      "{reviews[activeIdx].quote}"
-                    </p>
-
-                    <div className="h-px w-12 bg-slate-200" />
-
-                    {/* Review User Info */}
-                    <div className="flex items-center gap-4">
-                      {/* Typographic avatar background (no real human photos) */}
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-primary/10 to-brand-primary/30 border border-brand-primary/25 flex items-center justify-center text-brand-primary font-bold shadow-inner">
-                        {reviews[activeIdx].client.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900 font-display text-base tracking-tight">{reviews[activeIdx].client}</h4>
-                        <p className="text-slate-500 text-xs font-medium">{reviews[activeIdx].role}</p>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Travelling liquid/laser drop that shoots down the connecting line */}
+                  <motion.div
+                    initial={{ top: "0%", opacity: 0, scale: 0.5 }}
+                    animate={{ top: "100%", opacity: [0, 1, 1, 0], scale: [0.5, 1.2, 0.6] }}
+                    transition={{ 
+                      duration: 0.55, 
+                      ease: "easeOut",
+                      delay: 0.12
+                    }}
+                    className="absolute left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full shadow-lg pointer-events-none"
+                    style={{ 
+                      backgroundColor: colorTheme.accent,
+                      boxShadow: `0 0 10px 2px ${colorTheme.accent}`
+                    }}
+                  />
                 </motion.div>
-              </AnimatePresence>
-            </div>
+              );
+            })()}
 
-            {/* Swapping indicators below review detail card */}
-            <div className="flex flex-wrap gap-3 pt-2">
-              {reviews.map((rev, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveIdx(idx)}
-                  className={`flex items-center gap-3 px-4.5 py-3 rounded-2xl transition-all font-bold tracking-tight text-xs uppercase text-left border cursor-pointer ${
-                    activeIdx === idx
-                      ? 'bg-[#080d29] border-[#080d29] text-white shadow-lg shadow-indigo-500/10'
-                      : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-950 shadow-sm'
-                  }`}
-                >
-                  {/* Little custom avatar initial */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
-                    activeIdx === idx ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
-                  }`}>
-                    {rev.client.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <p className="font-bold tracking-tight leading-none mb-0.5 text-xs">{rev.client}</p>
-                    <p className={`text-[9px] leading-none font-medium ${activeIdx === idx ? 'text-white/60' : 'text-slate-400'}`}>{rev.role}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {/* Center Review Statement Box Containing dynamic testimonial statements */}
+            <AnimatePresence mode="wait">
+              {(() => {
+                const colorTheme = clientColors[activeIdx % clientColors.length];
+                return (
+                  <motion.div
+                    key={`testimonial-card-${activeIdx}`}
+                    initial={{ scale: 0.4, opacity: 0, rotate: -25, x: 60 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0, x: 0 }}
+                    exit={{ scale: 0.4, opacity: 0, rotate: 25, x: -60 }}
+                    transition={{ 
+                      type: "spring",
+                      stiffness: 350,
+                      damping: 24,
+                      mass: 0.8
+                    }}
+                    className="absolute top-[31%] w-[46%] h-[38%] left-[27%] z-10 flex flex-col items-center justify-center group"
+                  >
+                    {/* The main slanted card body matching the user sketch design perfectly but with the site's default light glass look */}
+                    <div className="absolute inset-0 bg-white/95 border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-2xl transition-all duration-300 transform skew-y-[-4.5deg] origin-center z-0 flex flex-col justify-between items-center overflow-visible">
+                      
+                      {/* Glowing custom-themed line at the top to match the reference banner design layout */}
+                      <div className={`absolute top-[4%] left-[10%] w-[60%] h-[3px] bg-gradient-to-r ${colorTheme.colors.glowLine} opacity-95 rounded-full shadow-sm`} />
+                      
+                      {/* Clean vertical thick brand accent strip on the right boundary */}
+                      <div className={`absolute top-[15%] right-0 w-[4px] h-[35%] ${colorTheme.colors.rightBar} rounded-l`} />
 
+                      {/* SKEWED LAYERS BEHIND / UNDERNEATH */}
+                      {/* Blue polygon accent block peeking underneath at the right bottom */}
+                      <div className={`absolute bottom-[-9px] right-[12%] w-[38%] h-[14px] bg-gradient-to-r ${colorTheme.colors.bottomRight} rounded-[2px] transform skew-x-[-20deg] -z-10`} />
+                      
+                      {/* Folded Ribbon hanging underneath on the left bottom */}
+                      {/* 1. Horizontal banner belt */}
+                      <div className={`absolute bottom-[-9px] left-[12%] w-[42%] h-[14px] bg-gradient-to-r ${colorTheme.colors.ribbonMain} transform skew-x-[-20deg] -z-10`} />
+                      
+                      {/* 2. Fold connection shadow (overlapping triangle) - vertically aligned perfectly at top: -9px, horizontally matched precisely to tail's right edge */}
+                      <div className={`absolute bottom-[-16px] left-[28%] w-[3.5%] h-[7px] ${colorTheme.colors.ribbonFold} -z-20`} style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+
+                      {/* 3. Hanging tail ribbon bookmark - vertically aligned perfectly at top: -9px */}
+                      <div className={`absolute bottom-[-39px] left-[20%] w-[8%] h-[30px] bg-gradient-to-b ${colorTheme.colors.ribbonTail} -z-30`} style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 50% 82%, 0% 100%)' }} />
+                    </div>
+
+                    {/* Content Layer (Kept completely flat / non-skewed for reading satisfaction) */}
+                    <div className="relative z-10 w-full h-full p-4 sm:p-5 flex flex-col justify-between items-center text-center">
+                      {/* Styled Quote Signifier with Brand Gradient Border */}
+                      <div className="p-1 sm:p-1.5 rounded-xl bg-slate-50 border border-slate-100 shadow-inner mb-0.5 pointer-events-none">
+                        <Quote className="w-3 h-3 sm:w-4 sm:h-4 stroke-[2.5]" style={{ color: colorTheme.accent }} />
+                      </div>
+     
+                      <div className="flex flex-col items-center space-y-1 sm:space-y-1.5 max-w-xs sm:max-w-md">
+                        {/* Minimal star score */}
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <StarIcon key={s} className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400 text-amber-400" />
+                          ))}
+                        </div>
+     
+                        {/* Testimonial Statement Quote */}
+                        <div className="overflow-y-auto max-h-[50px] xs:max-h-[65px] sm:max-h-[90px] px-1 scrollbar-thin">
+                          <p className="text-slate-600 text-[9px] xs:text-xs sm:text-sm lg:text-[12px] font-medium leading-relaxed italic tracking-tight font-sans">
+                            "{reviews[activeIdx].quote}"
+                          </p>
+                        </div>
+                      </div>
+     
+                      {/* Elegant bottom divider & reviewer name designation */}
+                      <div className="w-full flex flex-col items-center mt-1 pt-1 border-t border-slate-100">
+                        <h4 className="font-extrabold text-slate-800 text-[11px] sm:text-xs font-display tracking-tight uppercase leading-tight">
+                          {reviews[activeIdx].client}
+                        </h4>
+                        <p className="font-mono text-[7px] sm:text-[8px] uppercase tracking-widest mt-0.5" style={{ color: colorTheme.accent }}>
+                          {reviews[activeIdx].role}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })()}
+            </AnimatePresence>
+ 
           </div>
         </div>
+
       </div>
     </section>
   );
