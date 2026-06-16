@@ -4271,7 +4271,7 @@ const WhatClientsSaid = () => {
             
              {/* Rotating Orbit Container (Wrapper for Track and Avatars) */}
             <motion.div
-              className="absolute inset-0 w-full h-full z-0"
+              className="absolute inset-0 w-full h-full z-[6]"
               animate={{ rotate: -rotation }}
               transition={{ type: "spring", stiffness: 140, damping: 18, mass: 0.8 }}
             >
@@ -4374,7 +4374,7 @@ const WhatClientsSaid = () => {
                     scaleY: { duration: 0.45, ease: "easeOut" },
                     opacity: { duration: 0.3 }
                   }}
-                  className="absolute left-1/2 -translate-x-1/2 top-[12.5%] w-[1.5px] z-[5] origin-top"
+                  className="absolute left-1/2 -translate-x-1/2 top-[12.5%] w-[1.5px] z-[4] origin-top"
                   style={{
                     background: `linear-gradient(to bottom, ${colorTheme.accent} 0%, rgba(226, 232, 240, 0.2) 100%)`
                   }}
@@ -4414,7 +4414,7 @@ const WhatClientsSaid = () => {
                       damping: 24,
                       mass: 0.8
                     }}
-                    className="absolute top-[31%] w-[46%] h-[38%] left-[27%] z-10 flex flex-col items-center justify-center group"
+                    className="absolute top-[31%] w-[46%] h-[38%] left-[27%] z-20 flex flex-col items-center justify-center group"
                   >
                     {/* The main slanted card body matching the user sketch design perfectly but with the site's default light glass look */}
                     <div className="absolute inset-0 bg-white/95 border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-2xl transition-all duration-300 transform skew-y-[-4.5deg] origin-center z-0 flex flex-col justify-between items-center overflow-visible">
@@ -4434,7 +4434,7 @@ const WhatClientsSaid = () => {
                       <div className={`absolute bottom-[-9px] left-[12%] w-[42%] h-[14px] bg-gradient-to-r ${colorTheme.colors.ribbonMain} transform skew-x-[-20deg] -z-10`} />
                       
                       {/* 2. Fold connection shadow (overlapping triangle) - vertically aligned perfectly at top: -9px, horizontally matched precisely to tail's right edge */}
-                      <div className={`absolute bottom-[-16px] left-[28%] w-[3.5%] h-[7px] ${colorTheme.colors.ribbonFold} -z-20`} style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+                      <div className={`absolute bottom-[-19px] left-[28%] w-[4%] h-[10px] ${colorTheme.colors.ribbonFold} -z-20`} style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
 
                       {/* 3. Hanging tail ribbon bookmark - vertically aligned perfectly at top: -9px */}
                       <div className={`absolute bottom-[-39px] left-[20%] w-[8%] h-[30px] bg-gradient-to-b ${colorTheme.colors.ribbonTail} -z-30`} style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 50% 82%, 0% 100%)' }} />
