@@ -237,7 +237,7 @@ const Preloader = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 mb-2"
+          className="text-2xl md:text-3xl font-black uppercase tracking-normal text-slate-900 mb-2"
         >
           Abdul <span className="text-brand-primary">Wahab</span>
         </motion.h2>
@@ -1675,7 +1675,7 @@ const AdminDashboard = ({
                       type="text" 
                       value={editDisplayFont} 
                       onChange={(e) => setEditDisplayFont(e.target.value)}
-                      placeholder="Space Grotesk"
+                      placeholder="Blushing Rose Regular"
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-primary bg-slate-50 text-slate-900"
                     />
                   </div>
@@ -1686,7 +1686,7 @@ const AdminDashboard = ({
                       type="text" 
                       value={editSansFont} 
                       onChange={(e) => setEditSansFont(e.target.value)}
-                      placeholder="Inter"
+                      placeholder="Plus Jakarta Sans"
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-primary bg-slate-50 text-slate-900"
                     />
                   </div>
@@ -2877,7 +2877,7 @@ const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean
         className="w-10 h-10 rounded-full shadow-sm object-cover border border-slate-200/50 bg-white" 
         loading="lazy"
       />
-      <span className="text-xl md:text-2xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
+      <span className="text-xl md:text-2xl font-display font-bold tracking-normal text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
     </a>
 
         {/* Desktop Nav - Pill Style (Center) - Feedback and FAQ excluded from outside horizontal nav */}
@@ -3024,7 +3024,7 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             <span className="text-4xl sm:text-5xl md:text-6xl font-script font-semibold text-brand-primary ml-3">Abdul Wahab</span>
           </div>
           
-          <h1 className="text-6xl sm:text-7xl md:text-8xl xl:text-[9rem] font-black leading-[0.85] mb-6 tracking-tighter uppercase text-slate-900 drop-shadow-sm">
+          <h1 className="text-[40px] xs:text-[50px] sm:text-7xl md:text-8xl xl:text-[9rem] font-bold leading-[1.05] xs:leading-none md:leading-[1.02] mb-6 tracking-normal uppercase text-slate-900 drop-shadow-sm">
             <motion.span
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -3047,36 +3047,36 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             I create <span className="font-medium text-slate-800">modern, clean, and impactful</span> designs that help brands stand out and communicate their message clearly.
           </p>
           
-          <div className="flex flex-wrap items-center gap-4 mb-4">
+          <div className="flex flex-row items-center gap-2.5 sm:gap-4 mb-6 w-full max-w-md sm:max-w-none">
             <a 
               href="#portfolio" 
               onClick={(e) => scrollToSectionHelper('portfolio', e)}
-              className="group relative overflow-hidden px-8 py-4 bg-slate-900 text-white font-semibold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-3 text-sm tracking-wide uppercase shadow-xl hover:shadow-2xl hover:shadow-slate-900/20"
+              className="group relative overflow-hidden flex-[1.4] sm:flex-none px-3.5 sm:px-8 py-3.5 sm:py-4 bg-slate-900 text-white font-semibold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-wide uppercase shadow-xl hover:shadow-2xl hover:shadow-slate-900/20 shrink-0 text-center whitespace-nowrap"
             >
-              <span className="relative z-10 flex items-center gap-2">View Portfolio <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
+              <span className="relative z-10 flex items-center gap-1 sm:gap-2">View Portfolio <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" /></span>
               <div className="absolute inset-0 bg-brand-primary transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out z-0"></div>
             </a>
             <a 
               href="#contact" 
               onClick={(e) => scrollToSectionHelper('contact', e)}
-              className="px-8 py-4 glass border border-slate-200/50 text-slate-700 font-semibold rounded-full hover:bg-white hover:text-brand-primary transition-all duration-300 flex items-center justify-center gap-3 text-sm tracking-wide uppercase hover:shadow-lg"
+              className="flex-[0.8] sm:flex-none px-3.5 sm:px-8 py-3.5 sm:py-4 glass border border-slate-200/50 text-slate-700 font-semibold rounded-full hover:bg-white hover:text-brand-primary transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-wide uppercase hover:shadow-lg shrink-0 text-center whitespace-nowrap"
             >
               Contact Me
             </a>
           </div>
 
           {/* Horizontal Stats Card */}
-          <div className="glass px-6 py-4 rounded-2xl border-slate-200 shadow-lg flex flex-wrap items-center gap-6 z-30 w-fit">
+          <div className="glass px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl border-slate-200 shadow-lg flex flex-row items-center justify-between sm:justify-start gap-2.5 sm:gap-6 z-30 w-full sm:w-fit">
             {stats.map((stat) => (
-              <div key={stat.id} className="flex items-center gap-3">
-                <div className={`w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center`}>
-                  {stat.type === 'projects' && <Palette className="w-5 h-5 text-brand-primary" />}
-                  {stat.type === 'clients' && <Layers className="w-5 h-5 text-brand-primary" />}
-                  {stat.type === 'reviews' && <Award className="w-5 h-5 text-brand-primary" />}
+              <div key={stat.id} className="flex items-center gap-1.5 sm:gap-3">
+                <div className="w-7 h-7 sm:w-10 sm:h-10 bg-brand-primary/10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
+                  {stat.type === 'projects' && <Palette className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary" />}
+                  {stat.type === 'clients' && <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary" />}
+                  {stat.type === 'reviews' && <Award className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary" />}
                 </div>
-                <div>
-                  <p className="text-lg font-bold text-slate-900">{stat.value}</p>
-                  <p className="text-xs text-slate-400 font-medium tracking-wide">{stat.label}</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-lg font-bold text-slate-900 leading-tight">{stat.value}</p>
+                  <p className="text-[9px] sm:text-xs text-slate-400 font-medium tracking-wide truncate">{stat.label}</p>
                 </div>
               </div>
             ))}
@@ -3188,7 +3188,7 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
 
 const About = () => {
   return (
-    <section id="about" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+    <section id="about" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 sm:px-6 md:px-8 xl:px-0">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
       <div className="max-w-[1400px] mx-auto w-full relative z-10">
         <motion.div
@@ -3196,10 +3196,10 @@ const About = () => {
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true, margin: "-100px" }}
-          className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-2xl shadow-brand-primary/[0.03] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 md:p-16 lg:p-20"
+          className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-2xl shadow-brand-primary/[0.03] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 md:p-16 lg:p-20 overflow-hidden"
         >
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
+          <div className="grid lg:grid-cols-2 gap-16 items-center w-full">
+            <div className="min-w-0">
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -3209,9 +3209,8 @@ const About = () => {
                   <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
                   <span className="text-xs font-bold uppercase tracking-widest text-slate-500">About Me</span>
                 </div>
-                
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight text-slate-900 leading-[1.1]">
-                  CRAFTING <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">VISUAL</span> <br />STORIES
+                               <h2 className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight text-slate-900 leading-[1.2] sm:leading-[1.1]">
+                  CRAFTING <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-1">VISUAL</span> <br />STORIES
                 </h2>
                 
                 <div className="space-y-6 text-slate-500 text-lg md:text-xl leading-relaxed font-light mb-10">
@@ -3223,17 +3222,17 @@ const About = () => {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-4 pt-2">
+                <div className="flex flex-row sm:flex-wrap items-center justify-start overflow-x-auto sm:overflow-x-visible gap-2 sm:gap-4 pt-2 w-full no-scrollbar pb-3 sm:pb-0 snap-x snap-mandatory">
                   {['Logo Design', 'Social Media Design', 'Branding', 'Poster Design'].map((item, i) => (
                     <motion.div 
                       key={item} 
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 + (i * 0.1) }}
-                      className="flex items-center gap-3 bg-white/60 backdrop-blur-sm px-5 py-3 rounded-full border border-slate-200 shadow-sm"
+                      className="flex-shrink-0 sm:flex-none flex items-center gap-1.5 sm:gap-3 bg-white/60 backdrop-blur-sm px-4 py-2.5 sm:px-5 sm:py-3 rounded-full border border-slate-200 shadow-sm justify-center sm:justify-start snap-center"
                     >
-                      <Check className="w-4 h-4 text-brand-primary" />
-                      <span className="text-slate-700 text-sm font-semibold">{item}</span>
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-primary shrink-0" />
+                      <span className="text-slate-700 text-xs sm:text-sm font-semibold truncate">{item}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -3321,7 +3320,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-5xl md:text-6xl font-black mb-6 text-slate-900 tracking-tight"
+            className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-slate-900 tracking-tight"
           >
             MY <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">PORTFOLIO</span>
           </motion.h2>
@@ -3493,7 +3492,7 @@ const Skills = () => {
               <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Expertise</span>
             </div>
             
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight">DESIGN <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">ARSENAL</span></h2>
+            <h2 className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight">DESIGN <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">ARSENAL</span></h2>
             
             <p className="text-slate-500 text-lg md:text-xl mb-12 leading-relaxed font-light">
               My technical proficiency allows me to deliver high-quality designs that are both aesthetically pleasing and strategically sound.
@@ -3597,7 +3596,7 @@ const Services = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight"
+              className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight"
             >
               SERVICES I <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">OFFER</span>
             </motion.h2>
@@ -3621,10 +3620,12 @@ const Services = () => {
               transition={{ duration: 0.5, delay: idx * 0.1 }}
               className={`glass p-5 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 group border-white/60 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] relative overflow-hidden`}
             >
-              <div className={`mb-8 p-4 rounded-2xl bg-slate-50 shadow-sm inline-block group-hover:scale-110 transition-transform duration-500 text-${service.color} relative z-10`}>
-                {service.icon}
+              <div className="flex items-center gap-4 mb-6 relative z-10">
+                <div className={`p-4 rounded-2xl bg-slate-50 shadow-sm inline-block group-hover:scale-110 transition-transform duration-500 text-${service.color} shrink-0`}>
+                  {service.icon}
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight group-hover:text-brand-primary transition-colors leading-tight">{service.title}</h3>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-slate-800 tracking-tight relative z-10 group-hover:text-brand-primary transition-colors">{service.title}</h3>
               <p className="text-slate-500 leading-relaxed font-light relative z-10">
                 {service.description}
               </p>
@@ -3705,7 +3706,7 @@ const FAQ = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-4"
+            className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight mb-4"
           >
             Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">Questions</span>
           </motion.h2>
@@ -3872,7 +3873,7 @@ const Contact = () => {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-8 text-white tracking-tight leading-[1.1] drop-shadow-xl"
+          className="text-[32px] xs:text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-8 text-white tracking-tight leading-[1.3] xs:leading-[1.2] sm:leading-[1.1] drop-shadow-xl"
         >
           Let's Talk About <br />
           Your Project
@@ -4250,7 +4251,7 @@ const WhatClientsSaid = () => {
             <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Feedback</span>
           </motion.div>
           
-          <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tight uppercase text-slate-900 leading-tight">
+          <h2 className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 tracking-tight uppercase text-slate-900 leading-tight">
             WHAT CLIENTS <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">SAID</span>
           </h2>
           
@@ -4265,7 +4266,7 @@ const WhatClientsSaid = () => {
           {/* Main 100% fluid custom circle tracker layout with responsive scaling for mobile viewports */}
           <div 
             ref={circleRef}
-            className="w-full max-w-[620px] aspect-square relative scale-[0.80] xs:scale-[0.88] sm:scale-100 transition-transform duration-300 origin-center"
+            className="hidden sm:block w-full max-w-[620px] aspect-square relative scale-[0.80] xs:scale-[0.88] sm:scale-100 transition-transform duration-300 origin-center"
           >
             
             
@@ -4414,7 +4415,7 @@ const WhatClientsSaid = () => {
                       damping: 24,
                       mass: 0.8
                     }}
-                    className="absolute top-[31%] w-[46%] h-[38%] left-[27%] z-20 flex flex-col items-center justify-center group"
+                    className="hidden sm:flex absolute top-[31%] w-[46%] h-[38%] left-[27%] z-20 flex-col items-center justify-center group"
                   >
                     {/* The main slanted card body matching the user sketch design perfectly but with the site's default light glass look */}
                     <div className="absolute inset-0 bg-white/95 border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-2xl transition-all duration-300 transform skew-y-[-4.5deg] origin-center z-0 flex flex-col justify-between items-center overflow-visible">
@@ -4478,6 +4479,112 @@ const WhatClientsSaid = () => {
               })()}
             </AnimatePresence>
  
+          </div>
+
+          {/* Mobile Testimonial Viewport - beautiful and highly optimized layout for mobile devices (< sm) */}
+          <div className="block sm:hidden w-full max-w-[430px] px-2 relative z-10 py-2">
+            
+            {/* 1. Horizontal scrollable list/rail of client initials avatar buttons */}
+            <div className="flex items-center gap-2.5 overflow-x-auto py-3 px-1 no-scrollbar w-full mb-5 scroll-smooth snap-x">
+              {reviews.map((rev, idx) => {
+                const isActive = activeIdx === idx;
+                const colorTheme = clientColors[idx % clientColors.length];
+                return (
+                  <button
+                    key={`mobile-avatar-${idx}`}
+                    onClick={() => handleSelect(idx)}
+                    className={`flex-shrink-0 w-11 h-11 rounded-full flex flex-col items-center justify-center font-bold text-xs transition-all duration-300 snap-center ${
+                      isActive
+                        ? `bg-gradient-to-tr ${colorTheme.from} ${colorTheme.to} text-white scale-110 shadow-[0_6px_15px_rgba(124,60,237,0.25)] ring-2 ring-violet-200 border border-white`
+                        : 'bg-white border border-slate-200 text-slate-500 shadow-sm'
+                    }`}
+                  >
+                    <span className="text-[11px] font-bold">
+                      {rev.client.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 2. Testimonial Card */}
+            <AnimatePresence mode="wait">
+              {(() => {
+                const colorTheme = clientColors[activeIdx % clientColors.length];
+                return (
+                  <motion.div
+                    key={`testimonial-card-mobile-${activeIdx}`}
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="relative bg-white/95 border border-slate-200/80 shadow-[0_15px_35px_rgba(15,23,42,0.06)] backdrop-blur-2xl rounded-[1.5rem] w-full p-6 flex flex-col items-center text-center overflow-hidden"
+                  >
+                    {/* Elegant custom-themed glow line at the top */}
+                    <div className={`absolute top-0 left-[10%] w-[80%] h-[4px] bg-gradient-to-r ${colorTheme.colors.glowLine} opacity-95 rounded-b-full shadow-sm`} />
+                    
+                    {/* Clean right brand accent strip */}
+                    <div className={`absolute top-[20%] right-0 w-[4px] h-[30%] ${colorTheme.colors.rightBar} rounded-l-md`} />
+
+                    {/* Styled Quote Signifier with Brand Accent Background */}
+                    <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 shadow-inner mb-4 pointer-events-none mt-1">
+                      <Quote className="w-5 h-5 stroke-[2.5]" style={{ color: colorTheme.accent }} />
+                    </div>
+                    
+                    {/* Stars */}
+                    <div className="flex gap-1 mb-4">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <StarIcon key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+
+                    {/* Testimonial Quote - Fully readable and clear */}
+                    <p className="text-slate-600 text-sm font-medium leading-relaxed italic tracking-tight font-sans px-1 mb-5">
+                      "{reviews[activeIdx].quote}"
+                    </p>
+
+                    {/* Bottom Divider / Designations */}
+                    <div className="w-full flex flex-col items-center pt-4 border-t border-slate-100">
+                      <h4 className="font-extrabold text-slate-800 text-sm font-display tracking-tight uppercase leading-tight">
+                        {reviews[activeIdx].client}
+                      </h4>
+                      <p className="font-mono text-[10px] uppercase tracking-widest mt-1" style={{ color: colorTheme.accent }}>
+                        {reviews[activeIdx].role}
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })()}
+            </AnimatePresence>
+
+            {/* 3. Slider controls below card (Next / Prev arrows with pagination dots) */}
+            <div className="flex items-center justify-between w-full mt-6 px-1">
+              <button
+                onClick={() => handleSelect((activeIdx - 1 + reviews.length) % reviews.length)}
+                className="p-3 rounded-full bg-white border border-slate-200 hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
+                aria-label="Previous review"
+              >
+                <ChevronLeft className="w-4 h-4 text-slate-600" />
+              </button>
+              
+              <div className="flex items-center gap-1.5 overflow-hidden max-w-[150px] py-1">
+                {reviews.map((_, idx) => (
+                  <span 
+                    key={`dot-${idx}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${activeIdx === idx ? 'w-4 bg-brand-primary' : 'w-1.5 bg-slate-200'}`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={() => handleSelect((activeIdx + 1) % reviews.length)}
+                className="p-3 rounded-full bg-white border border-slate-200 hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
+                aria-label="Next review"
+              >
+                <ChevronRight className="w-4 h-4 text-slate-600" />
+              </button>
+            </div>
+
           </div>
         </div>
 
@@ -4616,8 +4723,8 @@ export default function App() {
   const [themeStyles, setThemeStyles] = useState({
     brandPrimary: localStorage.getItem('style_brand_primary') || '#7c3ced',
     lightBackground: localStorage.getItem('style_light_bg') || '#fafafa',
-    displayFont: localStorage.getItem('style_font_display') || 'Space Grotesk',
-    sansFont: localStorage.getItem('style_font_sans') || 'Inter',
+    displayFont: (localStorage.getItem('style_font_display') === 'Space Grotesk' || localStorage.getItem('style_font_display') === 'ROYAL Hefana' || !localStorage.getItem('style_font_display')) ? 'Blushing Rose Regular' : localStorage.getItem('style_font_display')!,
+    sansFont: (localStorage.getItem('style_font_sans') === 'Inter' || !localStorage.getItem('style_font_sans')) ? 'Plus Jakarta Sans' : localStorage.getItem('style_font_sans')!,
     scriptFont: localStorage.getItem('style_font_script') || 'Dancing Script',
     footerNote: localStorage.getItem('style_footer_note') || 'Note: These colors and fonts have been specifically chosen to maintain a premium and modern graphic designer portfolio aesthetic in light mode.'
   });
@@ -4950,7 +5057,7 @@ export default function App() {
               className="w-8 h-8 rounded-md opacity-95 object-cover border border-slate-200 bg-white" 
               loading="lazy"
             />
-            <span className="text-xl font-display font-bold tracking-tighter text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
+            <span className="text-xl font-display font-bold tracking-normal text-slate-900">Wahab Graphic<span className="text-brand-primary">.</span></span>
           </div>
 
           {/* Emergency Contact Number */}
@@ -4983,7 +5090,7 @@ export default function App() {
               {Array.from({ length: 12 }).map((_, i) => (
                 <span 
                   key={i} 
-                  className="text-7xl md:text-9xl font-black uppercase tracking-tighter font-display flex items-center gap-16 select-none animate-pulse-slow"
+                  className="text-7xl md:text-9xl font-bold uppercase tracking-normal font-display flex items-center gap-16 select-none animate-pulse-slow"
                   style={{
                     color: `${themeStyles.brandPrimary}0b`, // Soft premium filled color (approx 4.5% opacity of brand primary)
                   }}
