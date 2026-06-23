@@ -4723,7 +4723,7 @@ export default function App() {
   const [themeStyles, setThemeStyles] = useState({
     brandPrimary: localStorage.getItem('style_brand_primary') || '#7c3ced',
     lightBackground: localStorage.getItem('style_light_bg') || '#fafafa',
-    displayFont: (localStorage.getItem('style_font_display') === 'Space Grotesk' || localStorage.getItem('style_font_display') === 'ROYAL Hefana' || !localStorage.getItem('style_font_display')) ? 'Blushing Rose Regular' : localStorage.getItem('style_font_display')!,
+    displayFont: (localStorage.getItem('style_font_display') === 'Space Grotesk' || localStorage.getItem('style_font_display') === 'ROYAL Hefana' || localStorage.getItem('style_font_display') === 'Lovelace' || localStorage.getItem('style_font_display') === 'lovelace' || !localStorage.getItem('style_font_display')) ? 'Blushing Rose Regular' : localStorage.getItem('style_font_display')!,
     sansFont: (localStorage.getItem('style_font_sans') === 'Inter' || !localStorage.getItem('style_font_sans')) ? 'Plus Jakarta Sans' : localStorage.getItem('style_font_sans')!,
     scriptFont: localStorage.getItem('style_font_script') || 'Dancing Script',
     footerNote: localStorage.getItem('style_footer_note') || 'Note: These colors and fonts have been specifically chosen to maintain a premium and modern graphic designer portfolio aesthetic in light mode.'
