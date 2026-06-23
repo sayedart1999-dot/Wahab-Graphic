@@ -3051,17 +3051,17 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             <a 
               href="#portfolio" 
               onClick={(e) => scrollToSectionHelper('portfolio', e)}
-              className="group relative overflow-hidden flex-[1.4] sm:flex-none px-3.5 sm:px-8 py-3.5 sm:py-4 bg-slate-900 text-white font-semibold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-wide uppercase shadow-xl hover:shadow-2xl hover:shadow-slate-900/20 shrink-0 text-center whitespace-nowrap"
+              className="group relative overflow-hidden flex-[1.4] sm:flex-none px-5 sm:px-8 py-3.5 sm:py-4 bg-slate-900 text-white font-bold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-widest uppercase hover:shadow-2xl hover:shadow-slate-900/20 shrink-0 text-center whitespace-nowrap"
             >
-              <span className="relative z-10 flex items-center gap-1 sm:gap-2">View Portfolio <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" /></span>
+              <span className="relative z-10 flex items-center gap-1 sm:gap-2">EXPLORE WORK <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" /></span>
               <div className="absolute inset-0 bg-brand-primary transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out z-0"></div>
             </a>
             <a 
               href="#contact" 
               onClick={(e) => scrollToSectionHelper('contact', e)}
-              className="flex-[0.8] sm:flex-none px-3.5 sm:px-8 py-3.5 sm:py-4 glass border border-slate-200/50 text-slate-700 font-semibold rounded-full hover:bg-white hover:text-brand-primary transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-wide uppercase hover:shadow-lg shrink-0 text-center whitespace-nowrap"
+              className="flex-[0.8] sm:flex-none px-5 sm:px-8 py-3.5 sm:py-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-full hover:bg-slate-50 hover:text-brand-primary hover:border-brand-primary/30 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-widest uppercase shrink-0 text-center whitespace-nowrap"
             >
-              Contact Me
+              LET'S COLLABORATING
             </a>
           </div>
 
