@@ -2253,8 +2253,6 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
         <X className="w-6 h-6" />
       </button>
 
-      {/* Dynamic bottom blur element similar to the parent page */}
-      <div className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-[105] bg-transparent backdrop-blur-[12px] [mask-image:linear-gradient(to_top,rgba(0,0,0,1)_10%,rgba(0,0,0,0)_100%)]" />
 
       <div ref={scrollRef} className="h-full overflow-y-auto custom-scrollbar" data-lenis-prevent>
         <div className="max-w-[1400px] mx-auto px-6 py-12">
@@ -5028,12 +5026,12 @@ export default function App() {
 
   return (
     <div className="relative">
+      {/* Premium film grain / noise overlay */}
+      <div className="grain-overlay" />
       <AnimatePresence mode="wait">
         {isInitialLoading && <Preloader key="preloader" />}
       </AnimatePresence>
 
-      {/* Dynamic bottom viewport blur fade (inspired by Racdox) */}
-      <div className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-50 bg-transparent backdrop-blur-[12px] [mask-image:linear-gradient(to_top,rgba(0,0,0,1)_10%,rgba(0,0,0,0)_100%)]" />
 
       <GlobalBackground />
       <CustomCursor />

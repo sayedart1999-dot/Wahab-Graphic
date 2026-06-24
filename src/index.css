@@ -55,7 +55,7 @@
   }
 
   /* Premium elegant native italic style for typography display components */
-  .font-display .italic, 
+  .font-display .italic,
   h1 .italic, h2 .italic, h3 .italic, h4 .italic, h5 .italic, h6 .italic {
     font-family: inherit !important;
     font-style: italic !important;
@@ -66,7 +66,7 @@
   .glass {
     @apply bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
   }
-  
+
   .glass-dark {
     @apply bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-2xl shadow-slate-900/20 text-white;
   }
@@ -123,4 +123,3 @@
   -ms-overflow-style: none !important; /* IE and Edge */
   scrollbar-width: none !important; /* Firefox */
 }
-
