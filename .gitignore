@@ -1,1 +1,60 @@
-(src/index.css)
+```gitignore
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.js.map
+*.css.map
+
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+htmlcov/
+.coverage.*
+.pytest_cache/
+.mypy_cache/
+
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Compiled JavaScript
+*.min.js
+*.bundle.js
+
+# Temporary files
+*.tmp
+*.temp
+```
+
+Wait, let me reconsider this. The only modified files are `src/App.tsx` and `src/index.css` - these are source code files, not build artifacts or dependencies. There's nothing in the changes that indicates build outputs or temporary files were added.
+
+```gitignore
+
+```

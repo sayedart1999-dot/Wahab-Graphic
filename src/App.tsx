@@ -210,15 +210,15 @@ const Preloader = () => {
       initial={{ y: 0, opacity: 1 }}
       exit={{ y: "-100%", opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-      className="fixed inset-0 z-[9999] bg-[#fafafa] flex flex-col items-center justify-center p-6 origin-top"
+      className="fixed inset-0 z-[9999] bg-[#030014] flex flex-col items-center justify-center p-6 origin-top"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,60,237,0.05)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.1)_0%,transparent_70%)]" />
       
       <div className="relative">
         <motion.div 
           animate={{ rotate: 360 }}
           transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="w-32 h-32 md:w-40 md:h-40 rounded-full border-t-2 border-r-2 border-brand-primary/40 border-l-2 border-brand-primary/40 border-b-2 border-slate-200"
+          className="w-32 h-32 md:w-40 md:h-40 rounded-full border-t-2 border-r-2 border-brand-primary/60 border-l-2 border-brand-primary/60 border-b-2 border-slate-700 box-glow"
         />
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.img 
@@ -227,7 +227,7 @@ const Preloader = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             src="https://i.imgur.com/mNctGoH.png" 
             alt="Logo" 
-            className="w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-[0_10px_40px_rgba(124,60,237,0.1)] object-cover bg-white" 
+            className="w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-[0_10px_40px_rgba(139,92,246,0.3)] object-cover bg-white/10 backdrop-blur-sm border border-white/20" 
           />
         </div>
       </div>
@@ -237,15 +237,15 @@ const Preloader = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-2xl md:text-3xl font-black uppercase tracking-normal text-slate-900 mb-2"
+          className="text-2xl md:text-3xl font-black uppercase tracking-normal text-white mb-2 neon-glow"
         >
-          Abdul <span className="text-brand-primary">Wahab</span>
+          Abdul <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400">Wahab</span>
         </motion.h2>
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: 200 }}
           transition={{ duration: 2, ease: "easeInOut" }}
-          className="h-px bg-gradient-to-r from-transparent via-brand-primary/30 to-transparent mx-auto"
+          className="h-px bg-gradient-to-r from-transparent via-brand-primary/50 to-transparent mx-auto"
         />
         <motion.p 
           initial={{ opacity: 0 }}
@@ -257,7 +257,7 @@ const Preloader = () => {
         </motion.p>
       </div>
 
-      <div className="absolute bottom-10 text-slate-300 text-[10px] font-mono tracking-widest uppercase">
+      <div className="absolute bottom-10 text-slate-600 text-[10px] font-mono tracking-widest uppercase">
         © 2026 Wahab Graphic.
       </div>
     </motion.div>
@@ -2077,7 +2077,7 @@ const AdminDashboard = ({
                           </button>
                         </div>
                       </div>
-                      <div className="p-4 border-t border-slate-100 bg-slate-50">
+                      <div className="p-4 border-t border-slate-100 ">
                         <h4 className="font-bold text-sm truncate text-slate-900">{proj.name}</h4>
                       </div>
                     </div>
@@ -2591,12 +2591,12 @@ const GlobalBackground = () => {
   ];
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-slate-50">
+    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden ">
       {/* Background Dot Grid - Fixed */}
-      <div className="absolute inset-0 dot-grid opacity-[0.03]" />
+      <div className="absolute inset-0 dot-grid opacity-[0.08]" />
       
       {/* Connected Gradient Flow / Ambient Large Blobs */}
-      <div className="absolute inset-0 opacity-15 mix-blend-multiply">
+      <div className="absolute inset-0 opacity-15 mix-blend-screen">
         <motion.div 
           style={{ y: y1 }}
           animate={{
@@ -2616,7 +2616,7 @@ const GlobalBackground = () => {
             opacity: [0.2, 0.4, 0.2]
           }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute bottom-[-30%] right-[-20%] w-[150vw] h-[120vh] bg-purple-400 rounded-[100%] blur-[250px] md:blur-[300px]"
+          className="absolute bottom-[-30%] right-[-20%] w-[150vw] h-[120vh] bg-indigo-500 rounded-[100%] blur-[250px] md:blur-[300px]"
         />
         
         <motion.div 
@@ -2999,7 +2999,7 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
   };
 
   return (
-    <section id="home" className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden">
+    <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-hidden">
       <div className="max-w-[1600px] mx-auto px-6 relative z-10 w-full pt-10">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           <motion.div
@@ -3014,17 +3014,17 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             transition={{ delay: 0.2 }}
             className="mb-8 inline-block"
           >
-            <div className="inline-flex py-2 px-4 rounded-full glass border-white/40 shadow-sm text-xs md:text-sm font-semibold tracking-widest text-slate-500 uppercase">
+            <div className="inline-flex py-2 px-4 rounded-full glass border-white/20 shadow-lg text-xs md:text-sm font-semibold tracking-widest text-violet-300 uppercase box-glow">
               ✨ Logo Design, Brand Identity & Social Media
             </div>
           </motion.div>
 
           <div className="mb-6 flex items-baseline flex-wrap">
-            <span className="text-xl md:text-2xl font-light text-slate-500 tracking-tight">Hi, I am </span>
-            <span className="text-4xl sm:text-5xl md:text-6xl font-script font-semibold text-brand-primary ml-3">Abdul Wahab</span>
+            <span className="text-xl md:text-2xl font-light text-slate-400 tracking-tight">Hi, I am </span>
+            <span className="text-4xl sm:text-5xl md:text-6xl font-script font-semibold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400 ml-3 neon-glow">Abdul Wahab</span>
           </div>
           
-          <h1 className="text-[40px] xs:text-[50px] sm:text-7xl md:text-8xl xl:text-[9rem] font-bold leading-[1.05] xs:leading-none md:leading-[1.02] mb-6 tracking-normal uppercase text-slate-900 drop-shadow-sm">
+          <h1 className="text-[40px] xs:text-[50px] sm:text-7xl md:text-8xl xl:text-[9rem] font-bold leading-[1.05] xs:leading-none md:leading-[1.02] mb-6 tracking-normal uppercase text-white">
             <motion.span
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -3037,36 +3037,36 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="text-transparent bg-clip-text bg-gradient-to-br from-brand-primary via-brand-primary to-purple-400 block pb-2 drop-shadow-none"
+              className="text-gradient-hero block pb-2 drop-shadow-none neon-glow"
             >
               Designer.
             </motion.span>
           </h1>
           
-          <p className="text-slate-500 text-lg md:text-xl max-w-xl mb-10 leading-relaxed font-light">
-            I create <span className="font-medium text-slate-800">modern, clean, and impactful</span> designs that help brands stand out and communicate their message clearly.
+          <p className="text-slate-400 text-lg md:text-xl max-w-xl mb-10 leading-relaxed font-light">
+            I create <span className="font-medium text-white">modern, clean, and impactful</span> designs that help brands stand out and communicate their message clearly.
           </p>
           
           <div className="flex flex-row items-center gap-2.5 sm:gap-4 mb-6 w-full max-w-md sm:max-w-none">
             <a 
               href="#portfolio" 
               onClick={(e) => scrollToSectionHelper('portfolio', e)}
-              className="group relative overflow-hidden flex-[1.4] sm:flex-none px-5 sm:px-8 py-3.5 sm:py-4 bg-slate-900 text-white font-bold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-widest uppercase hover:shadow-2xl hover:shadow-slate-900/20 shrink-0 text-center whitespace-nowrap"
+              className="group relative overflow-hidden flex-[1.4] sm:flex-none px-5 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-widest uppercase hover:shadow-2xl hover:shadow-violet-500/30 shrink-0 text-center whitespace-nowrap box-glow"
             >
               <span className="relative z-10 flex items-center gap-1 sm:gap-2">EXPLORE WORK <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" /></span>
-              <div className="absolute inset-0 bg-brand-primary transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out z-0"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-600 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out z-0"></div>
             </a>
             <a 
               href="#contact" 
               onClick={(e) => scrollToSectionHelper('contact', e)}
-              className="flex-[0.8] sm:flex-none px-5 sm:px-8 py-3.5 sm:py-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-full hover:bg-slate-50 hover:text-brand-primary hover:border-brand-primary/30 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-widest uppercase shrink-0 text-center whitespace-nowrap"
+              className="flex-[0.8] sm:flex-none px-5 sm:px-8 py-3.5 sm:py-4 glass border border-white/20 text-white font-bold rounded-full hover:bg-white/10 hover:border-brand-primary/50 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-widest uppercase shrink-0 text-center whitespace-nowrap"
             >
               LET'S COLLABORATING
             </a>
           </div>
 
           {/* Horizontal Stats Card */}
-          <div className="glass px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl border-slate-200 shadow-lg flex flex-row items-center justify-between sm:justify-start gap-2.5 sm:gap-6 z-30 w-full sm:w-fit">
+          <div className="glass px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl border-white/10 shadow-xl flex flex-row items-center justify-between sm:justify-start gap-2.5 sm:gap-6 z-30 w-full sm:w-fit">
             {stats.map((stat) => (
               <div key={stat.id} className="flex items-center gap-1.5 sm:gap-3">
                 <div className="w-7 h-7 sm:w-10 sm:h-10 bg-brand-primary/10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
@@ -3189,14 +3189,14 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
 const About = () => {
   return (
     <section id="about" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 sm:px-6 md:px-8 xl:px-0">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="max-w-[1400px] mx-auto w-full relative z-10">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true, margin: "-100px" }}
-          className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-2xl shadow-brand-primary/[0.03] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 md:p-16 lg:p-20 overflow-hidden"
+          className="glass-card border-white/10 rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 md:p-16 lg:p-20 overflow-hidden"
         >
           <div className="grid lg:grid-cols-2 gap-16 items-center w-full">
             <div className="min-w-0">
@@ -3205,17 +3205,17 @@ const About = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6 border border-slate-200/50">
-                  <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">About Me</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-white/10 mb-6 box-glow">
+                  <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse neon-glow" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-violet-300">About Me</span>
                 </div>
-                               <h2 className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight text-slate-900 leading-[1.2] sm:leading-[1.1]">
-                  CRAFTING <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-1">VISUAL</span> <br />STORIES
+                               <h2 className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight text-white leading-[1.2] sm:leading-[1.1]">
+                  CRAFTING <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400 italic pr-1 neon-glow">VISUAL</span> <br />STORIES
                 </h2>
                 
-                <div className="space-y-6 text-slate-500 text-lg md:text-xl leading-relaxed font-light mb-10">
+                <div className="space-y-6 text-slate-400 text-lg md:text-xl leading-relaxed font-light mb-10">
                   <p>
-                    Hello, I'm <span className="font-semibold text-slate-800">Wahab</span>, a passionate graphic designer who focuses on creating clean, modern, and visually engaging designs. I specialize in logo design, brand identity, and social media graphics that help businesses build a strong visual presence.
+                    Hello, I'm <span className="font-semibold text-white">Wahab</span>, a passionate graphic designer who focuses on creating clean, modern, and visually engaging designs. I specialize in logo design, brand identity, and social media graphics that help businesses build a strong visual presence.
                   </p>
                   <p>
                     My goal is to help brands look professional and memorable through thoughtful and effective design.
@@ -3229,10 +3229,10 @@ const About = () => {
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 + (i * 0.1) }}
-                      className="flex-shrink-0 sm:flex-none flex items-center gap-1.5 sm:gap-3 bg-white/60 backdrop-blur-sm px-4 py-2.5 sm:px-5 sm:py-3 rounded-full border border-slate-200 shadow-sm justify-center sm:justify-start snap-center"
+                      className="flex-shrink-0 sm:flex-none flex items-center gap-1.5 sm:gap-3 glass px-4 py-2.5 sm:px-5 sm:py-3 rounded-full border border-white/10 shadow-lg justify-center sm:justify-start snap-center"
                     >
                       <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-primary shrink-0" />
-                      <span className="text-slate-700 text-xs sm:text-sm font-semibold truncate">{item}</span>
+                      <span className="text-slate-300 text-xs sm:text-sm font-semibold truncate">{item}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -3242,28 +3242,28 @@ const About = () => {
             <div className="grid grid-cols-2 gap-4 sm:gap-6 relative">
               <div className="space-y-6 mt-12">
                 <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
-                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">5<span className="text-brand-primary">+</span></h3>
+                  <div className="glass p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-white/10 shadow-xl hover:shadow-2xl hover:box-glow transition-all group">
+                    <h3 className="text-5xl md:text-6xl font-black text-white mb-3 group-hover:text-brand-primary transition-colors neon-glow">5<span className="text-brand-primary">+</span></h3>
                     <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Years Exp.</p>
                   </div>
                 </TiltCard>
                 <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
-                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">150<span className="text-brand-primary">+</span></h3>
+                  <div className="glass p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-white/10 shadow-xl hover:shadow-2xl hover:box-glow transition-all group">
+                    <h3 className="text-5xl md:text-6xl font-black text-white mb-3 group-hover:text-brand-primary transition-colors neon-glow">150<span className="text-brand-primary">+</span></h3>
                     <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Projects</p>
                   </div>
                 </TiltCard>
               </div>
               <div className="space-y-6">
                 <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                   <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
-                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">99<span className="text-brand-primary">%</span></h3>
+                   <div className="glass p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-white/10 shadow-xl hover:shadow-2xl hover:box-glow transition-all group">
+                    <h3 className="text-5xl md:text-6xl font-black text-white mb-3 group-hover:text-brand-primary transition-colors neon-glow">99<span className="text-brand-primary">%</span></h3>
                     <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Happy Clients</p>
                   </div>
                 </TiltCard>
                 <TiltCard className="cursor-default relative z-10 hover:-translate-y-2 transition-transform duration-500">
-                  <div className="bg-white/80 backdrop-blur-md p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all group">
-                    <h3 className="text-5xl md:text-6xl font-black text-slate-800 mb-3 group-hover:text-brand-primary transition-colors">24<span className="text-brand-primary">/</span>7</h3>
+                  <div className="glass p-4 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] text-center border border-white/10 shadow-xl hover:shadow-2xl hover:box-glow transition-all group">
+                    <h3 className="text-5xl md:text-6xl font-black text-white mb-3 group-hover:text-brand-primary transition-colors neon-glow">24<span className="text-brand-primary">/</span>7</h3>
                     <p className="text-sm uppercase tracking-widest text-slate-400 font-bold">Support</p>
                   </div>
                 </TiltCard>
@@ -4235,7 +4235,7 @@ const WhatClientsSaid = () => {
       
       {/* Soft gorgeous ambient brand glows */}
       <div className="absolute left-[30%] top-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-primary/[0.025] rounded-full blur-[100px] pointer-events-none animate-pulse" />
-      <div className="absolute right-[30%] top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-purple-400/[0.02] rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute right-[30%] top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-indigo-500/[0.02] rounded-full blur-[80px] pointer-events-none" />
 
       <div className="max-w-[1400px] mx-auto w-full relative z-10 px-6">
         

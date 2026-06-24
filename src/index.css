@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Dancing+Script:wght@400;500;600;700&family=Italiana&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Dancing+Script:wght@400;500;600;700&family=Italiana&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
 
 @font-face {
   font-family: 'Blushing Rose Regular';
@@ -17,10 +17,12 @@
   --font-script: "Dancing Script", cursive;
 
   --color-brand-primary: #8B5CF6;
-  --color-brand-secondary: #7C3AED;
+  --color-brand-secondary: #6366F1;
   --color-brand-accent: #A78BFA;
-  --color-dark-bg: #fafafa;
-  --color-deep-brown: #e2e8f0;
+  --color-brand-glow: #7C3AED;
+  --color-dark-bg: #030014;
+  --color-card-bg: #0F0720;
+  --color-deep-brown: #1E1B4B;
 }
 
 @layer base {
@@ -30,12 +32,11 @@
   }
 
   body {
-    @apply bg-dark-bg text-slate-800 font-sans selection:bg-brand-primary selection:text-white;
-    background-image: 
-      radial-gradient(rgba(139, 92, 246, 0.08) 1px, transparent 1px),
-      radial-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px);
-    background-size: 40px 40px, 80px 80px;
-    background-position: 0 0, 40px 40px;
+    @apply bg-dark-bg text-white font-sans selection:bg-brand-primary selection:text-white;
+    background: 
+      radial-gradient(ellipse at top, rgba(124, 58, 237, 0.15), transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(99, 102, 241, 0.1), transparent 50%),
+      linear-gradient(to bottom, #030014, #0F0720);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -55,7 +56,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display text-slate-900 tracking-tight;
+    @apply font-display text-white tracking-tight;
   }
 
   /* Premium elegant native italic style for typography display components */
@@ -68,27 +69,46 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/80 backdrop-blur-2xl border border-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.06)];
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)];
   }
   
+  .glass-card {
+    @apply bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+  }
+
   .glass-dark {
     @apply bg-slate-900/90 backdrop-blur-2xl border border-slate-700/50 shadow-2xl shadow-slate-900/20 text-white;
   }
 
-  .brand-glow {
-    text-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+  .neon-glow {
+    text-shadow: 
+      0 0 10px rgba(139, 92, 246, 0.8),
+      0 0 20px rgba(139, 92, 246, 0.6),
+      0 0 30px rgba(139, 92, 246, 0.4),
+      0 0 40px rgba(124, 58, 237, 0.2);
+  }
+
+  .box-glow {
+    box-shadow: 
+      0 0 20px rgba(139, 92, 246, 0.3),
+      0 0 40px rgba(124, 58, 237, 0.2),
+      inset 0 0 20px rgba(139, 92, 246, 0.1);
   }
 
   .brand-border-glow {
-    box-shadow: 0 10px 50px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 10px 50px rgba(139, 92, 246, 0.3);
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400;
+  }
+
+  .text-gradient-hero {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-300 via-purple-300 to-indigo-300;
   }
 
   .dot-grid {
-    background-image: radial-gradient(circle, var(--color-brand-primary) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(139, 92, 246, 0.4) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
@@ -103,6 +123,31 @@
 
   .animate-pulse-slow {
     animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    }
+    to {
+      box-shadow: 0 0 40px rgba(139, 92, 246, 0.6);
+    }
+  }
+
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(99, 102, 241, 0.3));
+    padding: 1px;
+    border-radius: 1rem;
+  }
+
+  .gradient-border-inner {
+    background: rgba(3, 0, 20, 0.8);
+    border-radius: calc(1rem - 1px);
   }
 }
 
