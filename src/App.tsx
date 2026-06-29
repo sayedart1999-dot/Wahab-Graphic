@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Lenis from 'lenis';
 import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion, AnimatePresence, useScroll, useTransform, useMotionTemplate } from 'motion/react';
+import { motion, AnimatePresence, useScroll, useTransform, useMotionTemplate, useAnimation, useAnimationFrame } from 'motion/react';
 import { 
   Palette, 
   Layers, 
@@ -59,9 +59,13 @@ import {
   Clock,
   ChevronDown,
   Settings,
-  Phone
+  Phone,
+  Moon,
+  Sun
 } from 'lucide-react';
+import { PerspectiveCarousel } from './components/PerspectiveCarousel';
 import { supabase } from './lib/supabase';
+import { Project, Category, Stat, Skill, Service, CanvasItem } from './types';
 import { uploadToCloudinary, uploadMultipleToCloudinary } from './lib/cloudinary';
 import { 
   Stage, 
@@ -106,69 +110,15 @@ export const scrollToSectionHelper = (id: string, e?: React.MouseEvent | React.S
 };
 
 // --- Types ---
-interface CanvasItem {
-  id: string;
-  type: 'image';
-  src: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
-  scaleX: number;
-  scaleY: number;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  categoryId: string;
-  coverImage: string;
-  images: string[];
-  description: string;
-  status: 'draft' | 'published';
-  createdAt: string; // Changed from Timestamp for Supabase
-  canvasData?: CanvasItem[];
-  canvasBackgroundColor?: string;
-  canvasHeight?: number;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  order: number;
-  coverImage?: string;
-}
-
-interface Stat {
-  id: string;
-  label: string;
-  value: string;
-  type: string;
-}
-
-interface Skill {
-  name: string;
-  level: number;
-  icon: React.ReactNode;
-  color: string;
-}
-
-interface Service {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-}
+// Moved to src/types.ts
 
 // --- Data ---
 const SKILLS: Skill[] = [
   { name: "Adobe Illustrator", level: 95, icon: <PenTool className="w-5 h-5" />, color: "brand-primary" },
   { name: "Adobe Photoshop", level: 90, icon: <Palette className="w-5 h-5" />, color: "brand-primary" },
-  { name: "Typography", level: 85, icon: <Layout className="w-5 h-5" />, color: "brand-primary" },
   { name: "Color Theory", level: 92, icon: <Layers className="w-5 h-5" />, color: "brand-primary" },
   { name: "Branding", level: 88, icon: <Award className="w-5 h-5" />, color: "brand-primary" },
+  { name: "Print Design", level: 90, icon: <Monitor className="w-5 h-5" />, color: "brand-primary" },
 ];
 
 const SERVICES: Service[] = [
@@ -202,17 +152,23 @@ const SERVICES: Service[] = [
     icon: <Layout className="w-10 h-10" />,
     color: "brand-primary"
   },
+  { 
+    title: "UI/UX Design", 
+    description: "User-centric interface designs for web and mobile applications.",
+    icon: <Monitor className="w-10 h-10" />,
+    color: "brand-primary"
+  },
 ];
 
-const Preloader = () => {
+const Preloader = ({ isDarkMode }: { isDarkMode: boolean }) => {
   return (
     <motion.div 
       initial={{ y: 0, opacity: 1 }}
       exit={{ y: "-100%", opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-      className="fixed inset-0 z-[9999] bg-[#fafafa] flex flex-col items-center justify-center p-6 origin-top"
+      className="fixed inset-0 z-[9999] bg-dark-bg flex flex-col items-center justify-center p-6 origin-top"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,60,237,0.05)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,60,237,0.15)_0%,transparent_70%)]" />
       
       <div className="relative">
         <motion.div 
@@ -261,6 +217,125 @@ const Preloader = () => {
         © 2026 Wahab Graphic.
       </div>
     </motion.div>
+  );
+};
+
+const playMechanicalClick = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    
+    const audioCtx = new AudioContextClass();
+    
+    // Main click sound (high-frequency square wave)
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+    
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    // Noise burst for mechanical texture
+    const bufferSize = audioCtx.sampleRate * 0.02;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.02);
+    
+    noise.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+    
+    osc.start();
+    noise.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+    
+    // Auto-close context to save resources
+    setTimeout(() => audioCtx.close(), 200);
+  } catch (e) {
+    console.error("Audio playback failed", e);
+  }
+};
+
+const ThemeTransitionOverlay = ({ isAnimating, isDarkMode }: { isAnimating: boolean, isDarkMode: boolean }) => {
+  const sweepVariants = {
+    initial: { y: "-100%", skewY: 10 },
+    animate: { y: "100%", skewY: 10 },
+  };
+
+  return (
+    <AnimatePresence>
+      {isAnimating && (
+        <div className="fixed inset-0 z-[99999] pointer-events-none overflow-hidden">
+          {/* Layer 1: Brand Color */}
+          <motion.div
+            variants={sweepVariants}
+            initial="initial"
+            animate="animate"
+            transition={{ duration: 0.9, ease: [0.77, 0, 0.175, 1] }}
+            className="absolute inset-0 bg-brand-primary/40 h-[120%]"
+          />
+          {/* Layer 2: Secondary Tone */}
+          <motion.div
+            variants={sweepVariants}
+            initial="initial"
+            animate="animate"
+            transition={{ duration: 0.9, ease: [0.77, 0, 0.175, 1], delay: 0.1 }}
+            className={`absolute inset-0 h-[120%] ${
+              !isDarkMode ? "bg-slate-800" : "bg-slate-200"
+            }`}
+          />
+          {/* Layer 3: Target Background */}
+          <motion.div
+            variants={sweepVariants}
+            initial="initial"
+            animate="animate"
+            transition={{ duration: 0.9, ease: [0.77, 0, 0.175, 1], delay: 0.2 }}
+            className={`absolute inset-0 h-[120%] ${
+              !isDarkMode ? "bg-slate-950" : "bg-slate-50"
+            }`}
+          />
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const ThemeToggleButton = ({ isDarkMode, onToggle }: { isDarkMode: boolean, onToggle: () => void }) => {
+  return (
+    <motion.button
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      onClick={onToggle}
+      className={`w-12 h-12 rounded-full shadow-xl border backdrop-blur-xl transition-all duration-500 group flex items-center justify-center relative z-10 ${
+        isDarkMode 
+          ? "bg-white border-white text-slate-900" 
+          : "bg-slate-900 border-slate-800 text-white"
+      }`}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="relative">
+        {isDarkMode ? (
+          <Sun className="w-5 h-5" />
+        ) : (
+          <Moon className="w-5 h-5" />
+        )}
+      </div>
+    </motion.button>
   );
 };
 
@@ -2555,7 +2630,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
   );
 };
 
-const GlobalBackground = () => {
+const GlobalBackground = ({ isDarkMode }: { isDarkMode: boolean }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const { scrollYProgress } = useScroll();
 
@@ -2594,7 +2669,7 @@ const GlobalBackground = () => {
       <div className="absolute inset-0 dot-grid opacity-[0.03]" />
       
       {/* Connected Gradient Flow / Ambient Large Blobs */}
-      <div className="absolute inset-0 opacity-15 mix-blend-multiply">
+      <div className={`absolute inset-0 opacity-20 ${isDarkMode ? 'mix-blend-screen' : 'mix-blend-multiply'}`}>
         <motion.div 
           style={{ y: y1 }}
           animate={{
@@ -2775,7 +2850,7 @@ const CustomCursor = () => {
   );
 };
 
-const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean, onAdminClick: () => void, onLogoSecretClick: () => void }) => {
+const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick, isDarkMode, onToggleTheme }: { isAdmin: boolean, onAdminClick: () => void, onLogoSecretClick: () => void, isDarkMode: boolean, onToggleTheme: () => void }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
@@ -2901,6 +2976,7 @@ const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean
 
         {/* Desktop Menu Button (Right) */}
         <div className="hidden md:flex items-center justify-end justify-self-end gap-4">
+          <ThemeToggleButton isDarkMode={isDarkMode} onToggle={onToggleTheme} />
           {isAdmin && (
             <button 
               onClick={onAdminClick}
@@ -2921,6 +2997,7 @@ const Navbar = ({ isAdmin, onAdminClick, onLogoSecretClick }: { isAdmin: boolean
 
         {/* Mobile Toggle (Right) */}
         <div className="flex justify-end justify-self-end md:hidden gap-4 items-center">
+          <ThemeToggleButton isDarkMode={isDarkMode} onToggle={onToggleTheme} />
           {isAdmin && (
             <button 
               onClick={onAdminClick}
@@ -3274,12 +3351,55 @@ const About = () => {
   );
 };
 
-const Portfolio = ({ categories, projects }: { categories: Category[], projects: Project[] }) => {
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+const slugify = (text: string) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
+};
+
+const Portfolio = ({ 
+  categories, 
+  projects, 
+  currentPath, 
+  navigateTo 
+}: { 
+  categories: Category[], 
+  projects: Project[], 
+  currentPath: string, 
+  navigateTo: (path: string) => void 
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Determine active states based on URL path
+  const isProjectRoute = currentPath.startsWith('/project');
+  
+  const routeParts = useMemo(() => {
+    return currentPath.split('/').filter(Boolean);
+  }, [currentPath]);
+  
+  // routeParts: ['project', 'category-slug', 'project-slug']
+  const categorySlug = routeParts[1] ? decodeURIComponent(routeParts[1]) : null;
+  const projectSlug = routeParts[2] ? decodeURIComponent(routeParts[2]) : null;
+
+  const selectedCategory = useMemo(() => {
+    if (!categorySlug) return null;
+    return categories.find(c => c.slug === categorySlug || slugify(c.name) === slugify(categorySlug));
+  }, [categorySlug, categories]);
+
+  const selectedProject = useMemo(() => {
+    if (!selectedCategory || !projectSlug) return null;
+    return projects.find(p => 
+      p.categoryId === selectedCategory.id && 
+      (slugify(p.name) === slugify(projectSlug) || p.id === projectSlug)
+    );
+  }, [projectSlug, selectedCategory, projects]);
 
   useEffect(() => {
-    if (selectedProject) {
+    if (isProjectRoute) {
       document.body.style.overflow = 'hidden';
       (window as any).lenis?.stop();
     } else {
@@ -3290,54 +3410,69 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
       document.body.style.overflow = '';
       (window as any).lenis?.start();
     };
-  }, [selectedProject]);
+  }, [isProjectRoute]);
 
   // Filter for published projects only (or projects without status field for backward compatibility)
-  const publishedProjects = projects.filter(p => !p.status || p.status === 'published');
+  const publishedProjects = useMemo(() => {
+    return projects.filter(p => !p.status || p.status === 'published');
+  }, [projects]);
 
-  const categoryProjects = selectedCategory 
-    ? publishedProjects.filter(p => p.categoryId === selectedCategory.id)
-    : [];
+  const categoryProjects = useMemo(() => {
+    return selectedCategory 
+      ? publishedProjects.filter(p => p.categoryId === selectedCategory.id)
+      : [];
+  }, [selectedCategory, publishedProjects]);
+
+  // Search filter
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return publishedProjects.filter(p => 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [searchQuery, publishedProjects]);
 
   return (
-    <section id="portfolio" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-      <div className="max-w-[1600px] mx-auto w-full relative z-10 px-6">
-        <div className="text-center mb-20">
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6"
-          >
-            <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Selected Work</span>
-          </motion.div>
-          
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-slate-900 tracking-tight"
-          >
-            MY <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">PORTFOLIO</span>
-          </motion.h2>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-slate-500 max-w-2xl mx-auto text-lg md:text-xl font-light leading-relaxed"
-          >
-            Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs that help brands communicate better with their audience.
-          </motion.p>
-        </div>        
-        {!selectedCategory ? (
+    <>
+      {/* 1. MAIN HOMEPAGE SECTION (Only visible on home / other paths, hidden inside /project) */}
+      <section id="portfolio" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+        <div className="max-w-[1600px] mx-auto w-full relative z-10 px-6">
+          <div className="text-center mb-20">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6"
+            >
+              <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Selected Work</span>
+            </motion.div>
+            
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-slate-900 tracking-tight"
+            >
+              MY <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">PORTFOLIO</span>
+            </motion.h2>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-slate-500 max-w-2xl mx-auto text-lg md:text-xl font-light leading-relaxed"
+            >
+              Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs that help brands communicate better with their audience.
+            </motion.p>
+          </div>        
+
           <motion.div 
             layout
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-20 gap-x-10"
           >
-            {categories.map((cat) => {
+            {categories.slice(0, 3).map((cat) => {
               const catProjects = publishedProjects.filter(p => p.categoryId === cat.id);
               return (
                 <TiltCard key={cat.id}>
@@ -3348,7 +3483,7 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.5 }}
                     className="group relative w-full aspect-[4/3] cursor-pointer"
-                    onClick={() => setSelectedCategory(cat)}
+                    onClick={() => navigateTo(`/project/${cat.slug}`)}
                   >
                     {/* Sliding Papers (Projects) */}
                     <div className="absolute inset-x-6 top-6 bottom-6 z-10 flex justify-center pointer-events-none">
@@ -3367,7 +3502,6 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                               src={p.coverImage || undefined}
                               alt=""
                               className="w-full h-full object-cover"
-                              style={{ imageRendering: 'auto' }}
                               referrerPolicy="no-referrer"
                               loading="lazy"
                             />
@@ -3377,20 +3511,17 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
                     </div>
 
                     {/* Front of the Folder Cover */}
-                    <div className="absolute inset-0 z-20 bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-200 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:top-14 group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] group-hover:translate-y-2 group-hover:scale-115">
+                    <div className="absolute inset-0 z-20 bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:top-14 group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] group-hover:translate-y-2 group-hover:scale-115">
                       {cat.coverImage ? (
-                        <>
-                          <img 
-                            src={cat.coverImage} 
-                            alt={cat.name} 
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            style={{ imageRendering: 'auto' }}
-                            referrerPolicy="no-referrer"
-                            loading="lazy"
-                          />
-                        </>
+                        <img 
+                          src={cat.coverImage} 
+                          alt={cat.name} 
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          referrerPolicy="no-referrer"
+                          loading="lazy"
+                        />
                       ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-200 flex flex-col items-center justify-center p-8">
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex flex-col items-center justify-center p-8">
                           <Folder className="w-20 h-20 mb-4 text-brand-primary/30" />
                         </div>
                       )}
@@ -3405,73 +3536,290 @@ const Portfolio = ({ categories, projects }: { categories: Category[], projects:
               );
             })}
           </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+
+          {categories.length > 3 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-center mt-20"
+            >
               <button 
-                onClick={() => setSelectedCategory(null)}
-                className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-bold uppercase tracking-widest text-xs"
+                onClick={() => navigateTo('/project')}
+                className="group relative flex items-center gap-3 px-10 py-4 rounded-full bg-slate-900 text-white font-bold uppercase tracking-[0.2em] text-[10px] hover:scale-105 transition-all duration-500 shadow-2xl overflow-hidden"
               >
-                <ArrowLeft className="w-5 h-5 text-brand-primary" />
-                <span>Back to Folders</span>
+                <span className="relative z-10">View All Projects</span>
+                <div className="absolute inset-0 bg-brand-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </button>
-              <h3 className="text-2xl font-bold text-slate-900">Portfolio <span className="text-brand-primary">/</span> {selectedCategory.name}</h3>
-            </div>
+            </motion.div>
+          )}
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <AnimatePresence mode="popLayout">
-                {categoryProjects.map((project, idx) => (
-                  <motion.div
-                    key={project.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.4 }}
-                    className="group relative overflow-hidden rounded-3xl aspect-[4/3] glass cursor-pointer border-slate-200"
-                    onClick={() => setSelectedProject(project)}
-                  >
-                    <img 
-                      src={project.coverImage || undefined} 
-                      alt={project.name} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      style={{ imageRendering: 'auto' }}
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pt-16 pb-4 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end">
-                      <h3 className="text-lg font-bold text-white text-center drop-shadow-md">{project.name}</h3>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+          {categories.length === 0 && (
+            <div className="text-center py-20 bg-white border border-slate-200 rounded-[3rem] shadow-sm">
+              <p className="text-slate-400 italic">No categories found. Add some in the admin panel!</p>
             </div>
+          )}
+        </div>
+      </section>
 
-            {categoryProjects.length === 0 && (
-              <div className="text-center py-20 bg-white border border-slate-200 rounded-[3rem] mt-8 shadow-sm">
-                <p className="text-slate-400 italic">No projects found in this category.</p>
+      {/* 2. PREMIUM FULL-SCREEN PROJECT EXPLORER POPUP / WINDOW */}
+      <AnimatePresence>
+        {isProjectRoute && (
+          <motion.div
+            initial={{ opacity: 0, scale: 1.02 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.35, ease: "easeInOut" }}
+            className="fixed inset-0 z-50 bg-slate-50/98 dark:bg-slate-950/98 backdrop-blur-xl flex flex-col overflow-hidden text-slate-800 dark:text-slate-100"
+          >
+            {/* Header / Breadcrumb navigation bar */}
+            <div className="border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-4 flex items-center justify-between bg-white/70 dark:bg-slate-900/70 backdrop-blur-md relative z-30">
+              <div className="flex items-center gap-3 text-sm font-medium">
+                <button 
+                  onClick={() => navigateTo('/')}
+                  className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                >
+                  Home
+                </button>
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
+                <button 
+                  onClick={() => navigateTo('/project')}
+                  className={`${!selectedCategory ? 'text-brand-primary font-bold' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'} transition-colors`}
+                >
+                  All Folders
+                </button>
+                {selectedCategory && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
+                    <button 
+                      onClick={() => navigateTo(`/project/${selectedCategory.slug}`)}
+                      className={`${!selectedProject ? 'text-brand-primary font-bold' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'} transition-colors`}
+                    >
+                      {selectedCategory.name}
+                    </button>
+                  </>
+                )}
+                {selectedProject && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
+                    <span className="text-brand-primary font-bold truncate max-w-[150px]">
+                      {selectedProject.name}
+                    </span>
+                  </>
+                )}
               </div>
-            )}
+
+              <div className="flex items-center gap-4">
+                {/* Dynamic project search */}
+                <div className="relative hidden md:block">
+                  <input
+                    type="text"
+                    placeholder="Search projects..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-primary w-48 transition-all focus:w-64"
+                  />
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-sans">🔍</div>
+                </div>
+
+                <button 
+                  onClick={() => navigateTo('/')}
+                  className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:scale-105 transition-all shadow-sm"
+                  title="Close Project Window"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Main scrollable body */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-12">
+              <div className="max-w-[1400px] mx-auto w-full">
+                
+                {/* Search query layout */}
+                {searchQuery.trim() ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-8 border-b border-slate-100 dark:border-slate-900 pb-4">
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
+                        Search Results for "{searchQuery}"
+                      </h3>
+                      <button 
+                        onClick={() => setSearchQuery('')}
+                        className="text-xs text-brand-primary hover:underline font-bold"
+                      >
+                        Clear Search
+                      </button>
+                    </div>
+
+                    {searchResults.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {searchResults.map((p) => {
+                          const catOfProj = categories.find(c => c.id === p.categoryId);
+                          return (
+                            <motion.div
+                              key={p.id}
+                              whileHover={{ y: -6 }}
+                              className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl overflow-hidden shadow-sm cursor-pointer"
+                              onClick={() => navigateTo(`/project/${catOfProj?.slug || 'unknown'}/${slugify(p.name)}`)}
+                            >
+                              <div className="aspect-video overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
+                                <img
+                                  src={p.coverImage}
+                                  alt={p.name}
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                  loading="lazy"
+                                />
+                              </div>
+                              <div className="p-4">
+                                <span className="text-[10px] font-bold text-brand-primary tracking-wider uppercase">
+                                  {catOfProj?.name || "Folder"}
+                                </span>
+                                <h4 className="font-bold text-slate-800 dark:text-slate-200 mt-1 truncate">
+                                  {p.name}
+                                </h4>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-150 dark:border-slate-850">
+                        <p className="text-slate-400 dark:text-slate-500 italic">
+                          No matching projects found. Try different keywords!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {/* Folder Root View (No folder selected) */}
+                    {!selectedCategory ? (
+                      <div className="space-y-12">
+                        <div className="text-center max-w-xl mx-auto space-y-3">
+                          <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                            PROJECT <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic">DIRECTORY</span>
+                          </h2>
+                          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+                            Welcome to my comprehensive works archive. Click on any of the folders below to explore custom project showcase galleries.
+                          </p>
+                        </div>
+
+                        {/* Beautiful grid of all folders */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-10 pt-4">
+                          {categories.map((cat) => {
+                            const catProjects = publishedProjects.filter(p => p.categoryId === cat.id);
+                            return (
+                              <TiltCard key={cat.id}>
+                                <motion.div
+                                  layout
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className="group relative w-full aspect-[4/3] cursor-pointer"
+                                  onClick={() => navigateTo(`/project/${cat.slug}`)}
+                                >
+                                  {/* Sliding Papers */}
+                                  <div className="absolute inset-x-6 top-6 bottom-6 z-10 flex justify-center pointer-events-none">
+                                    {catProjects.slice(0, 3).map((p, i) => (
+                                      <div
+                                        key={p.id}
+                                        className={`absolute bottom-0 w-full aspect-video bg-white p-1 rounded-xl shadow-xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] opacity-0 group-hover:opacity-100 border border-slate-200/50
+                                          ${i === 0 ? 'group-hover:-translate-y-28 group-hover:-rotate-3 group-hover:scale-[1.08] group-hover:shadow-2xl' : 
+                                            i === 1 ? 'group-hover:-translate-y-24 group-hover:rotate-2 group-hover:scale-[1.03] group-hover:shadow-xl' : 
+                                            'group-hover:-translate-y-20 group-hover:rotate-6 group-hover:scale-95 group-hover:shadow-lg'}
+                                        `}
+                                        style={{ zIndex: 10 + i }}
+                                      >
+                                        <div className="w-full h-full overflow-hidden rounded-lg">
+                                          <img
+                                            src={p.coverImage || undefined}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                            referrerPolicy="no-referrer"
+                                            loading="lazy"
+                                          />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  {/* Folder Front */}
+                                  <div className="absolute inset-0 z-20 bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:top-14 group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] group-hover:translate-y-2 group-hover:scale-115">
+                                    {cat.coverImage ? (
+                                      <img 
+                                        src={cat.coverImage} 
+                                        alt={cat.name} 
+                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                        referrerPolicy="no-referrer"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex flex-col items-center justify-center p-8">
+                                        <Folder className="w-20 h-20 mb-4 text-brand-primary/30" />
+                                      </div>
+                                    )}
+                                    
+                                    <div className="absolute inset-0 p-8 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
+                                      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                                      <h3 className="text-sm font-medium text-white tracking-widest uppercase text-center pb-0 mb-[-25px] transition-colors z-10">{cat.name}</h3>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              </TiltCard>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Active Folder Content View */
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                          <button 
+                            onClick={() => navigateTo('/project')}
+                            className="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors font-bold uppercase tracking-widest text-xs"
+                          >
+                            <ArrowLeft className="w-5 h-5 text-brand-primary" />
+                            <span>Back to Folders</span>
+                          </button>
+                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                            Portfolio <span className="text-brand-primary">/</span> {selectedCategory.name}
+                          </h3>
+                        </div>
+
+                        <div className="py-12">
+                          <PerspectiveCarousel 
+                            projects={categoryProjects} 
+                            onProjectClick={(p) => navigateTo(`/project/${selectedCategory.slug}/${slugify(p.name)}`)} 
+                          />
+                        </div>
+
+                        {categoryProjects.length === 0 && (
+                          <div className="text-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] mt-8 shadow-sm">
+                            <p className="text-slate-400 dark:text-slate-500 italic">No projects found in this category.</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Immersive project viewer modal synced directly to deep URLs */}
+            <AnimatePresence>
+              {selectedProject && (
+                <ProjectModal 
+                  project={selectedProject} 
+                  onClose={() => navigateTo(`/project/${selectedCategory?.slug}`)} 
+                />
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
-
-        {categories.length === 0 && !selectedCategory && (
-          <div className="text-center py-20 bg-white border border-slate-200 rounded-[3rem] shadow-sm">
-            <p className="text-slate-400 italic">No categories found. Add some in the admin panel!</p>
-          </div>
-        )}
-      </div>
-
-      <AnimatePresence>
-        {selectedProject && (
-          <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
-        )}
       </AnimatePresence>
-    </section>
+    </>
   );
 };
 
@@ -3871,7 +4219,7 @@ const Contact = () => {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-[32px] xs:text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-8 text-white tracking-tight leading-[1.3] xs:leading-[1.2] sm:leading-[1.1] drop-shadow-xl"
+          className="text-[32px] xs:text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-8 text-white !text-white tracking-tight leading-[1.3] xs:leading-[1.2] sm:leading-[1.1] drop-shadow-xl"
         >
           Let's Talk About <br />
           Your Project
@@ -3881,7 +4229,7 @@ const Contact = () => {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-white/90 text-lg md:text-xl lg:text-2xl mb-12 max-w-4xl mx-auto font-light leading-relaxed drop-shadow-md flex flex-col gap-2"
+          className="text-white/90 !text-white/90 text-lg md:text-xl lg:text-2xl mb-12 max-w-4xl mx-auto font-light leading-relaxed drop-shadow-md flex flex-col gap-2"
         >
           <span>Feel free to reach out for collaborations or just a friendly hello.</span>
           <span>I'm always open to discussing new projects and creative ideas.</span>
@@ -4707,6 +5055,220 @@ const STATIC_STATS = [
   { id: '3', label: 'Reviews', value: '4.2+', type: 'reviews' },
 ];
 
+const playMelodicTune = (frequency: number) => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    
+    const audioCtx = new AudioContextClass();
+    
+    // Main warm base tone (Sine wave)
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    
+    // Sparkly crystal chime overtone (Octave harmonic for premium feel)
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    
+    const filter = audioCtx.createBiquadFilter();
+    
+    osc1.type = 'sine'; 
+    osc1.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+    
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(frequency * 2, audioCtx.currentTime); // Pure crystalline octave
+    
+    // Soft attack and luxurious ambient release for main tone
+    gain1.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain1.gain.linearRampToValueAtTime(0.07, audioCtx.currentTime + 0.15);
+    gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3.2);
+    
+    // Sparkly short burst for the octave chime
+    gain2.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain2.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 0.05);
+    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+    
+    // Smooth filter sweep
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1800, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 2.5);
+    filter.Q.value = 1.2;
+    
+    osc1.connect(gain1);
+    gain1.connect(filter);
+    
+    osc2.connect(gain2);
+    gain2.connect(filter);
+    
+    filter.connect(audioCtx.destination);
+    
+    osc1.start();
+    osc2.start();
+    
+    osc1.stop(audioCtx.currentTime + 3.2);
+    osc2.stop(audioCtx.currentTime + 3.2);
+    
+    setTimeout(() => audioCtx.close(), 3800);
+  } catch (e) {
+    console.error("Audio failed", e);
+  }
+};
+
+const InteractiveGuitarTicker = ({ themeStyles }: { themeStyles: any }) => {
+  const [plucks, setPlucks] = useState<{ [key: number]: { x: number, intensity: number, direction: number, time: number } }>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const pathsRef = useRef<(SVGPathElement | null)[]>([]);
+  const lastYRef = useRef<number | null>(null);
+
+  // Generate 36 strings evenly spaced
+  const strings = useMemo(() => Array.from({ length: 36 }).map((_, i) => ({
+    y: 2 + (i * (96 / 35)), // 2% to 98%
+    freq: 130.81 * Math.pow(1.059463, i) // C3 as base, musical scale
+  })), []);
+
+  useAnimationFrame((time) => {
+    strings.forEach((string, i) => {
+      const pluck = plucks[i];
+      const path = pathsRef.current[i];
+      if (!path) return;
+
+      if (!pluck || pluck.intensity <= 0.05) {
+        path.setAttribute('d', `M 0 ${string.y} L 1000 ${string.y}`);
+        return;
+      }
+
+      const elapsed = (time - pluck.time) / 1000;
+      const decay = Math.exp(-elapsed * 5); // Slower movement decay for longer sound
+      const oscillation = Math.sin(elapsed * 50) * pluck.intensity * (pluck.direction || 1) * decay;
+      
+      const x = pluck.x;
+      const range = 100;
+
+      const d = `M 0 ${string.y} L ${x - range} ${string.y} Q ${x} ${string.y + oscillation} ${x + range} ${string.y} L 1000 ${string.y}`;
+      path.setAttribute('d', d);
+
+      if (decay < 0.01) {
+        setPlucks(prev => {
+          const next = { ...prev };
+          delete next[i];
+          return next;
+        });
+      }
+    });
+  });
+
+  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const clientX = ('touches' in e) ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = ('touches' in e) ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const virtualX = (x / rect.width) * 1000;
+    const virtualY = (y / rect.height) * 100;
+
+    if (lastYRef.current !== null) {
+      const prevY = lastYRef.current;
+      const deltaY = virtualY - prevY;
+      
+      if (Math.abs(deltaY) > 0.01) {
+        const direction = deltaY > 0 ? 1 : -1;
+
+        strings.forEach((string, i) => {
+          const minBound = Math.min(prevY, virtualY);
+          const maxBound = Math.max(prevY, virtualY);
+          
+          // Check if mouse crossed this string's Y coordinate or is extremely close
+          const isCrossing = string.y >= minBound && string.y <= maxBound;
+          const isExtremelyClose = Math.abs(virtualY - string.y) < 0.6;
+
+          if (isCrossing || isExtremelyClose) {
+            const lastPluck = plucks[i];
+            const now = performance.now();
+            // Debounce/cooldown to prevent double triggering same string instantly
+            if (!lastPluck || (now - lastPluck.time) > 150) {
+              setPlucks(prev => ({
+                ...prev,
+                [i]: { x: virtualX, intensity: 5, direction: direction, time: now }
+              }));
+              playMelodicTune(string.freq);
+            }
+          }
+        });
+      }
+    }
+    
+    lastYRef.current = virtualY;
+  };
+
+  const handleMouseLeave = () => {
+    lastYRef.current = null;
+  };
+
+  return (
+    <div 
+      ref={containerRef}
+      className="w-full bg-transparent relative select-none overflow-hidden h-64 md:h-96 flex items-center"
+      onMouseMove={handleMouseMove}
+      onTouchMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onTouchEnd={handleMouseLeave}
+    >
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 100" preserveAspectRatio="none">
+        <defs>
+          <pattern id="tickerTextPattern" x="0" y="0" width="2000" height="100" patternUnits="userSpaceOnUse">
+             <motion.g
+               animate={{ x: [0, -2000] }}
+               transition={{ duration: 45, ease: "linear", repeat: Infinity }}
+             >
+                <text 
+                  x="0" y="85" 
+                  fontSize="110" fontWeight="900" 
+                  textAnchor="start" fill="white" 
+                  className="uppercase font-sans"
+                  textLength="2000" lengthAdjust="spacing"
+                >
+                  WAHAB • GRAPHIC • WAHAB • GRAPHIC • 
+                </text>
+                <text 
+                  x="2000" y="85" 
+                  fontSize="110" fontWeight="900" 
+                  textAnchor="start" fill="white" 
+                  className="uppercase font-sans"
+                  textLength="2000" lengthAdjust="spacing"
+                >
+                  WAHAB • GRAPHIC • WAHAB • GRAPHIC • 
+                </text>
+             </motion.g>
+          </pattern>
+          <mask id="tickerMask">
+             <rect width="100%" height="100%" fill="url(#tickerTextPattern)" />
+          </mask>
+        </defs>
+
+        <g mask="url(#tickerMask)">
+          {strings.map((string, i) => (
+            <path
+              key={i}
+              ref={el => { pathsRef.current[i] = el; }}
+              d={`M 0 ${string.y} L 1000 ${string.y}`}
+              stroke={themeStyles.brandPrimary}
+              strokeWidth="0.05"
+              fill="none"
+              opacity="1"
+            />
+          ))}
+        </g>
+        
+        {/* Background text visibility set to 0 for pure string-mask effect */}
+        <rect width="100%" height="100%" fill="url(#tickerTextPattern)" opacity="0" />
+      </svg>
+    </div>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState<any | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -4717,6 +5279,63 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [stats, setStats] = useState<Stat[]>(STATIC_STATS);
+
+  const [currentPath, setCurrentPath] = useState(typeof window !== 'undefined' ? window.location.pathname : '/');
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('pushstate-changed', handleLocationChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('pushstate-changed', handleLocationChange);
+    };
+  }, []);
+
+  const navigateTo = (path: string) => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', path);
+      window.dispatchEvent(new Event('pushstate-changed'));
+    }
+  };
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
+  const [isThemeAnimating, setIsThemeAnimating] = useState(false);
+
+  const handleToggleTheme = () => {
+    playMechanicalClick();
+    
+    setIsThemeAnimating(true);
+
+    // Toggle theme halfway through the sweep
+    setTimeout(() => {
+      setIsDarkMode(!isDarkMode);
+    }, 450);
+
+    setTimeout(() => {
+      setIsThemeAnimating(false);
+    }, 1200);
+  };
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   const [themeStyles, setThemeStyles] = useState({
     brandPrimary: localStorage.getItem('style_brand_primary') || '#7c3ced',
@@ -5029,21 +5648,34 @@ export default function App() {
       {/* Premium film grain / noise overlay */}
       <div className="grain-overlay" />
       <AnimatePresence mode="wait">
-        {isInitialLoading && <Preloader key="preloader" />}
+        {isInitialLoading && <Preloader key="preloader" isDarkMode={isDarkMode} />}
       </AnimatePresence>
 
 
-      <GlobalBackground />
+      <ThemeTransitionOverlay isAnimating={isThemeAnimating} isDarkMode={isDarkMode} />
+      <GlobalBackground isDarkMode={isDarkMode} />
       <CustomCursor />
-      <Navbar isAdmin={isAdmin} onAdminClick={() => setShowAdmin(true)} onLogoSecretClick={handleLogoSecretClick} />
+      <Navbar 
+        isAdmin={isAdmin} 
+        onAdminClick={() => setShowAdmin(true)} 
+        onLogoSecretClick={handleLogoSecretClick}
+        isDarkMode={isDarkMode}
+        onToggleTheme={handleToggleTheme}
+      />
       <Hero stats={stats} />
       <About />
-      <Portfolio categories={categories} projects={projects} />
+      <Portfolio 
+        categories={categories} 
+        projects={projects} 
+        currentPath={currentPath}
+        navigateTo={navigateTo}
+      />
       <Skills />
       <Services />
       <Contact />
       <FAQ />
       <WhatClientsSaid />
+      
       
       <footer className="pt-12 pb-0 border-t border-slate-200/60 bg-white/80 backdrop-blur-md relative z-20 overflow-hidden">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
@@ -5073,32 +5705,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* Elegant Infinite Horizontal Ticker / Marquee (inspired by Racdox style watermark) */}
-        <div className="w-full overflow-hidden bg-slate-50/30 border-t border-slate-100/60 py-10 relative select-none">
-          <div className="flex w-full overflow-hidden">
-            <motion.div 
-              className="flex whitespace-nowrap gap-16 pr-16"
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{
-                ease: "linear",
-                duration: 75,
-                repeat: Infinity,
-              }}
-            >
-              {Array.from({ length: 12 }).map((_, i) => (
-                <span 
-                  key={i} 
-                  className="text-7xl md:text-9xl font-bold uppercase tracking-normal font-display flex items-center gap-16 select-none animate-pulse-slow"
-                  style={{
-                    color: `${themeStyles.brandPrimary}0b`, // Soft premium filled color (approx 4.5% opacity of brand primary)
-                  }}
-                >
-                  Wahab Graphic <span className="text-brand-primary/10 select-none">•</span>
-                </span>
-              ))}
-            </motion.div>
-          </div>
-        </div>
+        {/* Elegant Infinite Horizontal Ticker / Marquee with Interactive Guitar Strings */}
+        <InteractiveGuitarTicker themeStyles={themeStyles} />
       </footer>
 
       <AnimatePresence>
