@@ -2199,7 +2199,7 @@ const AdminDashboard = ({
 };
 
 // --- Project Modal Component ---
-const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => void }) => {
+const ProjectModal = ({ project, onClose, isDarkMode }: { project: Project, onClose: () => void, isDarkMode: boolean }) => {
   const [selectedImageIdx, setSelectedImageIdx] = useState<number | null>(null);
   const [selectedCanvasIdx, setSelectedCanvasIdx] = useState<number | null>(null);
   const [imageError, setImageError] = useState(false);
@@ -2319,11 +2319,15 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-slate-50/98 backdrop-blur-2xl"
+      className={`fixed inset-0 z-[100] backdrop-blur-2xl transition-colors duration-500 ${
+        isDarkMode ? 'bg-slate-950/98 text-slate-100' : 'bg-slate-50/98 text-slate-800'
+      }`}
     >
       <button 
         onClick={onClose}
-        className="fixed top-4 right-4 md:top-8 md:right-8 w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-slate-100 transition-all z-[110] border border-slate-200 shadow-xl"
+        className={`fixed top-4 right-4 md:top-8 md:right-8 w-12 h-12 rounded-full flex items-center justify-center transition-all z-[110] border shadow-xl ${
+          isDarkMode ? 'bg-slate-900 border-slate-850 text-white hover:bg-slate-800' : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-100'
+        }`}
       >
         <X className="w-6 h-6" />
       </button>
@@ -2333,8 +2337,12 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
         <div className="max-w-[1400px] mx-auto px-6 py-12">
           <div className="space-y-12">
           <div className="text-center space-y-4 pt-10">
-            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-slate-900">{project.name}</h2>
-            <p className="text-slate-500 text-lg max-w-2xl mx-auto">{project.description}</p>
+            <h2 className={`text-4xl md:text-6xl font-black uppercase tracking-tighter ${
+              isDarkMode ? 'text-white' : 'text-slate-900'
+            }`}>{project.name}</h2>
+            <p className={`text-lg max-w-2xl mx-auto ${
+              isDarkMode ? 'text-slate-400' : 'text-slate-500'
+            }`}>{project.description}</p>
           </div>
 
           <div className="space-y-8">
@@ -2383,7 +2391,9 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
                 {project.images.map((img, idx) => (
                   <div 
                     key={idx} 
-                    className="rounded-[2rem] overflow-hidden bg-white border border-slate-200 shadow-xl break-inside-avoid cursor-pointer group relative"
+                    className={`rounded-[2rem] overflow-hidden border shadow-xl break-inside-avoid cursor-pointer group relative ${
+                      isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+                    }`}
                     onClick={() => setSelectedImageIdx(idx)}
                   >
                     <img src={img || undefined} referrerPolicy="no-referrer" className="w-full h-auto group-hover:scale-105 transition-transform duration-500" alt={`${project.name} - ${idx + 1}`} />
@@ -2397,7 +2407,7 @@ const ProjectModal = ({ project, onClose }: { project: Project, onClose: () => v
               </div>
             ) : (
               (!project.canvasData || project.canvasData.length === 0) && (
-                <div className="text-center text-gray-500 py-20">
+                <div className={`text-center py-20 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
                   No additional images available for this project.
                 </div>
               )
@@ -3365,12 +3375,16 @@ const Portfolio = ({
   categories, 
   projects, 
   currentPath, 
-  navigateTo 
+  navigateTo,
+  isDarkMode,
+  onToggleTheme
 }: { 
   categories: Category[], 
   projects: Project[], 
   currentPath: string, 
-  navigateTo: (path: string) => void 
+  navigateTo: (path: string) => void,
+  isDarkMode: boolean,
+  onToggleTheme?: () => void
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -3569,30 +3583,48 @@ const Portfolio = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.02 }}
             transition={{ duration: 0.35, ease: "easeInOut" }}
-            className="fixed inset-0 z-50 bg-slate-50/98 dark:bg-slate-950/98 backdrop-blur-xl flex flex-col overflow-hidden text-slate-800 dark:text-slate-100"
+            className={`fixed inset-0 z-50 backdrop-blur-xl flex flex-col overflow-hidden transition-colors duration-500 ${
+              isDarkMode 
+                ? "bg-slate-950/98 text-slate-100" 
+                : "bg-slate-50/98 text-slate-800"
+            }`}
           >
             {/* Header / Breadcrumb navigation bar */}
-            <div className="border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-4 flex items-center justify-between bg-white/70 dark:bg-slate-900/70 backdrop-blur-md relative z-30">
+            <div className={`border-b px-6 py-4 flex items-center justify-between backdrop-blur-md relative z-30 transition-colors duration-500 ${
+              isDarkMode 
+                ? "border-slate-850/80 bg-slate-900/70" 
+                : "border-slate-200/80 bg-white/70"
+            }`}>
               <div className="flex items-center gap-3 text-sm font-medium">
                 <button 
                   onClick={() => navigateTo('/')}
-                  className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  className={`transition-colors ${
+                    isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"
+                  }`}
                 >
                   Home
                 </button>
-                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
+                <ChevronRight className={`w-4 h-4 ${isDarkMode ? "text-slate-700" : "text-slate-300"}`} />
                 <button 
                   onClick={() => navigateTo('/project')}
-                  className={`${!selectedCategory ? 'text-brand-primary font-bold' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'} transition-colors`}
+                  className={`${
+                    !selectedCategory 
+                      ? 'text-brand-primary font-bold' 
+                      : (isDarkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+                  } transition-colors`}
                 >
                   All Folders
                 </button>
                 {selectedCategory && (
                   <>
-                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
+                    <ChevronRight className={`w-4 h-4 ${isDarkMode ? "text-slate-700" : "text-slate-300"}`} />
                     <button 
                       onClick={() => navigateTo(`/project/${selectedCategory.slug}`)}
-                      className={`${!selectedProject ? 'text-brand-primary font-bold' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'} transition-colors`}
+                      className={`${
+                        !selectedProject 
+                          ? 'text-brand-primary font-bold' 
+                          : (isDarkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+                      } transition-colors`}
                     >
                       {selectedCategory.name}
                     </button>
@@ -3600,7 +3632,7 @@ const Portfolio = ({
                 )}
                 {selectedProject && (
                   <>
-                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
+                    <ChevronRight className={`w-4 h-4 ${isDarkMode ? "text-slate-700" : "text-slate-300"}`} />
                     <span className="text-brand-primary font-bold truncate max-w-[150px]">
                       {selectedProject.name}
                     </span>
@@ -3616,14 +3648,26 @@ const Portfolio = ({
                     placeholder="Search projects..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-primary w-48 transition-all focus:w-64"
+                    className={`pl-9 pr-4 py-1.5 rounded-full border text-xs focus:outline-none focus:ring-1 focus:ring-brand-primary w-48 transition-all focus:w-64 ${
+                      isDarkMode 
+                        ? "border-slate-800 bg-slate-900/80 text-slate-200" 
+                        : "border-slate-200 bg-white/80 text-slate-700"
+                    }`}
                   />
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-sans">🔍</div>
                 </div>
 
+                {onToggleTheme && (
+                  <ThemeToggleButton isDarkMode={isDarkMode} onToggle={onToggleTheme} />
+                )}
+
                 <button 
                   onClick={() => navigateTo('/')}
-                  className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:scale-105 transition-all shadow-sm"
+                  className={`p-2 rounded-full hover:scale-105 transition-all shadow-sm ${
+                    isDarkMode 
+                      ? "bg-slate-800 text-slate-400 hover:text-white" 
+                      : "bg-slate-100 text-slate-500 hover:text-slate-900"
+                  }`}
                   title="Close Project Window"
                 >
                   <X className="w-5 h-5" />
@@ -3639,7 +3683,10 @@ const Portfolio = ({
                 {searchQuery.trim() ? (
                   <div>
                     <div className="flex items-center justify-between mb-8 border-b border-slate-100 dark:border-slate-900 pb-4">
-                      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
+                      <h3 
+                        className="text-xl font-bold"
+                        style={{ color: isDarkMode ? '#e2e8f0' : '#1e293b' }}
+                      >
                         Search Results for "{searchQuery}"
                       </h3>
                       <button 
@@ -3696,7 +3743,10 @@ const Portfolio = ({
                     {!selectedCategory ? (
                       <div className="space-y-12">
                         <div className="text-center max-w-xl mx-auto space-y-3">
-                          <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                          <h2 
+                            className="text-3xl md:text-4xl font-black tracking-tight"
+                            style={{ color: isDarkMode ? '#ffffff' : '#0f172a' }}
+                          >
                             PROJECT <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic">DIRECTORY</span>
                           </h2>
                           <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
@@ -3783,7 +3833,10 @@ const Portfolio = ({
                             <ArrowLeft className="w-5 h-5 text-brand-primary" />
                             <span>Back to Folders</span>
                           </button>
-                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                          <h3 
+                            className="text-2xl font-bold"
+                            style={{ color: isDarkMode ? '#ffffff' : '#0f172a' }}
+                          >
                             Portfolio <span className="text-brand-primary">/</span> {selectedCategory.name}
                           </h3>
                         </div>
@@ -3813,6 +3866,7 @@ const Portfolio = ({
                 <ProjectModal 
                   project={selectedProject} 
                   onClose={() => navigateTo(`/project/${selectedCategory?.slug}`)} 
+                  isDarkMode={isDarkMode}
                 />
               )}
             </AnimatePresence>
@@ -5669,6 +5723,8 @@ export default function App() {
         projects={projects} 
         currentPath={currentPath}
         navigateTo={navigateTo}
+        isDarkMode={isDarkMode}
+        onToggleTheme={handleToggleTheme}
       />
       <Skills />
       <Services />

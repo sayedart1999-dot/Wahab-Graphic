@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Project } from "../types";
@@ -14,17 +14,46 @@ export const PerspectiveCarousel: React.FC<PerspectiveCarouselProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastScrollTime, setLastScrollTime] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
 
   const handleNext = () => {
+    if (projects.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % projects.length);
   };
 
   const handlePrev = () => {
+    if (projects.length === 0) return;
     setCurrentIndex((prev) => (prev - 1 + projects.length) % projects.length);
+  };
+
+  // Touch handlers for mobile swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStart === null || projects.length === 0) return;
+    const currentTouch = e.targetTouches[0].clientX;
+    const diff = touchStart - currentTouch;
+
+    // Minimum swipe distance of 50px
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+      setTouchStart(null);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStart(null);
   };
 
   // Add scroll handler with lock logic
   const handleWheel = (e: WheelEvent) => {
+    if (projects.length === 0) return;
     const container = e.currentTarget as HTMLElement;
     const rect = container.getBoundingClientRect();
     
@@ -40,29 +69,21 @@ export const PerspectiveCarousel: React.FC<PerspectiveCarouselProps> = ({
 
     const now = Date.now();
     if (now - lastScrollTime < 400) {
-      // If we are debouncing but still over the component, we might want to prevent default 
-      // to avoid page jitter if we haven't reached boundaries.
-      // However, it's safer to just return and let the previous logic handle it.
+      // Debounce window
+      if (e.cancelable) e.preventDefault();
+      return;
     }
 
     if (e.deltaY > 0) {
-      // Scrolling down
-      if (currentIndex < projects.length - 1) {
-        if (now - lastScrollTime >= 400) {
-          setCurrentIndex(prev => prev + 1);
-          setLastScrollTime(now);
-        }
-        if (e.cancelable) e.preventDefault();
-      }
+      // Scrolling down - infinite next
+      setCurrentIndex(prev => (prev + 1) % projects.length);
+      setLastScrollTime(now);
+      if (e.cancelable) e.preventDefault();
     } else if (e.deltaY < 0) {
-      // Scrolling up
-      if (currentIndex > 0) {
-        if (now - lastScrollTime >= 400) {
-          setCurrentIndex(prev => prev - 1);
-          setLastScrollTime(now);
-        }
-        if (e.cancelable) e.preventDefault();
-      }
+      // Scrolling up - infinite prev
+      setCurrentIndex(prev => (prev - 1 + projects.length) % projects.length);
+      setLastScrollTime(now);
+      if (e.cancelable) e.preventDefault();
     }
   };
 
@@ -83,9 +104,13 @@ export const PerspectiveCarousel: React.FC<PerspectiveCarouselProps> = ({
   return (
     <div 
       id="perspective-carousel-container"
-      className="relative w-full min-h-[500px] flex flex-col items-center justify-center select-none overflow-visible py-20"
+      className="relative w-full min-h-[550px] flex flex-col items-center justify-center select-none overflow-visible py-16"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
-      <div className="relative w-full h-full flex items-center justify-center [perspective:1500px] [transform-style:preserve-3d]">
+      {/* 3D Stage Container */}
+      <div className="relative w-full h-[320px] sm:h-[380px] md:h-[420px] flex items-center justify-center [perspective:1500px] [transform-style:preserve-3d]">
         <AnimatePresence initial={false} mode="popLayout">
           {projects.map((project, i) => {
             // Logic for a relative index to keep active in middle
@@ -112,7 +137,7 @@ export const PerspectiveCarousel: React.FC<PerspectiveCarouselProps> = ({
                   z: absIndex * -150, // Depth
                   rotateY: relativeIndex * -35, // Perspective rotation
                   scale: 1 - absIndex * 0.12,
-                  opacity: 1 - absIndex * 0.4,
+                  opacity: 1,
                   zIndex: 10 - absIndex,
                 }}
                 transition={{
@@ -138,7 +163,7 @@ export const PerspectiveCarousel: React.FC<PerspectiveCarouselProps> = ({
                   />
                   
                   {/* Overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-500 ${i === currentIndex ? 'opacity-100' : 'opacity-0'}`}>
+                  <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-500 opacity-0 ${i === currentIndex ? 'group-hover:opacity-100' : 'pointer-events-none'}`}>
                     <div className="absolute inset-0 p-8 flex flex-col justify-end">
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -165,6 +190,39 @@ export const PerspectiveCarousel: React.FC<PerspectiveCarouselProps> = ({
             );
           })}
         </AnimatePresence>
+      </div>
+
+      {/* Navigation Controls (Chevron Buttons & Pagination Dots) */}
+      <div className="flex items-center justify-center gap-6 mt-16 z-30 relative">
+        <button
+          onClick={handlePrev}
+          className="p-3 sm:p-4 rounded-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-brand-primary dark:hover:text-brand-primary hover:scale-110 active:scale-95 transition-all duration-300 shadow-lg cursor-pointer"
+          aria-label="Previous Project"
+        >
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
+        
+        {/* Progress indicator dots */}
+        <div className="flex gap-1.5 px-4 py-2 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800/60 shadow-sm backdrop-blur-sm">
+          {projects.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentIndex(idx)}
+              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                idx === currentIndex ? "w-6 bg-brand-primary" : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={handleNext}
+          className="p-3 sm:p-4 rounded-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-brand-primary dark:hover:text-brand-primary hover:scale-110 active:scale-95 transition-all duration-300 shadow-lg cursor-pointer"
+          aria-label="Next Project"
+        >
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
       </div>
     </div>
   );
