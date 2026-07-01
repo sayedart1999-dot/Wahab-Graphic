@@ -4,7 +4,65 @@ import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useS
 import { arrayMove, SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionTemplate, useAnimation, useAnimationFrame } from 'motion/react';
-import { Palette, Layers, LayoutGrid as Layout, Send, Github, Twitter, Linkedin, Instagram, Facebook, MessageCircle, ExternalLink, Menu, X, User as UserIcon, ChevronRight, Monitor, Smartphone, PenTool, Award, Mail, Quote, Plus, Minus, RotateCcw, Trash2, CreditCard as Edit2, FolderPlus, Image as ImageIcon, LogOut, LogIn, ChevronLeft, Eye, Upload, FileText, Folder, ArrowLeft, ArrowUp, ArrowDown, Undo2, Redo2, Loader as Loader2, Check, ShieldCheck, CircleAlert as AlertCircle, Triangle, Square, Circle, ArrowRight, FolderOpen, Save, ChartBar as BarChart3, Clock, ChevronDown, Settings, Phone, Moon, Sun } from 'lucide-react';
+import { 
+  Palette, 
+  Layers, 
+  Layout, 
+  Send, 
+  Github, 
+  Twitter, 
+  Linkedin, 
+  Instagram, 
+  Facebook,
+  MessageCircle,
+  ExternalLink, 
+  Menu, 
+  X, 
+  User as UserIcon,
+  ChevronRight,
+  Monitor,
+  Smartphone,
+  PenTool,
+  Award,
+  Mail,
+  Quote,
+  Plus,
+  Minus,
+  RotateCcw,
+  Trash2,
+  Edit2,
+  FolderPlus,
+  Image as ImageIcon,
+  LogOut,
+  LogIn,
+  ChevronLeft,
+  Eye,
+  Upload,
+  FileText,
+  Folder,
+  ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  Undo2,
+  Redo2,
+  Loader2,
+  Check,
+  ShieldCheck,
+  AlertCircle,
+  Triangle,
+  Square,
+  Circle,
+  ArrowRight,
+  FolderOpen,
+  Save,
+  BarChart3,
+  Clock,
+  ChevronDown,
+  Settings,
+  Phone,
+  Moon,
+  Sun
+} from 'lucide-react';
 import { PerspectiveCarousel } from './components/PerspectiveCarousel';
 import { supabase } from './lib/supabase';
 import { Project, Category, Stat, Skill, Service, CanvasItem } from './types';
@@ -3026,9 +3084,9 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
   };
 
   return (
-    <section id="home" className="relative min-h-auto md:min-h-[90vh] flex items-center pt-16 md:pt-20 pb-8 md:pb-0 overflow-hidden">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 relative z-10 w-full pt-6 md:pt-10">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-8 items-center">
+    <section id="home" className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden">
+      <div className="max-w-[1600px] mx-auto px-6 relative z-10 w-full pt-10">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -3046,12 +3104,12 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             </div>
           </motion.div>
 
-          <div className="mb-4 flex items-baseline flex-wrap">
-            <span className="text-lg md:text-2xl font-light text-slate-500 tracking-tight">Hi, I am </span>
-            <span className="text-3xl sm:text-4xl md:text-6xl font-script font-semibold text-brand-primary ml-2 sm:ml-3">Abdul Wahab</span>
+          <div className="mb-6 flex items-baseline flex-wrap">
+            <span className="text-xl md:text-2xl font-light text-slate-500 tracking-tight">Hi, I am </span>
+            <span className="text-4xl sm:text-5xl md:text-6xl font-script font-semibold text-brand-primary ml-3">Abdul Wahab</span>
           </div>
-
-          <h1 className="text-[2.5rem] xs:text-[3rem] sm:text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.05] xs:leading-none md:leading-[1.02] mb-4 md:mb-6 tracking-tight uppercase text-slate-900">
+          
+          <h1 className="text-[40px] xs:text-[50px] sm:text-7xl md:text-8xl xl:text-[9rem] font-bold leading-[1.05] xs:leading-none md:leading-[1.02] mb-6 tracking-normal uppercase text-slate-900 drop-shadow-sm">
             <motion.span
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -3070,40 +3128,40 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             </motion.span>
           </h1>
           
-          <p className="text-slate-500 text-base md:text-lg lg:text-xl max-w-xl mb-6 md:mb-10 leading-relaxed font-light">
+          <p className="text-slate-500 text-lg md:text-xl max-w-xl mb-10 leading-relaxed font-light">
             I create <span className="font-medium text-slate-800">modern, clean, and impactful</span> designs that help brands stand out and communicate their message clearly.
           </p>
           
-          <div className="flex flex-row items-center gap-2 sm:gap-4 mb-6 w-full">
-            <a
-              href="#portfolio"
+          <div className="flex flex-row items-center gap-2.5 sm:gap-4 mb-6 w-full max-w-md sm:max-w-none">
+            <a 
+              href="#portfolio" 
               onClick={(e) => scrollToSectionHelper('portfolio', e)}
-              className="group relative overflow-hidden flex-1 sm:flex-none px-4 sm:px-8 py-3 sm:py-4 bg-slate-900 text-white font-bold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wider uppercase hover:shadow-2xl shrink-0 text-center"
+              className="group relative overflow-hidden flex-[1.4] sm:flex-none px-5 sm:px-8 py-3.5 sm:py-4 bg-slate-900 text-white font-bold rounded-full hover:scale-105 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-widest uppercase hover:shadow-2xl hover:shadow-slate-900/20 shrink-0 text-center whitespace-nowrap"
             >
-              <span className="relative z-10 flex items-center gap-2">WORK <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
+              <span className="relative z-10 flex items-center gap-1 sm:gap-2">EXPLORE WORK <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" /></span>
               <div className="absolute inset-0 bg-brand-primary transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out z-0"></div>
             </a>
-            <a
-              href="#contact"
+            <a 
+              href="#contact" 
               onClick={(e) => scrollToSectionHelper('contact', e)}
-              className="flex-1 sm:flex-none px-4 sm:px-8 py-3 sm:py-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-full hover:bg-slate-50 hover:text-brand-primary hover:border-brand-primary/30 transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wider uppercase shrink-0 text-center"
+              className="flex-[0.8] sm:flex-none px-5 sm:px-8 py-3.5 sm:py-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-full hover:bg-slate-50 hover:text-brand-primary hover:border-brand-primary/30 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-3 text-xs sm:text-sm tracking-widest uppercase shrink-0 text-center whitespace-nowrap"
             >
-              CONTACT
+              LET'S COLLABORATING
             </a>
           </div>
 
-          {/* Stats Card */}
-          <div className="glass px-3 py-3 sm:px-6 sm:py-4 rounded-2xl border-slate-200 shadow-lg flex flex-row items-center justify-between gap-2 sm:gap-6 w-full sm:w-auto overflow-x-auto no-scrollbar">
+          {/* Horizontal Stats Card */}
+          <div className="glass px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl border-slate-200 shadow-lg flex flex-row items-center justify-between sm:justify-start gap-2.5 sm:gap-6 z-30 w-full sm:w-fit">
             {stats.map((stat) => (
-              <div key={stat.id} className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brand-primary/10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
+              <div key={stat.id} className="flex items-center gap-1.5 sm:gap-3">
+                <div className="w-7 h-7 sm:w-10 sm:h-10 bg-brand-primary/10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
                   {stat.type === 'projects' && <Palette className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary" />}
                   {stat.type === 'clients' && <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary" />}
                   {stat.type === 'reviews' && <Award className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary" />}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm sm:text-lg font-bold text-slate-900 leading-tight">{stat.value}</p>
-                  <p className="text-[10px] sm:text-xs text-slate-500 font-medium tracking-wide truncate">{stat.label}</p>
+                  <p className="text-xs sm:text-lg font-bold text-slate-900 leading-tight">{stat.value}</p>
+                  <p className="text-[9px] sm:text-xs text-slate-400 font-medium tracking-wide truncate">{stat.label}</p>
                 </div>
               </div>
             ))}
@@ -3114,15 +3172,15 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
           initial={{ opacity: 0, scale: 0.8 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
-          className="order-1 lg:order-2 relative flex justify-center items-center h-[280px] sm:h-[350px] md:h-[450px] lg:h-[600px] w-full"
+          className="order-1 lg:order-2 relative flex justify-center items-center h-[380px] sm:h-[450px] lg:h-[600px] w-full"
         >
-          {/* Circular Trails - Hidden on mobile */}
-          <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] border border-brand-primary/10 rounded-full pointer-events-none" />
-          <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[550px] md:h-[550px] border border-brand-primary/5 rounded-full pointer-events-none" />
-          <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[400px] md:h-[400px] border border-brand-primary/5 rounded-full pointer-events-none" />
+          {/* Circular Trails - Now centered with the avatar */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] sm:w-[500px] sm:h-[500px] md:w-[700px] md:h-[700px] border border-brand-primary/10 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[240px] h-[240px] sm:w-[400px] sm:h-[400px] md:w-[550px] md:h-[550px] border border-brand-primary/5 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180px] h-[180px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] border border-brand-primary/5 rounded-full pointer-events-none" />
 
-          {/* Floating 3D Icons - Hidden on mobile */}
-          <div className="hidden md:block absolute inset-0 pointer-events-none">
+          {/* Floating 3D Icons */}
+          <div className="absolute inset-0 pointer-events-none">
             {/* Ai Icon */}
             <motion.div 
               animate={{ y: [0, -20, 0], rotate: [0, 10, 0] }}
@@ -3160,32 +3218,32 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
             </motion.div>
           </div>
 
-          <div className="relative z-10 w-full max-w-[260px] sm:max-w-[320px] md:max-w-md">
-            <motion.div
+          <div className="relative z-10 w-full max-w-[320px] md:max-w-md">
+            <motion.div 
               initial={{ opacity: 0, y: 50 }}
-              animate={{
-                opacity: 1,
+              animate={{ 
+                opacity: 1, 
                 y: [0, -15, 0],
               }}
-              transition={{
+              transition={{ 
                 opacity: { duration: 1 },
-                y: {
-                  repeat: Infinity,
-                  duration: 5,
-                  ease: "easeInOut"
+                y: { 
+                  repeat: Infinity, 
+                  duration: 5, 
+                  ease: "easeInOut" 
                 }
               }}
-              className="relative w-full rounded-3xl overflow-hidden"
+              className="relative w-full cursor-none rounded-3xl overflow-hidden"
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
-              <img
-                src="https://i.imgur.com/NU9hpnH.png"
-                alt="Abdul Wahab"
-                className="w-full h-auto object-cover aspect-[4/5] rounded-3xl border-4 border-white/10 transition-all duration-300"
-                referrerPolicy="no-referrer"
-                loading="eager"
-              />
+        <img 
+          src="https://i.imgur.com/NU9hpnH.png" 
+          alt="Abdul Wahab" 
+          className="w-full h-auto object-cover aspect-[4/5] rounded-3xl border-4 border-white/10 transition-all duration-300"
+          referrerPolicy="no-referrer"
+          loading="eager"
+        />
               
               {isHovering && (
                 <div
@@ -3215,14 +3273,15 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
 
 const About = () => {
   return (
-    <section id="about" className="section-padding scroll-mt-20 relative px-4">
+    <section id="about" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 sm:px-6 md:px-8 xl:px-0">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
       <div className="max-w-[1400px] mx-auto w-full relative z-10">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true, margin: "-100px" }}
-          className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-lg rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 md:p-16 lg:p-20 overflow-hidden"
+          className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-2xl shadow-brand-primary/[0.03] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 md:p-16 lg:p-20 overflow-hidden"
         >
           <div className="grid lg:grid-cols-2 gap-16 items-center w-full">
             <div className="min-w-0">
@@ -3389,11 +3448,12 @@ const Portfolio = ({
 
   return (
     <>
-      {/* MAIN HOMEPAGE SECTION */}
-      <section id="portfolio" className="section-padding scroll-mt-20 relative px-4">
-        <div className="max-w-[1600px] mx-auto w-full relative z-10">
-          <div className="text-center mb-12 md:mb-20">
-            <motion.div
+      {/* 1. MAIN HOMEPAGE SECTION (Only visible on home / other paths, hidden inside /project) */}
+      <section id="portfolio" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+        <div className="max-w-[1600px] mx-auto w-full relative z-10 px-6">
+          <div className="text-center mb-20">
+            <motion.div 
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -3402,29 +3462,29 @@ const Portfolio = ({
               <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
               <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Selected Work</span>
             </motion.div>
-
-            <motion.h2
+            
+            <motion.h2 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 text-slate-900 tracking-tight"
+              className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-slate-900 tracking-tight"
             >
               MY <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">PORTFOLIO</span>
             </motion.h2>
-
-            <motion.p
+            
+            <motion.p 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-slate-500 max-w-2xl mx-auto text-base md:text-lg lg:text-xl font-light leading-relaxed px-4"
+              className="text-slate-500 max-w-2xl mx-auto text-lg md:text-xl font-light leading-relaxed"
             >
-              Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs.
+              Here are some of my selected design works. Each project focuses on creating visually appealing and effective designs that help brands communicate better with their audience.
             </motion.p>
-          </div>
+          </div>        
 
-          <motion.div
+          <motion.div 
             layout
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-12 md:gap-y-16 lg:gap-y-20 gap-x-6 md:gap-x-10"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-20 gap-x-10"
           >
             {categories.slice(0, 3).map((cat) => {
               const catProjects = publishedProjects.filter(p => p.categoryId === cat.id);
@@ -3819,44 +3879,44 @@ const Portfolio = ({
 
 const Skills = () => {
   return (
-    <section id="skills" className="section-padding scroll-mt-20 relative px-4">
-      <div className="max-w-[1400px] mx-auto w-full relative z-10">
-          <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
+    <section id="skills" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+      <div className="max-w-[1400px] mx-auto w-full relative z-10 px-6">
+          <div className="grid md:grid-cols-2 gap-16 lg:gap-24 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-4 md:mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6">
               <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
               <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Expertise</span>
             </div>
-
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 tracking-tight">DESIGN <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">ARSENAL</span></h2>
-
-            <p className="text-slate-500 text-base md:text-lg lg:text-xl mb-8 md:mb-12 leading-relaxed font-light">
+            
+            <h2 className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight">DESIGN <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">ARSENAL</span></h2>
+            
+            <p className="text-slate-500 text-lg md:text-xl mb-12 leading-relaxed font-light">
               My technical proficiency allows me to deliver high-quality designs that are both aesthetically pleasing and strategically sound.
             </p>
-
-            <div className="space-y-5 md:space-y-8">
+            
+            <div className="space-y-8">
                 {SKILLS.map((skill, i) => (
-                  <motion.div
+                  <motion.div 
                     key={skill.name}
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: i * 0.1 }}
                   >
-                    <div className="flex justify-between items-center mb-2 md:mb-4">
-                      <div className="flex items-center gap-2 md:gap-4">
-                        <div className={`p-2 md:p-3 bg-white/50 border border-slate-100 rounded-lg md:rounded-xl text-brand-primary shadow-sm`}>
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 bg-white/50 border border-slate-100 rounded-xl text-brand-primary shadow-sm`}>
                           {skill.icon}
                         </div>
-                        <span className="font-semibold text-slate-800 tracking-tight text-sm md:text-lg">{skill.name}</span>
+                        <span className="font-semibold text-slate-800 tracking-tight text-lg">{skill.name}</span>
                       </div>
-                      <span className={`text-brand-primary font-mono font-bold tracking-widest text-xs md:text-sm`}>{skill.level}%</span>
+                      <span className={`text-brand-primary font-mono font-bold tracking-widest text-sm`}>{skill.level}%</span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <motion.div
+                      <motion.div 
                         initial={{ width: 0 }}
                         whileInView={{ width: `${skill.level}%` }}
                         transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
@@ -3918,39 +3978,50 @@ const Skills = () => {
 
 const Services = () => {
   return (
-    <section id="services" className="section-padding scroll-mt-20 relative px-4">
-      <div className="max-w-[1400px] mx-auto w-full relative z-10">
-        <div className="text-center md:text-left mb-10 md:mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-4 md:mb-6"
-          >
-            <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">What I Do</span>
-          </motion.div>
-          <motion.h2
+    <section id="services" className="min-h-screen flex items-center py-24 scroll-mt-20 relative px-4 md:px-0">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      <div className="max-w-[1400px] mx-auto w-full relative z-10 px-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+          <div>
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 mb-6"
+            >
+              <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-500">What I Do</span>
+            </motion.div>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="text-[28px] xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight"
+            >
+              SERVICES I <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">OFFER</span>
+            </motion.h2>
+          </div>
+          <motion.p 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight"
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-slate-500 max-w-md text-lg leading-relaxed font-light"
           >
-            SERVICES I <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-purple-400 italic pr-2">OFFER</span>
-          </motion.h2>
+            Specialized design services tailored to help your brand grow, engage audiences, and stand out in a competitive market.
+          </motion.p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {SERVICES.map((service, idx) => (
             <motion.div
               key={service.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={`glass p-5 sm:p-6 md:p-8 rounded-2xl md:rounded-[2rem] transition-all duration-500 group border-white/60 hover:-translate-y-2 hover:shadow-lg relative overflow-hidden`}
+              className={`glass p-5 sm:p-8 md:p-10 rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 group border-white/60 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] relative overflow-hidden`}
             >
-              <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6 relative z-10">
-                <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 shadow-sm inline-block group-hover:scale-110 transition-transform duration-500 text-brand-primary shrink-0`}>
+              <div className="flex items-center gap-4 mb-6 relative z-10">
+                <div className={`p-4 rounded-2xl bg-slate-50 shadow-sm inline-block group-hover:scale-110 transition-transform duration-500 text-${service.color} shrink-0`}>
                   {service.icon}
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight group-hover:text-brand-primary transition-colors leading-tight">{service.title}</h3>
