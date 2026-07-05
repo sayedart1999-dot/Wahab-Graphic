@@ -4298,9 +4298,10 @@ const Contact = () => {
           {[
             { name: 'WhatsApp', icon: MessageCircle, href: 'https://wa.me/8801973324750?text=Hello%20I%20want%20to%20discuss%20a%20design%20project' },
             { name: 'Email', icon: Mail, href: 'https://mail.google.com/mail/?view=cm&fs=1&to=aw6481299@gmail.com' },
-            { name: 'Facebook', icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61584994744719' },
-            { name: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/_wahab__graphic_/' },
-            { name: 'LinkedIn', icon: Linkedin, href: 'https://www.linkedin.com/in/abdul-wahab-988726409' }
+            { name: 'Facebook', icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61591570175379' },
+            { name: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/wahabgraphic/' },
+            { name: 'LinkedIn', icon: Linkedin, href: 'https://www.linkedin.com/in/wahab-graphic/' },
+            { name: 'Twitter', icon: Twitter, href: 'https://x.com/wahab_graphic' }
           ].map((item, idx) => (
             <a 
               key={idx} 
