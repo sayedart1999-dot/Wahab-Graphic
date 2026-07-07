@@ -2677,45 +2677,6 @@ const GlobalBackground = ({ isDarkMode }: { isDarkMode: boolean }) => {
     <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-slate-50">
       {/* Background Dot Grid - Fixed */}
       <div className="absolute inset-0 dot-grid opacity-[0.03]" />
-      
-      {/* Connected Gradient Flow / Ambient Large Blobs */}
-      <div className={`absolute inset-0 opacity-20 ${isDarkMode ? 'mix-blend-screen' : 'mix-blend-multiply'}`}>
-        <motion.div 
-          style={{ y: y1 }}
-          animate={{
-            x: (mousePosition.x - centerX) * 0.02,
-            scale: [1, 1.05, 1],
-            opacity: [0.3, 0.5, 0.3]
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-20%] left-[-10%] w-[120vw] h-[100vh] bg-brand-primary rounded-[100%] blur-[200px] md:blur-[250px]"
-        />
-        
-        <motion.div 
-          style={{ y: y2 }}
-          animate={{
-            x: (mousePosition.x - centerX) * -0.015,
-            scale: [1, 1.1, 1],
-            opacity: [0.2, 0.4, 0.2]
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute bottom-[-30%] right-[-20%] w-[150vw] h-[120vh] bg-purple-400 rounded-[100%] blur-[250px] md:blur-[300px]"
-        />
-        
-        <motion.div 
-          style={{ y: y3 }}
-          animate={{
-            x: (mousePosition.x - centerX) * 0.01,
-            scale: [1, 1.05, 1],
-            opacity: [0.1, 0.3, 0.1]
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute top-[20%] right-[10%] w-[100vw] h-[80vh] bg-blue-300 rounded-[100%] blur-[200px] md:blur-[250px]"
-        />
-      </div>
-
-      {/* Layer to soften the gradient even further */}
-      <div className="absolute inset-0 bg-white/70 pointer-events-none z-[1]" />
 
       {/* Movable Individual Elements */}
       <div className="absolute inset-0 z-[2]">
@@ -3174,11 +3135,6 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
           transition={{ duration: 0.8 }}
           className="order-1 lg:order-2 relative flex justify-center items-center h-[380px] sm:h-[450px] lg:h-[600px] w-full"
         >
-          {/* Circular Trails - Now centered with the avatar */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] sm:w-[500px] sm:h-[500px] md:w-[700px] md:h-[700px] border border-brand-primary/10 rounded-full pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[240px] h-[240px] sm:w-[400px] sm:h-[400px] md:w-[550px] md:h-[550px] border border-brand-primary/5 rounded-full pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180px] h-[180px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] border border-brand-primary/5 rounded-full pointer-events-none" />
-
           {/* Floating 3D Icons */}
           <div className="absolute inset-0 pointer-events-none">
             {/* Ai Icon */}
@@ -3224,6 +3180,13 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
               animate={{ 
                 opacity: 1, 
                 y: [0, -15, 0],
+                borderRadius: [
+                  "60% 40% 30% 70% / 60% 30% 70% 40%",
+                  "40% 60% 60% 40% / 50% 40% 60% 50%",
+                  "60% 40% 50% 50% / 40% 60% 50% 60%",
+                  "40% 60% 70% 30% / 40% 50% 60% 50%",
+                  "60% 40% 30% 70% / 60% 30% 70% 40%"
+                ]
               }}
               transition={{ 
                 opacity: { duration: 1 },
@@ -3231,19 +3194,38 @@ const Hero = ({ stats }: { stats: Stat[] }) => {
                   repeat: Infinity, 
                   duration: 5, 
                   ease: "easeInOut" 
+                },
+                borderRadius: {
+                  repeat: Infinity,
+                  duration: 8,
+                  ease: "easeInOut"
                 }
               }}
-              className="relative w-full cursor-none rounded-3xl overflow-hidden"
+              className="relative w-full cursor-none overflow-hidden border-4 border-white/80 shadow-2xl bg-slate-100 z-10"
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
-        <img 
-          src="https://i.imgur.com/NU9hpnH.png" 
-          alt="Abdul Wahab" 
-          className="w-full h-auto object-cover aspect-[4/5] rounded-3xl border-4 border-white/10 transition-all duration-300"
-          referrerPolicy="no-referrer"
-          loading="eager"
-        />
+              <motion.img 
+                src="https://i.imgur.com/NU9hpnH.png" 
+                alt="Abdul Wahab" 
+                animate={{
+                  borderRadius: [
+                    "60% 40% 30% 70% / 60% 30% 70% 40%",
+                    "40% 60% 60% 40% / 50% 40% 60% 50%",
+                    "60% 40% 50% 50% / 40% 60% 50% 60%",
+                    "40% 60% 70% 30% / 40% 50% 60% 50%",
+                    "60% 40% 30% 70% / 60% 30% 70% 40%"
+                  ]
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 8,
+                  ease: "easeInOut"
+                }}
+                className="w-full h-auto object-cover aspect-[4/5] border-2 border-white/20 transition-all duration-300"
+                referrerPolicy="no-referrer"
+                loading="eager"
+              />
               
               {isHovering && (
                 <div
